@@ -293,6 +293,7 @@ interface AccessResponseData {
 function buildAccessResponse(data: AccessResponseData): NextResponse {
   const response = NextResponse.json({ ok: true });
 
+  // Aleph headers (canonical)
   response.headers.set("X-Aleph-User-Id", data.userId);
   response.headers.set("X-Aleph-User-Name", data.userName);
   response.headers.set("X-Aleph-User-Email", data.userEmail);
@@ -303,6 +304,13 @@ function buildAccessResponse(data: AccessResponseData): NextResponse {
   response.headers.set("X-Aleph-Role", data.role);
   response.headers.set("X-Aleph-Access-Level", data.accessLevel);
   response.headers.set("X-Aleph-Permissions", JSON.stringify(data.permissions));
+
+  // CHS-compatible headers (backward compat for Elias SSO)
+  response.headers.set("X-CHS-User-Id", data.userId);
+  response.headers.set("X-CHS-User-Name", data.userName);
+  response.headers.set("X-CHS-User-Dept", data.deptName);
+  response.headers.set("X-CHS-User-Role", data.role);
+  response.headers.set("X-CHS-Access-Level", data.accessLevel);
 
   return response;
 }

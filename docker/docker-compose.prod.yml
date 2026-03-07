@@ -1,0 +1,55 @@
+services:
+  platform:
+    container_name: aleph-platform
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    expose:
+      - "3000"
+    environment:
+      - DATABASE_URL=postgresql://aleph:${POSTGRES_PASSWORD}@aleph-db:5432/aleph
+      - JWT_SECRET=${JWT_SECRET}
+      - DOMAIN=${DOMAIN}
+      - ORG_NAME=${ORG_NAME}
+      - ORG_SLUG=${ORG_SLUG}
+      - ORG_DOMAIN=${ORG_DOMAIN}
+      - NODE_ENV=production
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - AI_MODEL=${AI_MODEL:-claude-sonnet-4-20250514}
+      - AI_MAX_TOKENS=${AI_MAX_TOKENS:-4096}
+      - AI_RATE_LIMIT_MESSAGES_PER_HOUR=${AI_RATE_LIMIT_MESSAGES_PER_HOUR:-50}
+      - AI_RATE_LIMIT_TOKENS_PER_DAY=${AI_RATE_LIMIT_TOKENS_PER_DAY:-100000}
+    depends_on:
+      aleph-db:
+        condition: service_healthy
+    networks:
+      - coolify
+      - aleph-internal
+    restart: unless-stopped
+
+  aleph-db:
+    container_name: aleph-db
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=aleph
+      - POSTGRES_USER=aleph
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - aleph-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aleph"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - aleph-internal
+    restart: unless-stopped
+
+networks:
+  coolify:
+    external: true
+  aleph-internal:
+    driver: bridge
+
+volumes:
+  aleph-pgdata:
