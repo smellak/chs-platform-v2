@@ -1,0 +1,25 @@
+{
+  "name": "aleph-platform",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "test": "turbo run test",
+    "db:generate": "turbo run db:generate --filter=@aleph/db",
+    "db:migrate": "turbo run db:migrate --filter=@aleph/db",
+    "db:seed": "turbo run db:seed --filter=@aleph/db"
+  },
+  "devDependencies": {
+    "turbo": "^2",
+    "typescript": "^5.7"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

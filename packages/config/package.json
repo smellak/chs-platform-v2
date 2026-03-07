@@ -1,0 +1,7 @@
+{
+  "name": "@aleph/config",
+  "private": true,
+  "files": [
+    "tsconfig.base.json"
+  ]
+}
