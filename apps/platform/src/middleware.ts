@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { verifyAccessToken } from "@aleph/auth";
+import { jwtVerify } from "jose";
+
+export const runtime = "experimental-edge";
 
 const PUBLIC_PATHS = [
   "/login",
@@ -9,7 +11,31 @@ const PUBLIC_PATHS = [
   "/api/health",
 ];
 
-export function middleware(request: NextRequest): NextResponse {
+async function verifyToken(
+  token: string,
+): Promise<{ userId: string; orgId: string } | null> {
+  try {
+    const secret = process.env["JWT_SECRET"];
+    if (!secret) return null;
+
+    const encoder = new TextEncoder();
+    const { payload } = await jwtVerify(token, encoder.encode(secret), {
+      algorithms: ["HS256"],
+    });
+
+    if (
+      typeof payload["userId"] === "string" &&
+      typeof payload["orgId"] === "string"
+    ) {
+      return { userId: payload["userId"], orgId: payload["orgId"] };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
@@ -28,7 +54,7 @@ export function middleware(request: NextRequest): NextResponse {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  const payload = verifyAccessToken(token);
+  const payload = await verifyToken(token);
   if (!payload) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Token inválido" }, { status: 401 });
