@@ -88,7 +88,7 @@ export function getAccessTokenCookieConfig(domain?: string): CookieConfig {
   const config: CookieConfig = {
     name: "aleph_access_token",
     httpOnly: true,
-    secure: process.env["NODE_ENV"] === "production",
+    secure: process.env["NODE_ENV"] === "production" && process.env["DOMAIN"] !== "localhost",
     sameSite: "lax",
     path: "/",
     maxAge: 15 * 60,
@@ -103,7 +103,7 @@ export function getRefreshTokenCookieConfig(): CookieConfig {
   return {
     name: "aleph_refresh_token",
     httpOnly: true,
-    secure: process.env["NODE_ENV"] === "production",
+    secure: process.env["NODE_ENV"] === "production" && process.env["DOMAIN"] !== "localhost",
     sameSite: "strict",
     path: "/api/auth",
     maxAge: 7 * 24 * 60 * 60,

@@ -122,7 +122,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       .where(eq(schema.organizations.id, user.orgId))
       .limit(1);
 
-    const orgDomain = orgs[0]?.domain ?? undefined;
+    // Only set cookie domain in production with a real domain (not localhost)
+    const envDomain = process.env["DOMAIN"];
+    const isLocalhost = !envDomain || envDomain === "localhost" || envDomain === "";
+    const orgDomain = isLocalhost ? undefined : (orgs[0]?.domain ?? undefined);
 
     // Build response
     const response = NextResponse.json({

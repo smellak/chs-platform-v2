@@ -23,33 +23,18 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 aleph && \
     adduser --system --uid 1001 aleph
 
+# Copy Next.js standalone output
 COPY --from=builder /app/apps/platform/.next/standalone ./
 COPY --from=builder /app/apps/platform/.next/static ./apps/platform/.next/static
 COPY --from=builder /app/apps/platform/public ./apps/platform/public
 
+# Copy packages needed for migrations/seed at runtime
 COPY --from=builder /app/packages/db ./packages/db
-COPY --from=builder /app/node_modules/drizzle-orm ./node_modules/drizzle-orm
-COPY --from=builder /app/node_modules/drizzle-kit ./node_modules/drizzle-kit
-COPY --from=builder /app/node_modules/pg ./node_modules/pg
-COPY --from=builder /app/node_modules/pg-types ./node_modules/pg-types
-COPY --from=builder /app/node_modules/pg-pool ./node_modules/pg-pool
-COPY --from=builder /app/node_modules/pg-protocol ./node_modules/pg-protocol
-COPY --from=builder /app/node_modules/pg-connection-string ./node_modules/pg-connection-string
-COPY --from=builder /app/node_modules/pg-cloudflare ./node_modules/pg-cloudflare
-COPY --from=builder /app/node_modules/pg-int8 ./node_modules/pg-int8
-COPY --from=builder /app/node_modules/pgpass ./node_modules/pgpass
-COPY --from=builder /app/node_modules/postgres-array ./node_modules/postgres-array
-COPY --from=builder /app/node_modules/postgres-bytea ./node_modules/postgres-bytea
-COPY --from=builder /app/node_modules/postgres-date ./node_modules/postgres-date
-COPY --from=builder /app/node_modules/postgres-interval ./node_modules/postgres-interval
-COPY --from=builder /app/node_modules/postgres-range ./node_modules/postgres-range
-COPY --from=builder /app/node_modules/buffer-writer ./node_modules/buffer-writer
-COPY --from=builder /app/node_modules/packet-reader ./node_modules/packet-reader
-COPY --from=builder /app/node_modules/obuf ./node_modules/obuf
-COPY --from=builder /app/node_modules/split2 ./node_modules/split2
-COPY --from=builder /app/node_modules/bcryptjs ./node_modules/bcryptjs
-COPY --from=builder /app/node_modules/tsx ./node_modules/tsx
-COPY --from=builder /app/node_modules/esbuild ./node_modules/esbuild
+COPY --from=builder /app/packages/auth ./packages/auth
+COPY --from=builder /app/packages/config ./packages/config
+
+# Copy all node_modules for migration/seed runtime (pg, drizzle, tsx, bcryptjs)
+COPY --from=builder /app/node_modules ./node_modules
 
 COPY docker/entrypoint.sh ./entrypoint.sh
 RUN chmod +x entrypoint.sh

@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { eq } from "drizzle-orm";
-import { hashSync } from "bcryptjs";
+import bcryptjs from "bcryptjs";
 import * as schema from "./schema/index.js";
 
 async function seed(): Promise<void> {
@@ -119,7 +119,7 @@ async function seed(): Promise<void> {
   const roleMap = new Map(rolesResult.map((r) => [r.slug, r]));
 
   // ─── Users ──────────────────────────────────────────────────────────────────
-  const passwordHash = hashSync("admin123", 10);
+  const passwordHash = bcryptjs.hashSync("admin123", 10);
 
   const usersData = [
     {
