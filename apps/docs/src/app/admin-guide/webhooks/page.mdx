@@ -1,0 +1,82 @@
+# Webhooks
+
+Webhooks allow the Aleph Platform to notify external systems when specific events occur. When an event is triggered, the platform sends an HTTP POST request to the configured URL with event details.
+
+## Accessing Webhook Management
+
+Navigate to **Admin > Webhooks** (`/admin/webhooks`). This page requires admin role.
+
+## Webhook Properties
+
+| Field | Description |
+|-------|-------------|
+| Name | A descriptive name for the webhook |
+| URL | The target URL that will receive POST requests |
+| Events | JSON array of event types to subscribe to |
+| Secret | HMAC signing secret for request verification |
+| Is Active | Whether the webhook is enabled |
+| Last Triggered | Timestamp of the last event delivery |
+| Last Status | HTTP status code of the last delivery attempt |
+| Fail Count | Number of consecutive delivery failures |
+| Created By | The admin who created the webhook |
+
+## Creating a Webhook
+
+1. Navigate to **Admin > Webhooks**
+2. Click **Add Webhook**
+3. Enter:
+   - **Name** -- Descriptive identifier
+   - **URL** -- The HTTPS endpoint that will receive events
+   - **Events** -- Select which events to subscribe to
+4. Click **Save**
+5. Copy the generated **Secret** for verifying webhook signatures
+
+## Verifying Webhook Signatures
+
+Each webhook request includes a signature header that you can use to verify the request came from Aleph Platform. Use the webhook secret to compute an HMAC-SHA256 signature of the request body and compare it with the signature in the header.
+
+```typescript
+import crypto from "crypto";
+
+function verifyWebhookSignature(
+  body: string,
+  signature: string,
+  secret: string
+): boolean {
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(body)
+    .digest("hex");
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expected)
+  );
+}
+```
+
+## Failure Handling
+
+The platform tracks consecutive failures for each webhook:
+
+- If a delivery attempt receives a non-2xx response or times out, the `fail_count` is incremented
+- The `last_status` field records the HTTP status code of the most recent attempt
+- Webhooks are not automatically disabled on failure, but administrators can monitor `fail_count` and deactivate problematic webhooks
+
+## Webhook Database Schema
+
+```sql
+CREATE TABLE webhooks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id UUID NOT NULL REFERENCES organizations(id),
+  name VARCHAR(100) NOT NULL,
+  url TEXT NOT NULL,
+  events JSONB DEFAULT '[]',
+  secret TEXT NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  last_triggered TIMESTAMPTZ,
+  last_status INTEGER,
+  fail_count INTEGER NOT NULL DEFAULT 0,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```

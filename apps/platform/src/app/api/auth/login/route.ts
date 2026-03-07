@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 import {
   verifyPassword,
@@ -16,8 +16,32 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+// Simple in-memory rate limiter for login
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+const MAX_ATTEMPTS = 5;
+const WINDOW_MS = 60_000; // 1 minute
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = loginAttempts.get(ip);
+  if (!entry || now > entry.resetAt) {
+    loginAttempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    return false;
+  }
+  entry.count++;
+  return entry.count > MAX_ATTEMPTS;
+}
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
+    const ip = request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? "unknown";
+    if (isRateLimited(ip)) {
+      return NextResponse.json(
+        { error: "Demasiados intentos. Espere un minuto." },
+        { status: 429 },
+      );
+    }
+
     const body: unknown = await request.json();
     const parsed = loginSchema.safeParse(body);
 

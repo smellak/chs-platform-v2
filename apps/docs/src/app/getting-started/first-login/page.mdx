@@ -1,0 +1,66 @@
+# First Login
+
+After installation, follow these steps to log in and explore the platform.
+
+## Default Credentials
+
+The database seed creates three users:
+
+| Username | Email | Password | Role | Department |
+|----------|-------|----------|------|------------|
+| `admin` | admin@centrohogar.es | `admin123` | Super Admin | IT |
+| `carlos.martinez` | carlos@centrohogar.es | `admin123` | User | Logistica y Almacen |
+| `ana.rodriguez` | ana@centrohogar.es | `admin123` | Viewer | Compras |
+
+## Login Flow
+
+1. Navigate to [http://localhost:3000](http://localhost:3000)
+2. You will be redirected to the login page at `/login`
+3. Enter username `admin` and password `admin123`
+4. Upon successful login, you are redirected to the dashboard
+
+## What Happens During Login
+
+When you submit the login form, the following occurs:
+
+1. The client sends a `POST` request to `/api/auth/login` with `username` and `password`
+2. The server verifies the password against the bcrypt hash stored in the database
+3. On success, two cookies are set:
+   - `aleph_access_token` -- A short-lived JWT (15 minutes) containing `userId` and `orgId`
+   - `aleph_refresh_token` -- A long-lived opaque token (7 days) for obtaining new access tokens
+4. The response includes user details (name, email, role, department, permissions)
+5. The client stores the user context and redirects to the dashboard
+
+## Exploring the Dashboard
+
+After logging in as `admin` (Super Admin), you have access to all platform features:
+
+### Home Dashboard
+The main page shows an overview of your organization's apps, recent activity, and quick-access links.
+
+### Admin Section
+Access the admin panel from the sidebar to manage:
+- **Users** -- Create, edit, deactivate user accounts
+- **Departments** -- Manage organizational departments
+- **Roles** -- Define roles with specific permission sets
+- **Apps** -- Register and configure internal applications
+- **API Providers** -- Configure AI model providers and track costs
+- **API Keys** -- Generate and manage API keys for programmatic access
+- **Webhooks** -- Set up event notifications to external systems
+- **Audit Log** -- View all platform activity
+
+### Monitor
+The monitoring section shows the health status of all registered application instances with response times and HTTP status codes.
+
+### Agent
+The AI agent is accessible via the floating button. It can route requests to registered app agents based on your permissions.
+
+## Changing the Default Password
+
+After first login, navigate to your profile page to change the default password. In production, you should change all default passwords immediately.
+
+## Next Steps
+
+- [Learn about the platform architecture](/architecture/overview)
+- [Set up your first app integration](/developer-guide/sdk-overview)
+- [Manage users and permissions](/admin-guide/users)

@@ -1,0 +1,22 @@
+{
+  "name": "create-aleph",
+  "version": "0.1.0",
+  "private": true,
+  "bin": {
+    "create-aleph": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs --dts",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.3",
+    "@types/prompts": "^2.4.9",
+    "@types/node": "^22"
+  }
+}

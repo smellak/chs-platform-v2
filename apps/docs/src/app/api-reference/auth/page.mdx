@@ -1,0 +1,213 @@
+# Authentication API
+
+The authentication API handles user login, logout, token refresh, and session management.
+
+## POST /api/auth/login
+
+Authenticate a user with username and password.
+
+**Request:**
+
+```json
+{
+  "username": "admin",
+  "password": "admin123"
+}
+```
+
+**Success Response (200):**
+
+```json
+{
+  "user": {
+    "id": "uuid",
+    "username": "admin",
+    "email": "admin@centrohogar.es",
+    "firstName": "Admin",
+    "lastName": "Principal",
+    "isSuperAdmin": true,
+    "orgId": "uuid",
+    "orgName": "Centro Hogar Sanchez",
+    "department": "IT",
+    "departmentId": "uuid",
+    "role": "super-admin",
+    "accessLevel": "full",
+    "permissions": {
+      "apps.read": true,
+      "apps.manage": true,
+      "users.read": true,
+      "users.manage": true
+    }
+  }
+}
+```
+
+**Side Effects:**
+- Sets `aleph_access_token` HttpOnly cookie (15 minute expiry)
+- Sets `aleph_refresh_token` HttpOnly cookie (7 day expiry)
+- Creates a refresh token record in the database
+- Updates the user's `last_login` timestamp
+
+**Error Responses:**
+- `401` -- Invalid username or password
+- `403` -- Account is deactivated
+
+## POST /api/auth/logout
+
+Clear authentication cookies and invalidate the refresh token.
+
+**Request:** No body required. The refresh token is read from the `aleph_refresh_token` cookie.
+
+**Success Response (200):**
+
+```json
+{
+  "message": "Logged out"
+}
+```
+
+**Side Effects:**
+- Clears `aleph_access_token` cookie
+- Clears `aleph_refresh_token` cookie
+- Deletes the refresh token from the database
+
+## POST /api/auth/refresh
+
+Obtain a new access token using a valid refresh token. The refresh token is read from the `aleph_refresh_token` cookie.
+
+**Request:** No body required.
+
+**Success Response (200):**
+
+```json
+{
+  "user": {
+    "id": "uuid",
+    "username": "admin",
+    "email": "admin@centrohogar.es",
+    "firstName": "Admin",
+    "lastName": "Principal"
+  }
+}
+```
+
+**Side Effects:**
+- Sets a new `aleph_access_token` cookie
+- May rotate the refresh token
+
+**Error Responses:**
+- `401` -- Missing or invalid refresh token
+- `401` -- Refresh token has expired
+- `403` -- User account is deactivated
+
+## GET /api/auth/me
+
+Get the current authenticated user's details. The access token is read from the `aleph_access_token` cookie or the `Authorization: Bearer` header.
+
+**Success Response (200):**
+
+```json
+{
+  "user": {
+    "id": "uuid",
+    "username": "admin",
+    "email": "admin@centrohogar.es",
+    "firstName": "Admin",
+    "lastName": "Principal",
+    "isSuperAdmin": true,
+    "orgId": "uuid",
+    "orgName": "Centro Hogar Sanchez",
+    "department": "IT",
+    "departmentId": "uuid",
+    "role": "super-admin",
+    "permissions": {}
+  }
+}
+```
+
+**Error Responses:**
+- `401` -- Missing or invalid access token
+
+## POST /api/auth/verify-access
+
+Verify whether the current user has access to a specific application. Used by the reverse proxy or API gateway to determine if a request should be forwarded to an app.
+
+**Request:**
+
+```json
+{
+  "appSlug": "citas-almacen"
+}
+```
+
+**Success Response (200):**
+
+```json
+{
+  "hasAccess": true,
+  "accessLevel": "full",
+  "user": {
+    "id": "uuid",
+    "name": "Admin Principal",
+    "email": "admin@centrohogar.es",
+    "orgId": "uuid",
+    "orgName": "Centro Hogar Sanchez",
+    "dept": "IT",
+    "deptId": "uuid",
+    "role": "super-admin",
+    "accessLevel": "full",
+    "permissions": {}
+  }
+}
+```
+
+**Error Responses:**
+- `401` -- Missing or invalid access token
+- `403` -- User does not have access to the specified app
+
+## GET /api/auth/sso-info
+
+Get SSO configuration information for the current organization.
+
+**Success Response (200):**
+
+```json
+{
+  "orgName": "Centro Hogar Sanchez",
+  "domain": ".centrohogarsanchez.es"
+}
+```
+
+## Authentication Flow Diagram
+
+```
+Client                          Platform                        Database
+  │                               │                               │
+  │  POST /api/auth/login         │                               │
+  │  { username, password }       │                               │
+  │──────────────────────────────>│                               │
+  │                               │  Find user by username        │
+  │                               │──────────────────────────────>│
+  │                               │  User record                  │
+  │                               │<──────────────────────────────│
+  │                               │                               │
+  │                               │  bcrypt.compare(password)     │
+  │                               │                               │
+  │                               │  Generate JWT + refresh token │
+  │                               │  Store refresh token          │
+  │                               │──────────────────────────────>│
+  │                               │                               │
+  │  Set-Cookie: aleph_access_token=...                           │
+  │  Set-Cookie: aleph_refresh_token=...                          │
+  │  200 { user: {...} }          │                               │
+  │<──────────────────────────────│                               │
+  │                               │                               │
+  │  GET /api/auth/me             │                               │
+  │  Cookie: aleph_access_token=..│                               │
+  │──────────────────────────────>│                               │
+  │                               │  Verify JWT                   │
+  │                               │  Fetch user details           │
+  │                               │──────────────────────────────>│
+  │  200 { user: {...} }          │                               │
+  │<──────────────────────────────│                               │
+```

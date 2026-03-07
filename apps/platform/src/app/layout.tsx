@@ -10,7 +10,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Aleph Platform",
-  description: "Portal corporativo de gestión de aplicaciones internas",
+  description: "Plataforma de gestión de aplicaciones internas con IA",
+  icons: { icon: "/favicon.svg" },
 };
 
 export default function RootLayout({

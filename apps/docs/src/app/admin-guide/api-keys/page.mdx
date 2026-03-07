@@ -1,0 +1,56 @@
+# API Keys
+
+API keys provide programmatic access to the Aleph Platform API without requiring interactive login. They are useful for CI/CD pipelines, scripts, and external integrations.
+
+## Accessing API Key Management
+
+Navigate to **Admin > API Keys** (`/admin/api-keys`). This page requires admin role.
+
+## API Key Properties
+
+| Field | Description |
+|-------|-------------|
+| Name | A descriptive name for the key (e.g., "CI Pipeline Key") |
+| Key Hash | The bcrypt hash of the actual key (the plaintext key is only shown once at creation) |
+| Key Prefix | The first characters of the key (e.g., `aleph_k_a1b2`) for identification without exposing the full key |
+| Permissions | A JSON permission map (same format as role permissions) |
+| Expires At | Optional expiration date |
+| Is Active | Whether the key is currently valid |
+| Created By | The admin who created the key |
+| Last Used | Timestamp of the last time the key was used |
+
+## Creating an API Key
+
+1. Navigate to **Admin > API Keys**
+2. Click **Create API Key**
+3. Enter:
+   - **Name** -- A descriptive identifier
+   - **Permissions** -- Select the permissions this key should have
+   - **Expiration** -- Optionally set an expiration date
+4. Click **Create**
+5. **Copy the key immediately** -- the full key is only displayed once
+
+## Using an API Key
+
+Include the API key in the `Authorization` header:
+
+```bash
+curl -H "Authorization: Bearer aleph_k_a1b2c3d4..." \
+  https://your-platform.com/api/health
+```
+
+## Key Security
+
+- API keys are stored as bcrypt hashes. The plaintext key cannot be recovered after creation.
+- Only the key prefix is stored in plaintext for identification purposes.
+- Keys can be deactivated at any time by setting `is_active` to `false`.
+- Set expiration dates on keys to follow the principle of least privilege.
+- The `last_used` field helps identify unused keys that should be revoked.
+
+## Revoking a Key
+
+1. Navigate to **Admin > API Keys**
+2. Find the key by name or prefix
+3. Click **Deactivate** (or **Delete**)
+
+Deactivated keys immediately stop working. Any requests using the key will receive a 401 response.

@@ -1,0 +1,168 @@
+# Docker Setup
+
+The recommended way to run Aleph Platform in production is with Docker Compose. The provided configuration sets up both the platform and PostgreSQL with a single command.
+
+## Quick Start
+
+```bash
+cd docker
+docker compose up -d
+```
+
+This starts two services:
+
+1. **platform** -- The Aleph Platform Next.js application on port 3000
+2. **db** -- PostgreSQL 16 (Alpine) on port 5432
+
+The platform container automatically runs database migrations and seeds the database on first startup via its entrypoint script.
+
+## Docker Compose Configuration
+
+The `docker/docker-compose.yml` file defines the full stack:
+
+```yaml
+services:
+  platform:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://aleph:aleph_secret@db:5432/aleph
+      - JWT_SECRET=change-me-in-production-use-at-least-64-chars-random-string-here
+      - DOMAIN=localhost
+      - NODE_ENV=production
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - AI_MODEL=${AI_MODEL:-claude-sonnet-4-20250514}
+      - AI_MAX_TOKENS=${AI_MAX_TOKENS:-4096}
+      - AI_RATE_LIMIT_MESSAGES_PER_HOUR=${AI_RATE_LIMIT_MESSAGES_PER_HOUR:-50}
+      - AI_RATE_LIMIT_TOKENS_PER_DAY=${AI_RATE_LIMIT_TOKENS_PER_DAY:-100000}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=aleph
+      - POSTGRES_USER=aleph
+      - POSTGRES_PASSWORD=aleph_secret
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aleph"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+```
+
+## Environment Variables
+
+You can override environment variables by creating a `.env` file in the `docker/` directory or by passing them directly:
+
+```bash
+# Using a .env file
+cat > docker/.env << 'EOF'
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+AI_MODEL=claude-sonnet-4-20250514
+JWT_SECRET=your-production-secret-at-least-64-characters-long
+EOF
+
+docker compose up -d
+```
+
+```bash
+# Or passing inline
+ANTHROPIC_API_KEY=sk-ant-xxx docker compose up -d
+```
+
+## Production Considerations
+
+### JWT Secret
+
+Always change the default `JWT_SECRET` in production. Use a cryptographically random string of at least 64 characters:
+
+```bash
+openssl rand -hex 32
+```
+
+### PostgreSQL Password
+
+Change the default PostgreSQL credentials (`aleph` / `aleph_secret`) for production deployments.
+
+### Data Persistence
+
+The PostgreSQL data is stored in a named Docker volume (`pgdata`). This persists across container restarts. To back up:
+
+```bash
+docker compose exec db pg_dump -U aleph aleph > backup.sql
+```
+
+### Health Checks
+
+The PostgreSQL container includes a health check (`pg_isready`). The platform container waits for the database to be healthy before starting, using `depends_on` with `condition: service_healthy`.
+
+## Common Commands
+
+```bash
+# Start the stack
+docker compose up -d
+
+# View logs
+docker compose logs -f platform
+
+# Stop the stack
+docker compose down
+
+# Stop and remove volumes (deletes database data)
+docker compose down -v
+
+# Rebuild after code changes
+docker compose build --no-cache
+docker compose up -d
+
+# Access the database
+docker compose exec db psql -U aleph aleph
+
+# Run a database backup
+docker compose exec db pg_dump -U aleph aleph > backup.sql
+```
+
+## Troubleshooting
+
+### Platform container fails to start
+
+Check the logs for migration or connection errors:
+
+```bash
+docker compose logs platform
+```
+
+Common causes:
+- Database not ready yet (the health check should prevent this)
+- Invalid `DATABASE_URL` format
+- Port 3000 already in use
+
+### Database connection refused
+
+Ensure the `db` service is running and healthy:
+
+```bash
+docker compose ps
+docker compose exec db pg_isready -U aleph
+```
+
+### Migrations fail
+
+If the database schema is out of date:
+
+```bash
+# Restart the platform container to re-run migrations
+docker compose restart platform
+```

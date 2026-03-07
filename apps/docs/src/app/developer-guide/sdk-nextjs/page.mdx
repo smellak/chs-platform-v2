@@ -1,0 +1,201 @@
+# Next.js Integration
+
+The `@aleph-platform/sdk/next` entry point provides helpers for Next.js applications using the App Router.
+
+## Installation
+
+```bash
+npm install @aleph-platform/sdk
+```
+
+## `getAlephUser(request)`
+
+Extracts the Aleph user from a Next.js `Request` object by reading the `x-aleph-*` headers. This function is designed for use in Next.js App Router route handlers and Server Components.
+
+```typescript
+import { getAlephUser } from "@aleph-platform/sdk/next";
+
+export async function GET(request: Request) {
+  const user = getAlephUser(request);
+
+  if (!user) {
+    return Response.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
+  return Response.json({
+    message: `Hello, ${user.name}`,
+    department: user.dept,
+    role: user.role,
+  });
+}
+```
+
+**Parameters:**
+- `request` -- A Web API `Request` object (or any object with a `headers` property that has a `forEach` method)
+
+**Returns:** `AlephUser | null`
+
+### How It Works
+
+The function converts the Next.js `Headers` object into a plain `Record<string, string>` and then calls `parseAlephHeaders`:
+
+```typescript
+function getAlephUser(request: NextRequestLike): AlephUser | null {
+  const headers: Record<string, string> = {};
+  request.headers.forEach((value, key) => {
+    headers[key] = value;
+  });
+  return parseAlephHeaders(headers);
+}
+```
+
+## Route Handler Examples
+
+### Protected API Route
+
+```typescript
+// app/api/items/route.ts
+import { getAlephUser } from "@aleph-platform/sdk/next";
+
+export async function GET(request: Request) {
+  const user = getAlephUser(request);
+
+  if (!user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // User is authenticated, fetch their data
+  const items = await getItemsForUser(user.id);
+  return Response.json({ items });
+}
+
+export async function POST(request: Request) {
+  const user = getAlephUser(request);
+
+  if (!user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Check access level for write operations
+  if (user.accessLevel !== "full") {
+    return Response.json({ error: "Full access required" }, { status: 403 });
+  }
+
+  const body = await request.json();
+  const item = await createItem(body, user.id);
+  return Response.json({ item }, { status: 201 });
+}
+```
+
+### Permission Check
+
+```typescript
+// app/api/admin/route.ts
+import { getAlephUser } from "@aleph-platform/sdk/next";
+
+export async function GET(request: Request) {
+  const user = getAlephUser(request);
+
+  if (!user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (user.role !== "super-admin" && user.role !== "dept-admin") {
+    return Response.json({ error: "Admin access required" }, { status: 403 });
+  }
+
+  const adminData = await getAdminData();
+  return Response.json(adminData);
+}
+```
+
+### Using with `headers()` in Server Components
+
+If you need user information in a Server Component (not a route handler), you can read the headers directly using the `parseAlephHeaders` function from the core SDK:
+
+```typescript
+// app/dashboard/page.tsx
+import { headers } from "next/headers";
+import { parseAlephHeaders } from "@aleph-platform/sdk";
+
+export default async function DashboardPage() {
+  const headersList = await headers();
+  const headerObj: Record<string, string> = {};
+  headersList.forEach((value, key) => {
+    headerObj[key] = value;
+  });
+
+  const user = parseAlephHeaders(headerObj);
+
+  if (!user) {
+    return <div>Please log in</div>;
+  }
+
+  return (
+    <div>
+      <h1>Welcome, {user.name}</h1>
+      <p>Department: {user.dept}</p>
+      <p>Role: {user.role}</p>
+    </div>
+  );
+}
+```
+
+## Redirect to Login
+
+Use `getAlephLoginUrl` to redirect unauthenticated users to the platform login page:
+
+```typescript
+import { getAlephLoginUrl } from "@aleph-platform/sdk";
+import { redirect } from "next/navigation";
+
+export async function GET(request: Request) {
+  const user = getAlephUser(request);
+
+  if (!user) {
+    const loginUrl = getAlephLoginUrl(
+      "https://platform.example.com",
+      request.url
+    );
+    redirect(loginUrl);
+  }
+
+  // ... handle authenticated request
+}
+```
+
+## Middleware
+
+For Next.js middleware (running at the edge), you can parse headers in `middleware.ts`:
+
+```typescript
+// middleware.ts
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { parseAlephHeaders } from "@aleph-platform/sdk";
+
+export function middleware(request: NextRequest) {
+  const headers: Record<string, string> = {};
+  request.headers.forEach((value, key) => {
+    headers[key] = value;
+  });
+
+  const user = parseAlephHeaders(headers);
+
+  if (!user && request.nextUrl.pathname.startsWith("/api/protected")) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: "/api/protected/:path*",
+};
+```

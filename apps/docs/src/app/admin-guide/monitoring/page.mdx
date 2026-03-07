@@ -1,0 +1,86 @@
+# Monitoring
+
+The monitoring section provides real-time health status for all registered application instances. It helps administrators identify service issues quickly.
+
+## Accessing the Monitor
+
+Navigate to **Monitor** (`/monitor`) from the dashboard sidebar. This page is available to users with admin privileges.
+
+## Service Health
+
+The platform periodically checks each app instance by sending an HTTP GET request to the configured `health_endpoint` (default: `/api/health`). The results are recorded in the `service_status` table.
+
+### Health Check Data
+
+Each health check records:
+
+| Field | Description |
+|-------|-------------|
+| Status | The health status (e.g., `healthy`, `unhealthy`, `timeout`) |
+| Response Time | Response time in milliseconds |
+| HTTP Code | The HTTP status code returned by the health endpoint |
+| Checked At | When the check was performed |
+| Details | Additional response details (JSONB) |
+
+### Status Indicators
+
+| Status | Meaning |
+|--------|---------|
+| Healthy | The service responded with a 2xx status code |
+| Unhealthy | The service responded with a non-2xx status code |
+| Timeout | The service did not respond within the timeout period |
+| Unknown | No health check has been performed yet |
+
+## Monitor API Endpoints
+
+The monitoring system exposes three API endpoints:
+
+### GET /api/monitor/services
+
+Returns the current health status of all registered app instances.
+
+### GET /api/monitor/overview
+
+Returns an aggregated overview of system health, including:
+- Total number of services
+- Number of healthy/unhealthy services
+- Average response times
+
+### GET /api/monitor/activity
+
+Returns recent activity and events across the platform, useful for understanding the current state of the system.
+
+## Service Status History
+
+Health check results are stored in the `service_status` table, providing a historical view of service reliability. This data can be used to:
+
+- Identify intermittent failures
+- Track response time trends
+- Measure service uptime
+
+## App Instance Configuration
+
+For each app instance, you can configure:
+
+- **Internal URL** -- Where the service is reachable (e.g., `http://elias:5000`)
+- **Health Endpoint** -- The path for health checks (default: `/api/health`)
+- **External Domain** -- The public-facing domain
+
+### Example Health Endpoint
+
+Your application's health endpoint should return a 200 status with relevant health information:
+
+```typescript
+// Example: /api/health route in your app
+export async function GET() {
+  return Response.json({
+    status: "healthy",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+}
+```
+
+## Platform Health
+
+The platform itself exposes a health endpoint at `/api/health` that returns its own status. This is used by the Docker health check configuration and external monitoring tools.

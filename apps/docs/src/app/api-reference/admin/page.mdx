@@ -1,0 +1,308 @@
+# Admin Endpoints
+
+The admin API provides CRUD operations for managing platform entities. All admin endpoints require authentication and appropriate permissions (typically `super-admin` or `dept-admin` role).
+
+## Users
+
+### GET /api/admin/users
+
+List all users in the organization.
+
+**Query Parameters:**
+- `search` -- Filter by name, email, or username
+- `departmentId` -- Filter by department
+
+**Response (200):**
+```json
+{
+  "users": [
+    {
+      "id": "uuid",
+      "username": "admin",
+      "email": "admin@centrohogar.es",
+      "firstName": "Admin",
+      "lastName": "Principal",
+      "isActive": true,
+      "isSuperAdmin": true,
+      "lastLogin": "2026-03-07T10:00:00Z",
+      "departments": [
+        {
+          "id": "uuid",
+          "name": "IT",
+          "role": "super-admin"
+        }
+      ]
+    }
+  ]
+}
+```
+
+### POST /api/admin/users
+
+Create a new user.
+
+**Request:**
+```json
+{
+  "username": "juan.garcia",
+  "email": "juan@centrohogar.es",
+  "firstName": "Juan",
+  "lastName": "Garcia",
+  "password": "secure-password",
+  "departmentId": "uuid",
+  "roleId": "uuid"
+}
+```
+
+**Response (201):**
+```json
+{
+  "user": {
+    "id": "uuid",
+    "username": "juan.garcia",
+    "email": "juan@centrohogar.es"
+  }
+}
+```
+
+## Departments
+
+### GET /api/admin/departments
+
+List all departments.
+
+**Response (200):**
+```json
+{
+  "departments": [
+    {
+      "id": "uuid",
+      "name": "IT",
+      "slug": "it",
+      "icon": "Monitor",
+      "color": "#4F46E5",
+      "description": null,
+      "isActive": true,
+      "userCount": 1
+    }
+  ]
+}
+```
+
+### POST /api/admin/departments
+
+Create a new department.
+
+**Request:**
+```json
+{
+  "name": "Finance",
+  "slug": "finance",
+  "icon": "DollarSign",
+  "color": "#059669",
+  "description": "Financial operations"
+}
+```
+
+## Roles
+
+### GET /api/admin/roles
+
+List all roles.
+
+**Response (200):**
+```json
+{
+  "roles": [
+    {
+      "id": "uuid",
+      "name": "Super Admin",
+      "slug": "super-admin",
+      "description": "Full platform access",
+      "permissions": {
+        "apps.read": true,
+        "apps.manage": true
+      },
+      "isSystem": true
+    }
+  ]
+}
+```
+
+### POST /api/admin/roles
+
+Create a new role.
+
+**Request:**
+```json
+{
+  "name": "Content Editor",
+  "slug": "content-editor",
+  "description": "Can manage content",
+  "permissions": {
+    "apps.read": true,
+    "apps.use": true
+  }
+}
+```
+
+## Apps
+
+### GET /api/admin/apps
+
+List all registered applications.
+
+**Response (200):**
+```json
+{
+  "apps": [
+    {
+      "id": "uuid",
+      "name": "Citas Almacen",
+      "slug": "citas-almacen",
+      "description": "Sistema de gestion de citas para el almacen",
+      "icon": "CalendarDays",
+      "color": "#EA580C",
+      "category": "Logistica",
+      "version": "1.0",
+      "isActive": true,
+      "isMaintenance": false,
+      "instances": [...],
+      "accessPolicies": [...],
+      "agent": {...}
+    }
+  ]
+}
+```
+
+### POST /api/admin/apps
+
+Create a new application.
+
+**Request:**
+```json
+{
+  "name": "Inventory Manager",
+  "slug": "inventory-manager",
+  "description": "Product inventory management",
+  "icon": "Package",
+  "color": "#2563EB",
+  "category": "Operations"
+}
+```
+
+## API Providers
+
+### GET /api/admin/api-providers
+
+List all AI API providers.
+
+**Response (200):**
+```json
+{
+  "providers": [
+    {
+      "id": "uuid",
+      "name": "Anthropic",
+      "slug": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "costPer1kInput": 0,
+      "costPer1kOutput": 0,
+      "isActive": true
+    }
+  ]
+}
+```
+
+## API Keys
+
+### GET /api/admin/api-keys
+
+List all API keys (hashes are not returned).
+
+**Response (200):**
+```json
+{
+  "apiKeys": [
+    {
+      "id": "uuid",
+      "name": "CI Pipeline Key",
+      "keyPrefix": "aleph_k_a1b2",
+      "permissions": { "apps.read": true },
+      "lastUsed": null,
+      "expiresAt": "2027-01-01T00:00:00Z",
+      "isActive": true,
+      "createdBy": "uuid"
+    }
+  ]
+}
+```
+
+## Webhooks
+
+### GET /api/admin/webhooks
+
+List all webhooks.
+
+**Response (200):**
+```json
+{
+  "webhooks": [
+    {
+      "id": "uuid",
+      "name": "Slack Notifications",
+      "url": "https://hooks.slack.com/services/...",
+      "events": ["user.created", "app.deployed"],
+      "isActive": true,
+      "lastTriggered": null,
+      "lastStatus": null,
+      "failCount": 0
+    }
+  ]
+}
+```
+
+### POST /api/admin/webhooks
+
+Create a new webhook.
+
+**Request:**
+```json
+{
+  "name": "Slack Notifications",
+  "url": "https://hooks.slack.com/services/...",
+  "events": ["user.created", "app.deployed"]
+}
+```
+
+## Common Error Responses
+
+All admin endpoints return consistent error formats:
+
+**401 Unauthorized:**
+```json
+{
+  "error": "Authentication required"
+}
+```
+
+**403 Forbidden:**
+```json
+{
+  "error": "Admin access required"
+}
+```
+
+**404 Not Found:**
+```json
+{
+  "error": "Resource not found"
+}
+```
+
+**400 Bad Request:**
+```json
+{
+  "error": "Validation error message"
+}
+```

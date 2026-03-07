@@ -1,0 +1,152 @@
+# Roles & Permissions
+
+Roles define what users can do within the platform. Each role contains a set of permissions, and users are assigned roles within departments.
+
+## Accessing Role Management
+
+Navigate to **Admin > Roles** (`/admin/roles`). This page requires `super-admin` role.
+
+## System Roles
+
+The platform ships with four built-in system roles (marked with `is_system: true`):
+
+### Super Admin
+
+Full platform access with all permissions. Super admins bypass all permission checks in the agent system.
+
+```json
+{
+  "apps.read": true,
+  "apps.manage": true,
+  "users.read": true,
+  "users.manage": true,
+  "departments.manage": true,
+  "roles.manage": true,
+  "audit.read": true,
+  "settings.manage": true
+}
+```
+
+### Dept Admin
+
+Department-level administration. Can manage users and apps within their department.
+
+```json
+{
+  "apps.read": true,
+  "apps.manage": true,
+  "users.read": true,
+  "users.manage": true
+}
+```
+
+### User
+
+Standard user with application access. Can use apps assigned to their department.
+
+```json
+{
+  "apps.read": true,
+  "apps.use": true
+}
+```
+
+### Viewer
+
+Read-only access. Can view apps but not modify data.
+
+```json
+{
+  "apps.read": true
+}
+```
+
+## Permission Keys
+
+Permissions are stored as a JSON object with boolean values. The following permission keys are used by the platform:
+
+| Permission | Description |
+|-----------|-------------|
+| `apps.read` | View applications in the dashboard |
+| `apps.use` | Use (interact with) applications |
+| `apps.manage` | Create, edit, delete applications |
+| `users.read` | View user accounts |
+| `users.manage` | Create, edit, deactivate user accounts |
+| `departments.manage` | Create, edit departments |
+| `roles.manage` | Create, edit roles |
+| `audit.read` | View audit logs |
+| `settings.manage` | Modify platform settings |
+
+## How Permissions Work
+
+### Role Assignment
+
+Users are assigned roles within departments through the `user_department_roles` table:
+
+```
+User "Carlos" -> Department "Logistica" -> Role "User"
+User "Admin"  -> Department "IT"        -> Role "Super Admin"
+```
+
+### Permission Resolution
+
+When a user accesses the platform:
+
+1. The platform looks up the user's department and role assignment
+2. The role's `permissions` JSON is loaded
+3. These permissions are serialized as the `x-aleph-permissions` header
+4. The role slug is sent as the `x-aleph-role` header
+
+### Access Level Determination
+
+The `access_level` (sent as `x-aleph-access-level`) is determined by `app_access_policies`:
+
+- An access policy maps `(app, department, optional role)` to an access level (`full` or `readonly`)
+- When a user accesses an app, the platform finds the matching policy for the user's department
+- The resulting access level is included in the headers
+
+### Agent Permission Checks
+
+The agent system uses a simplified three-tier permission model:
+
+| Capability Permission | Required Conditions |
+|----------------------|-------------------|
+| `read` | Any authenticated user with app access |
+| `write` | User must have `accessLevel: "full"` or be a super admin |
+| `admin` | User must have role `super-admin` or `dept-admin` |
+
+## Creating Custom Roles
+
+1. Navigate to **Admin > Roles**
+2. Click **Add Role**
+3. Enter:
+   - **Name** -- Display name
+   - **Slug** -- URL-safe identifier (unique per org)
+   - **Description** -- What this role is for
+   - **Permissions** -- Select the permissions to grant
+4. Click **Save**
+
+Custom roles are created with `is_system: false` and can be freely modified or deleted.
+
+## Role Database Schema
+
+```sql
+CREATE TABLE roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id UUID NOT NULL REFERENCES organizations(id),
+  name VARCHAR(100) NOT NULL,
+  slug VARCHAR(50) NOT NULL,
+  description TEXT,
+  permissions JSONB DEFAULT '{}',
+  is_system BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(org_id, slug)
+);
+```
+
+## Best Practices
+
+- Do not modify system roles directly. Create custom roles for specific needs.
+- Use the principle of least privilege -- assign the minimum permissions needed for each role.
+- The `viewer` role is ideal for stakeholders who need visibility without modification rights.
+- Department admins can manage users within their department without needing full super admin access.

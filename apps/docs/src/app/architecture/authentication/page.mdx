@@ -1,0 +1,150 @@
+# Authentication
+
+Aleph Platform implements a JWT-based authentication system with HttpOnly cookies. The `@aleph/auth` package provides the core cryptographic functions used by the platform.
+
+## Authentication Flow
+
+```
+1. User submits credentials
+   POST /api/auth/login { username, password }
+
+2. Server verifies password
+   bcrypt.compare(password, user.passwordHash)
+
+3. Server generates tokens
+   - Access token: JWT (HS256, 15min expiry)
+   - Refresh token: Random hex string (7d expiry)
+
+4. Server sets HttpOnly cookies
+   - aleph_access_token (path: /, sameSite: lax)
+   - aleph_refresh_token (path: /api/auth, sameSite: strict)
+
+5. Client receives user data in response body
+   { id, name, email, role, department, permissions, ... }
+```
+
+## Token Types
+
+### Access Token
+
+The access token is a JWT signed with HS256. It contains a minimal payload:
+
+```typescript
+interface AlephTokenPayload {
+  userId: string;   // UUID of the authenticated user
+  orgId: string;    // UUID of the user's organization
+  iat: number;      // Issued at timestamp
+  exp: number;      // Expiration timestamp (15 minutes from iat)
+}
+```
+
+The access token is intentionally minimal. Full user details (role, department, permissions) are resolved from the database on each request by the platform.
+
+### Refresh Token
+
+The refresh token is a cryptographically random 40-byte hex string stored in the `refresh_tokens` database table. It has a 7-day expiry. When the access token expires, the client can obtain a new one by sending the refresh token to `/api/auth/refresh`.
+
+## Cookie Configuration
+
+| Property | Access Token | Refresh Token |
+|----------|-------------|---------------|
+| Cookie name | `aleph_access_token` | `aleph_refresh_token` |
+| `httpOnly` | `true` | `true` |
+| `secure` | `true` in production (non-localhost) | `true` in production (non-localhost) |
+| `sameSite` | `lax` | `strict` |
+| `path` | `/` | `/api/auth` |
+| `maxAge` | 900 (15 minutes) | 604800 (7 days) |
+| `domain` | Configurable via `DOMAIN` env var | Not set |
+
+The access token cookie uses `sameSite: lax` and a configurable domain to enable cross-subdomain cookie sharing. This allows the platform to set the cookie once, and have it sent to all registered applications on the same domain.
+
+The refresh token cookie uses `sameSite: strict` and is scoped to `/api/auth` to minimize exposure. It is only sent when the client explicitly calls the refresh endpoint.
+
+## Password Hashing
+
+Passwords are hashed using bcrypt with 10 salt rounds:
+
+```typescript
+import bcrypt from "bcryptjs";
+
+const SALT_ROUNDS = 10;
+
+// Hash a password
+const hash = await bcrypt.hash(plainPassword, SALT_ROUNDS);
+
+// Verify a password
+const isValid = await bcrypt.compare(plainPassword, hash);
+```
+
+## Token Extraction
+
+The platform accepts access tokens from two sources, checked in this order:
+
+1. **Authorization header**: `Authorization: Bearer <token>`
+2. **Cookie**: `aleph_access_token=<token>`
+
+```typescript
+function extractTokenFromHeaders(headers: Headers): string | null {
+  // Check Authorization header first
+  const authHeader = headers.get("authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    return authHeader.slice(7);
+  }
+
+  // Fall back to cookie
+  const cookieHeader = headers.get("cookie");
+  if (cookieHeader) {
+    // Parse aleph_access_token from cookie string
+  }
+
+  return null;
+}
+```
+
+## Auth API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/auth/login` | POST | Authenticate with username/password |
+| `/api/auth/logout` | POST | Clear auth cookies |
+| `/api/auth/refresh` | POST | Obtain new access token using refresh token |
+| `/api/auth/me` | GET | Get current user details |
+| `/api/auth/verify-access` | POST | Verify if a user has access to a specific app |
+| `/api/auth/sso-info` | GET | Get SSO configuration information |
+
+## Security Considerations
+
+- **HttpOnly cookies** prevent JavaScript access to tokens, mitigating XSS attacks
+- **sameSite: strict** on refresh tokens prevents CSRF on the token refresh endpoint
+- **Short-lived access tokens** (15 minutes) limit the window of compromise
+- **bcrypt with 10 rounds** provides adequate resistance against brute-force attacks
+- **Token rotation** occurs on each refresh, invalidating the old refresh token
+- **JWT_SECRET** must be a strong random string (minimum 64 characters in production)
+
+## Auth Package API
+
+The `@aleph/auth` package exports the following:
+
+```typescript
+// Password functions
+hashPassword(plain: string): Promise<string>
+verifyPassword(plain: string, hash: string): Promise<boolean>
+
+// JWT functions
+generateAccessToken(payload: { userId: string; orgId: string }): string
+verifyAccessToken(token: string): AlephTokenPayload | null
+
+// Refresh token
+generateRefreshToken(): string
+
+// Cookie config
+getAccessTokenCookieConfig(domain?: string): CookieConfig
+getRefreshTokenCookieConfig(): CookieConfig
+
+// Token extraction
+extractTokenFromHeaders(headers: Headers): string | null
+
+// Types
+interface AlephTokenPayload { userId: string; orgId: string; iat: number; exp: number }
+interface CookieConfig { name: string; httpOnly: boolean; secure: boolean; sameSite: string; path: string; maxAge: number; domain?: string }
+```

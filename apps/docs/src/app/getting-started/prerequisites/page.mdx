@@ -1,0 +1,86 @@
+# Prerequisites
+
+Before setting up Aleph Platform, ensure your environment meets the following requirements.
+
+## Required Software
+
+### Node.js
+
+Aleph Platform requires **Node.js 20 or higher**. The monorepo uses npm workspaces which require a modern Node.js version.
+
+```bash
+# Check your Node.js version
+node --version
+# Should output v20.x.x or higher
+```
+
+If you need to install or update Node.js, we recommend using [nvm](https://github.com/nvm-sh/nvm):
+
+```bash
+nvm install 20
+nvm use 20
+```
+
+### Docker and Docker Compose
+
+For the recommended setup, you need Docker and Docker Compose:
+
+```bash
+# Check Docker
+docker --version
+# Docker version 24.x or higher
+
+# Check Docker Compose
+docker compose version
+# Docker Compose version v2.x or higher
+```
+
+### PostgreSQL (Local Development Only)
+
+If running without Docker, you need PostgreSQL 16:
+
+```bash
+# Check PostgreSQL
+psql --version
+# psql (PostgreSQL) 16.x
+```
+
+## Optional Software
+
+### Turborepo
+
+The monorepo uses Turborepo for build orchestration. It is included as a dev dependency, but you can also install it globally:
+
+```bash
+npm install -g turbo
+```
+
+### Git
+
+Required for cloning the repository and version control:
+
+```bash
+git --version
+# git version 2.x
+```
+
+## System Requirements
+
+| Resource | Minimum | Recommended |
+|----------|---------|-------------|
+| CPU | 2 cores | 4 cores |
+| RAM | 4 GB | 8 GB |
+| Disk | 2 GB free | 5 GB free |
+| OS | Linux, macOS, WSL2 | Linux or macOS |
+
+## Network Requirements
+
+The platform uses the following ports by default:
+
+| Port | Service |
+|------|---------|
+| 3000 | Aleph Platform (Next.js) |
+| 3001 | Documentation (this site) |
+| 5432 | PostgreSQL |
+
+Ensure these ports are available or configure alternative ports as described in the [Configuration](/getting-started/configuration) section.

@@ -1,0 +1,103 @@
+# Users
+
+The user management section allows administrators to create, edit, and manage user accounts within the organization.
+
+## Accessing User Management
+
+Navigate to **Admin > Users** (`/admin/users`). This page is accessible to users with `super-admin` or `dept-admin` roles.
+
+## User Properties
+
+Each user has the following properties:
+
+| Field | Description |
+|-------|-------------|
+| Username | Unique login identifier within the organization |
+| Email | Email address (unique within the organization) |
+| First Name | User's first name |
+| Last Name | User's last name |
+| Password | Bcrypt-hashed password (set during creation or password change) |
+| Avatar | Optional avatar URL |
+| Is Active | Whether the account is enabled |
+| Is Super Admin | Whether the user has super admin privileges |
+| Organization | The organization the user belongs to |
+| Last Login | Timestamp of the last successful login |
+
+## Creating a User
+
+1. Navigate to **Admin > Users**
+2. Click the **Add User** button
+3. Fill in the required fields:
+   - Username (must be unique within the organization)
+   - Email (must be unique within the organization)
+   - First name and last name
+   - Password (will be hashed with bcrypt)
+4. Optionally set:
+   - Super admin status
+   - Active status (defaults to active)
+5. Click **Save**
+
+After creating the user, assign them to a department with a role using the [Department Roles](#department-assignments) section.
+
+## Department Assignments
+
+Users are assigned to departments through the `user_department_roles` junction table. Each assignment includes:
+
+- **Department** -- Which department the user belongs to
+- **Role** -- The role they hold in that department (Super Admin, Dept Admin, User, Viewer)
+
+A user can belong to multiple departments but can only have one role per department. The unique index `(user_id, department_id)` enforces this constraint.
+
+### Assignment Rules
+
+- A user's effective role is determined by their department assignment
+- Super admins (`is_super_admin = true`) bypass all permission checks regardless of their department role
+- A user without any department assignment has no access to any applications
+- Access to specific applications is controlled by `app_access_policies`, which are defined per department
+
+## Deactivating a User
+
+Rather than deleting users (which would break audit log references), deactivate them:
+
+1. Navigate to **Admin > Users**
+2. Find the user and click **Edit**
+3. Toggle **Is Active** to off
+4. Click **Save**
+
+Deactivated users cannot log in. Their existing sessions are not terminated immediately but will expire naturally (access tokens expire after 15 minutes, refresh tokens after 7 days).
+
+## User Database Schema
+
+Users are stored in the `users` table:
+
+```sql
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id UUID NOT NULL REFERENCES organizations(id),
+  email VARCHAR(255) NOT NULL,
+  username VARCHAR(100) NOT NULL,
+  password_hash TEXT NOT NULL,
+  first_name VARCHAR(100) NOT NULL,
+  last_name VARCHAR(100) NOT NULL,
+  avatar TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  is_super_admin BOOLEAN NOT NULL DEFAULT false,
+  last_login TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(org_id, email),
+  UNIQUE(org_id, username)
+);
+```
+
+## Seed Users
+
+The database seed creates three default users for testing:
+
+| Username | Role | Department | Password |
+|----------|------|------------|----------|
+| admin | Super Admin | IT | admin123 |
+| carlos.martinez | User | Logistica y Almacen | admin123 |
+| ana.rodriguez | Viewer | Compras | admin123 |
+
+Change these passwords immediately in production.

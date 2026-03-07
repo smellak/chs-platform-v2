@@ -1,0 +1,66 @@
+# Search API
+
+The search API provides a global search across platform entities.
+
+## GET /api/search
+
+Search across applications, users, departments, and other platform entities. Results are filtered based on the authenticated user's permissions.
+
+**Query Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `q` | string | Yes | Search query string |
+
+**Request Example:**
+
+```bash
+curl -H "Cookie: aleph_access_token=..." \
+  "https://platform.example.com/api/search?q=citas"
+```
+
+**Response (200):**
+
+```json
+{
+  "results": [
+    {
+      "type": "app",
+      "id": "uuid",
+      "title": "Citas Almacen",
+      "description": "Sistema de gestion de citas para el almacen",
+      "url": "/admin/apps",
+      "icon": "CalendarDays",
+      "category": "Logistica"
+    },
+    {
+      "type": "user",
+      "id": "uuid",
+      "title": "Carlos Martinez",
+      "description": "carlos@centrohogar.es",
+      "url": "/admin/users"
+    }
+  ]
+}
+```
+
+### Result Types
+
+| Type | Searchable Fields |
+|------|-------------------|
+| `app` | name, slug, description, category |
+| `user` | firstName, lastName, email, username |
+| `department` | name, slug, description |
+
+## Client-Side Usage
+
+The platform provides a command palette component (accessible via `Ctrl+K` / `Cmd+K`) that uses this search API. The command palette supports:
+
+- Searching for applications by name
+- Searching for users by name or email
+- Searching for departments
+- Quick navigation to admin pages
+
+**Error Responses:**
+- `401` -- Not authenticated
+- `400` -- Missing `q` query parameter

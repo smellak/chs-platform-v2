@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none">
+  <!-- Stylized Aleph (א) symbol — two yods connected by a diagonal vav -->
+  <g transform="translate(6, 4)">
+    <!-- Upper-right yod -->
+    <circle cx="22" cy="3" r="3.2" fill="#2563eb"/>
+    <!-- Diagonal vav (connecting stroke) -->
+    <line x1="20" y1="6" x2="8" y2="26" stroke="#2563eb" stroke-width="3.2" stroke-linecap="round"/>
+    <!-- Lower-left yod -->
+    <circle cx="6" cy="29" r="3.2" fill="#2563eb"/>
+    <!-- Upper-left arm -->
+    <path d="M18 7 Q12 5 4 8" stroke="#2563eb" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+    <!-- Lower-right arm -->
+    <path d="M10 25 Q16 27 24 24" stroke="#2563eb" stroke-width="2.8" stroke-linecap="round" fill="none"/>
+  </g>
+</svg>

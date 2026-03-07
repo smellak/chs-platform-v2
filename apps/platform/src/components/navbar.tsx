@@ -15,14 +15,16 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import Image from "next/image";
 import type { AuthUser } from "@/lib/types";
 import { NotificationBell } from "@/components/notification-bell";
 
 interface NavbarProps {
   user: AuthUser;
+  orgName?: string;
 }
 
-export function Navbar({ user }: NavbarProps) {
+export function Navbar({ user, orgName }: NavbarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
@@ -54,13 +56,11 @@ export function Navbar({ user }: NavbarProps) {
           {/* Logo */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center font-bold text-sm">
-                A
-              </div>
+              <Image src="/icon.svg" alt="" width={32} height={32} className="w-8 h-8" />
               <div className="hidden sm:block">
                 <div className="text-sm font-bold tracking-wider">ALEPH</div>
                 <div className="text-[10px] text-blue-200/70 tracking-widest uppercase">
-                  Portal Corporativo
+                  {orgName ?? "Portal Corporativo"}
                 </div>
               </div>
             </div>

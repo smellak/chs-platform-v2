@@ -1,0 +1,20 @@
+{
+  "name": "aleph-agent-example",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@aleph-platform/agent-sdk": "file:../../packages/agent-sdk",
+    "express": "^4.21.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.3",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22"
+  }
+}

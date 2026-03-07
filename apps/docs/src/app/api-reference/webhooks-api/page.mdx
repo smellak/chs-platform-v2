@@ -1,0 +1,162 @@
+# Webhooks API
+
+The webhooks API allows programmatic management of webhook configurations. For the admin UI guide, see [Webhooks](/admin-guide/webhooks).
+
+## GET /api/admin/webhooks
+
+List all webhooks for the organization.
+
+**Response (200):**
+```json
+{
+  "webhooks": [
+    {
+      "id": "uuid",
+      "name": "Slack Notifications",
+      "url": "https://hooks.slack.com/services/...",
+      "events": ["user.created", "app.deployed"],
+      "isActive": true,
+      "lastTriggered": "2026-03-07T09:30:00Z",
+      "lastStatus": 200,
+      "failCount": 0,
+      "createdBy": "uuid",
+      "createdAt": "2026-03-01T10:00:00Z"
+    }
+  ]
+}
+```
+
+## POST /api/admin/webhooks
+
+Create a new webhook.
+
+**Request:**
+```json
+{
+  "name": "Slack Notifications",
+  "url": "https://hooks.slack.com/services/T00/B00/xxx",
+  "events": ["user.created", "user.updated", "app.created"]
+}
+```
+
+**Response (201):**
+```json
+{
+  "webhook": {
+    "id": "uuid",
+    "name": "Slack Notifications",
+    "url": "https://hooks.slack.com/services/T00/B00/xxx",
+    "events": ["user.created", "user.updated", "app.created"],
+    "secret": "whsec_a1b2c3d4...",
+    "isActive": true,
+    "failCount": 0,
+    "createdAt": "2026-03-07T10:00:00Z"
+  }
+}
+```
+
+The `secret` is only returned at creation time. Store it securely for signature verification.
+
+## Webhook Payload Format
+
+When an event is triggered, the platform sends a POST request to the webhook URL:
+
+**Headers:**
+```
+Content-Type: application/json
+X-Webhook-Signature: sha256=a1b2c3d4...
+X-Webhook-Event: user.created
+X-Webhook-Delivery: uuid
+```
+
+**Body:**
+```json
+{
+  "event": "user.created",
+  "timestamp": "2026-03-07T10:00:00Z",
+  "data": {
+    "id": "uuid",
+    "username": "new.user",
+    "email": "new@centrohogar.es",
+    "firstName": "New",
+    "lastName": "User",
+    "departmentId": "uuid",
+    "departmentName": "Marketing"
+  }
+}
+```
+
+## Verifying Webhook Signatures
+
+Each webhook delivery includes an `X-Webhook-Signature` header containing an HMAC-SHA256 signature. Verify it using the webhook secret:
+
+```typescript
+import crypto from "crypto";
+
+function verifySignature(
+  payload: string,
+  signature: string,
+  secret: string
+): boolean {
+  const expected = "sha256=" + crypto
+    .createHmac("sha256", secret)
+    .update(payload, "utf8")
+    .digest("hex");
+
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expected)
+  );
+}
+
+// In your webhook handler:
+app.post("/webhook", (req, res) => {
+  const signature = req.headers["x-webhook-signature"] as string;
+  const isValid = verifySignature(
+    JSON.stringify(req.body),
+    signature,
+    process.env.WEBHOOK_SECRET!
+  );
+
+  if (!isValid) {
+    return res.status(401).json({ error: "Invalid signature" });
+  }
+
+  // Process the event
+  const { event, data } = req.body;
+  console.log(`Received ${event}:`, data);
+
+  res.status(200).json({ received: true });
+});
+```
+
+## Available Events
+
+| Event | Description | Payload |
+|-------|-------------|---------|
+| `user.created` | A new user was created | User details |
+| `user.updated` | A user was modified | Updated user details |
+| `user.deactivated` | A user was deactivated | User ID and name |
+| `app.created` | A new app was registered | App details |
+| `app.updated` | An app was modified | Updated app details |
+| `app.deployed` | An app instance was deployed | Instance details |
+| `department.created` | A new department was created | Department details |
+| `role.created` | A new role was created | Role details |
+| `access_policy.created` | A new access policy was created | Policy details |
+
+## Failure Handling
+
+| Scenario | Behavior |
+|----------|----------|
+| Non-2xx response | `fail_count` incremented, `last_status` updated |
+| Timeout | `fail_count` incremented, `last_status` set to null |
+| Success (2xx) | `fail_count` reset to 0, `last_status` updated |
+
+Webhooks are not automatically disabled on failure. Administrators should monitor the `fail_count` field and investigate or disable webhooks with high failure counts.
+
+## Error Responses
+
+- `401` -- Not authenticated
+- `403` -- Admin access required
+- `400` -- Invalid request (missing required fields)
+- `404` -- Webhook not found

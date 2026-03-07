@@ -1,0 +1,77 @@
+# Departments
+
+Departments represent organizational units within your company. They are the primary grouping mechanism for users and the basis for application access policies.
+
+## Accessing Department Management
+
+Navigate to **Admin > Departments** (`/admin/departments`). This page requires `super-admin` or `dept-admin` role.
+
+## Department Properties
+
+| Field | Description |
+|-------|-------------|
+| Name | Department display name |
+| Slug | URL-safe identifier (auto-generated, unique per org) |
+| Icon | Lucide icon name for display |
+| Color | Hex color code for visual identification |
+| Description | Optional description of the department |
+| Is Active | Whether the department is active |
+
+## Default Departments
+
+The database seed creates eight departments:
+
+| Department | Slug | Icon | Color |
+|-----------|------|------|-------|
+| Compras | `compras` | ShoppingCart | #0891B2 |
+| Ventas | `ventas` | TrendingUp | #16A34A |
+| Logistica y Almacen | `logistica-almacen` | Truck | #DC2626 |
+| Marketplace | `marketplace` | Store | #7C3AED |
+| Marketing | `marketing` | Megaphone | #DB2777 |
+| Contenido | `contenido` | PenTool | #9333EA |
+| E-commerce | `ecommerce` | Globe | #2563EB |
+| IT | `it` | Monitor | #4F46E5 |
+
+## Creating a Department
+
+1. Navigate to **Admin > Departments**
+2. Click **Add Department**
+3. Fill in:
+   - **Name** -- The display name (e.g., "Marketing")
+   - **Slug** -- URL-safe identifier (e.g., "marketing"). Must be unique within the organization.
+   - **Icon** -- Select a Lucide icon name
+   - **Color** -- Pick a hex color
+   - **Description** -- Optional description
+4. Click **Save**
+
+## Department and Access Control
+
+Departments are central to the access control model:
+
+1. **Users** are assigned to departments with specific roles via `user_department_roles`
+2. **App access policies** grant access to applications per department via `app_access_policies`
+3. When a user accesses an app, the platform checks if the user's department has an access policy for that app
+4. The `x-aleph-dept` and `x-aleph-dept-id` headers propagate department info to downstream apps
+
+### Example Access Policy
+
+To grant the "Logistica y Almacen" department full access to the "Citas Almacen" app:
+
+```
+app_access_policies:
+  app_id: (Citas Almacen)
+  department_id: (Logistica y Almacen)
+  access_level: "full"
+```
+
+Users in the Logistica department will then receive `x-aleph-access-level: full` when accessing the Citas app.
+
+## Deactivating a Department
+
+Set `is_active` to `false` to deactivate a department. Users in the department will lose access to applications governed by that department's access policies. The department and its history are preserved for audit purposes.
+
+## Relationships
+
+- **organizations** -- Each department belongs to one organization
+- **user_department_roles** -- Users are assigned to departments with roles
+- **app_access_policies** -- Access policies reference departments to determine app access

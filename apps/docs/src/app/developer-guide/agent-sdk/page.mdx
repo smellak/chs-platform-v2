@@ -1,0 +1,232 @@
+# Agent SDK
+
+The `@aleph-platform/agent-sdk` package provides the `AlephAgent` class for building application agents that integrate with the platform's agent orchestration system. When a user sends a message to the platform's AI agent, it can route the request to your application's agent based on the capabilities you define.
+
+## Installation
+
+```bash
+npm install @aleph-platform/agent-sdk
+```
+
+## Quick Start
+
+```typescript
+import { AlephAgent } from "@aleph-platform/agent-sdk";
+
+const agent = new AlephAgent({
+  name: "Inventory Agent",
+  description: "Manages product inventory",
+  capabilities: [
+    {
+      name: "check_stock",
+      description: "Check stock levels for a product",
+      requiredPermission: "read",
+      parameters: {
+        productId: {
+          type: "string",
+          description: "The product ID to check",
+          required: true,
+        },
+      },
+    },
+    {
+      name: "update_stock",
+      description: "Update the stock level for a product",
+      requiredPermission: "write",
+      parameters: {
+        productId: {
+          type: "string",
+          description: "The product ID to update",
+          required: true,
+        },
+        quantity: {
+          type: "number",
+          description: "New stock quantity",
+          required: true,
+        },
+      },
+    },
+  ],
+  handler: async (request) => {
+    switch (request.capability) {
+      case "check_stock": {
+        const stock = await getStock(request.parameters.productId as string);
+        return { text: `Stock for ${request.parameters.productId}: ${stock} units` };
+      }
+      case "update_stock": {
+        await setStock(
+          request.parameters.productId as string,
+          request.parameters.quantity as number
+        );
+        return { text: `Stock updated successfully` };
+      }
+      default:
+        return { text: "Unknown capability", error: "Not found" };
+    }
+  },
+});
+```
+
+## AlephAgent Class
+
+### Constructor
+
+```typescript
+new AlephAgent(config: AgentConfig)
+```
+
+The constructor validates the capabilities configuration and throws an error if the configuration is invalid.
+
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `string` | Agent name |
+| `description` | `string` | Agent description |
+| `capabilities` | `AgentCapability[]` | Registered capabilities |
+
+### Methods
+
+#### `middleware()`
+
+Returns an Express-compatible middleware handler. Use this when your app is built with Express.
+
+```typescript
+const handler = agent.middleware();
+
+// Express
+app.post("/api/agent", handler);
+```
+
+The middleware:
+1. Parses `x-aleph-*` headers to identify the user
+2. Extracts `capability`, `parameters`, and `conversationContext` from the request body
+3. Validates that the requested capability exists
+4. Checks user permissions against the capability's `requiredPermission`
+5. Validates parameters against the capability's schema
+6. Calls the handler function
+7. Returns the result as JSON
+
+**Error responses:**
+- `401` -- Missing Aleph headers
+- `400` -- Missing or unknown capability, invalid parameters
+- `403` -- Insufficient permissions
+- `500` -- Handler error
+
+#### `routeHandler(request)`
+
+A Web API-compatible request handler for Next.js App Router or any framework that uses the standard `Request`/`Response` API.
+
+```typescript
+// Next.js App Router: app/api/agent/route.ts
+export async function POST(request: Request) {
+  return agent.routeHandler(request);
+}
+```
+
+The `routeHandler` performs the same validation steps as `middleware()` but works with the Web `Request` and `Response` APIs instead of Express's `req`/`res`.
+
+## Types
+
+### `AgentConfig`
+
+```typescript
+interface AgentConfig {
+  name: string;
+  description: string;
+  capabilities: AgentCapability[];
+  handler: (request: AgentRequest) => Promise<AgentResponse>;
+}
+```
+
+### `AgentCapability`
+
+```typescript
+interface AgentCapability {
+  name: string;
+  description: string;
+  requiredPermission: "read" | "write" | "admin";
+  parameters?: Record<string, {
+    type: "string" | "number" | "boolean";
+    description: string;
+    required?: boolean;
+    enum?: string[];
+  }>;
+}
+```
+
+### `AgentRequest`
+
+The object passed to your handler function:
+
+```typescript
+interface AgentRequest {
+  capability: string;              // Which capability was requested
+  parameters: Record<string, unknown>;  // Validated parameters
+  user: AlephUser;                 // The authenticated user
+  conversationContext?: Array<{    // Previous conversation messages
+    role: string;
+    content: string;
+  }>;
+}
+```
+
+### `AgentResponse`
+
+The object your handler must return:
+
+```typescript
+interface AgentResponse {
+  text: string;    // Human-readable response text
+  data?: unknown;  // Optional structured data
+  error?: string;  // Optional error message
+}
+```
+
+### `AlephUser` (Agent SDK)
+
+The user type in the Agent SDK is slightly different from the main SDK:
+
+```typescript
+interface AlephUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  accessLevel: string;
+  orgId?: string;
+  department?: string;
+}
+```
+
+## Validation
+
+The SDK validates both configuration and runtime parameters.
+
+### Configuration Validation
+
+When you create an `AlephAgent`, it validates:
+- At least one capability must be defined
+- Capability names must be unique
+- Each capability must have a name and description
+- `requiredPermission` must be `"read"`, `"write"`, or `"admin"`
+- Parameter types must be `"string"`, `"number"`, or `"boolean"`
+
+### Runtime Parameter Validation
+
+When a request arrives, the SDK validates:
+- Required parameters are present and non-null
+- Parameter types match the schema (`typeof` check)
+- Enum parameters contain only allowed values
+
+## Permission Checks
+
+The agent checks permissions using this logic:
+
+| Required Permission | Super Admin | Dept Admin | User (full access) | User (readonly) | Viewer |
+|--------------------|-------------|------------|-------------------|-----------------|--------|
+| `read` | Yes | Yes | Yes | Yes | Yes |
+| `write` | Yes | No | Yes | No | No |
+| `admin` | Yes | Yes | No | No | No |
+
+Super admins always pass all permission checks.

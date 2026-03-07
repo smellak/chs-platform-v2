@@ -1,0 +1,162 @@
+# Agent System
+
+Aleph Platform includes a built-in AI agent that acts as a conversational router. When a user sends a message, the platform agent determines which registered application agent can handle the request, checks the user's permissions, and routes the request accordingly.
+
+## How It Works
+
+```
+User: "Show me the appointments for next week"
+  │
+  v
+Platform Agent (Claude AI)
+  │ Analyzes intent, checks registered app agents
+  │ Finds "Citas Almacen" agent with "consultar_citas" capability
+  │ Verifies user has "read" permission
+  │
+  v
+Routes to App Agent endpoint
+  POST http://elias:5000/api/agent
+  Body: { capability: "consultar_citas", parameters: {...} }
+  Headers: x-aleph-user-id, x-aleph-role, etc.
+  │
+  v
+App Agent processes request and returns response
+  │
+  v
+Platform Agent formats and presents to user
+```
+
+## Agent Architecture
+
+### Platform Agent
+
+The platform agent is the user-facing conversational AI. It:
+
+1. Receives user messages via `/api/agent/chat`
+2. Maintains conversation history in the `agent_conversations` and `agent_messages` tables
+3. Has access to the list of all registered app agents and their capabilities
+4. Uses the AI model (configured via `AI_MODEL` env var) to determine user intent
+5. Routes requests to the appropriate app agent
+6. Records tool calls in the `agent_tool_calls` table for auditing
+7. Tracks token usage and latency for cost monitoring
+
+### App Agents
+
+App agents are endpoints exposed by registered applications. They are defined in the `app_agents` table with:
+
+- **name** -- Display name of the agent (e.g., "Elias")
+- **description** -- What the agent does
+- **endpoint** -- The API path on the app (e.g., `/api/agent`)
+- **capabilities** -- JSON array of capability definitions
+
+### Capabilities
+
+Each capability represents a specific action the agent can perform:
+
+```typescript
+interface AgentCapability {
+  name: string;                    // Unique identifier (e.g., "consultar_citas")
+  description: string;             // Human-readable description
+  requiredPermission: "read" | "write" | "admin";  // Minimum permission level
+  parameters?: Record<string, {    // Parameter definitions
+    type: "string" | "number" | "boolean";
+    description: string;
+    required?: boolean;
+    enum?: string[];
+  }>;
+}
+```
+
+## Permission Model
+
+The agent system enforces permissions at two levels:
+
+### 1. App Access
+
+Before routing a request to an app agent, the platform checks that the user has access to the app via `app_access_policies`. Access is granted per department and optionally per role.
+
+### 2. Capability Permissions
+
+Each capability has a `requiredPermission` field. The permission check works as follows:
+
+| Required Permission | Who Can Access |
+|--------------------|----------------|
+| `read` | Any authenticated user with app access |
+| `write` | Users with `accessLevel: "full"` or super admins |
+| `admin` | Users with `role: "super-admin"` or `role: "dept-admin"` |
+
+Super admins (`role: "super-admin"`) bypass all permission checks.
+
+## Conversation Management
+
+### Data Model
+
+Conversations are stored in two tables:
+
+- **agent_conversations** -- The conversation container with a title, linked to a user and organization
+- **agent_messages** -- Individual messages with role (`user`, `assistant`, `system`), content, and metadata
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/agent/chat` | POST | Send a message and get a response |
+| `/api/agent/conversations` | GET | List user's conversations |
+| `/api/agent/conversations` | POST | Create a new conversation |
+| `/api/agent/conversations/[id]` | GET | Get conversation with messages |
+| `/api/agent/conversations/[id]` | DELETE | Delete a conversation |
+
+### Chat Request
+
+```json
+{
+  "message": "Show me the appointments for next week",
+  "conversationId": "uuid-of-conversation"
+}
+```
+
+### Chat Response
+
+```json
+{
+  "message": "Here are the appointments for next week...",
+  "conversationId": "uuid",
+  "tokensUsed": 1250,
+  "model": "claude-sonnet-4-20250514",
+  "toolCalls": [
+    {
+      "appId": "uuid-of-citas-app",
+      "capability": "consultar_citas",
+      "parameters": { "week": "next" },
+      "status": "success"
+    }
+  ]
+}
+```
+
+## Rate Limiting
+
+The agent system enforces rate limits to control costs:
+
+| Limit | Default | Env Variable |
+|-------|---------|-------------|
+| Messages per hour | 50 | `AI_RATE_LIMIT_MESSAGES_PER_HOUR` |
+| Tokens per day | 100,000 | `AI_RATE_LIMIT_TOKENS_PER_DAY` |
+
+## Tool Call Tracking
+
+Every tool call is recorded in the `agent_tool_calls` table with:
+
+- The message it belongs to
+- The target app
+- The capability that was invoked
+- The parameters sent
+- The response received
+- Execution status (`pending`, `success`, `error`)
+- Timing information (when executed, duration in ms)
+
+This provides a complete audit trail for all agent actions and enables cost analysis per app and per user.
+
+## Building Your Own Agent
+
+To create an agent for your application, see the [Agent SDK](/developer-guide/agent-sdk) and [Building Agents](/developer-guide/building-agents) guides.

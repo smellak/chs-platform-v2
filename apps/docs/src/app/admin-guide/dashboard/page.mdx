@@ -1,0 +1,67 @@
+# Dashboard
+
+The Aleph Platform dashboard is the landing page after login. It provides an overview of your organization's applications, users, and system health.
+
+## Accessing the Dashboard
+
+After logging in, you are taken to the main dashboard at `/`. The dashboard is available to all authenticated users, but the information displayed varies based on the user's role:
+
+- **Super Admin** -- Full visibility into all apps, users, departments, and system status
+- **Dept Admin** -- Visibility into their department's apps and users
+- **User** -- Access to their assigned applications
+- **Viewer** -- Read-only view of assigned applications
+
+## Dashboard Sections
+
+### Application Overview
+
+Displays all applications the user has access to, with:
+- Application name, icon, and category
+- Current status (active, maintenance, offline)
+- Quick-access links to open the application
+
+### Admin Navigation
+
+For users with admin privileges, the sidebar provides access to all admin sections:
+
+| Section | Path | Description |
+|---------|------|-------------|
+| Users | `/admin/users` | User account management |
+| Departments | `/admin/departments` | Department configuration |
+| Roles | `/admin/roles` | Role and permission management |
+| Apps | `/admin/apps` | Application registry |
+| API Providers | `/admin/api-providers` | AI provider configuration |
+| API Keys | `/admin/api-keys` | API key management |
+| Webhooks | `/admin/webhooks` | Webhook configuration |
+| AI Analytics | `/admin/ai-analytics` | AI usage and cost analytics |
+| Audit Log | `/admin/audit` | Activity audit trail |
+
+### Monitoring
+
+The monitoring section at `/monitor` shows real-time health status of all registered application instances.
+
+### Agent
+
+The AI agent is accessible via a floating button on any page. It opens a side panel for conversational interactions with registered app agents.
+
+### Profile
+
+Users can access their profile at `/profile` to view account details and change their password.
+
+## Navigation
+
+The platform uses a sidebar-based navigation layout for the dashboard:
+
+- **Top bar** -- Search (command palette), notifications bell, user avatar
+- **Sidebar** -- Main navigation links with collapsible admin section
+- **Command palette** -- Press `Ctrl+K` (or `Cmd+K` on macOS) to open the global search
+
+## Search
+
+The global search feature (`/api/search`) searches across:
+- Applications
+- Users
+- Departments
+- Other platform entities
+
+Results are filtered based on the user's permissions.

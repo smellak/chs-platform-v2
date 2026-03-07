@@ -1,0 +1,79 @@
+# Architecture Overview
+
+Aleph Platform follows a monorepo architecture built with Turborepo. It consists of a central Next.js application that serves as the authentication gateway, admin dashboard, and agent orchestrator, alongside shared packages that external applications use to integrate with the platform.
+
+## High-Level Architecture
+
+```
+                    +-------------------+
+                    |   Browser/Client  |
+                    +--------+----------+
+                             |
+                             v
+                    +-------------------+
+                    | Aleph Platform    |
+                    | (Next.js 15)      |
+                    | - Auth            |
+                    | - Admin Dashboard |
+                    | - Agent Router    |
+                    | - API Gateway     |
+                    +--------+----------+
+                             |
+              +--------------+--------------+
+              |              |              |
+              v              v              v
+        +----------+   +----------+   +----------+
+        | App A    |   | App B    |   | App C    |
+        | (uses    |   | (uses    |   | (uses    |
+        |  SDK)    |   |  SDK)    |   |  SDK)    |
+        +----------+   +----------+   +----------+
+              |              |              |
+              +--------------+--------------+
+                             |
+                             v
+                    +-------------------+
+                    | PostgreSQL 16     |
+                    +-------------------+
+```
+
+## Core Concepts
+
+### Platform as Auth Gateway
+
+The platform acts as the central authentication and authorization layer. When a user logs in, the platform issues JWT tokens. When the user accesses a registered application, the platform injects identity headers (`x-aleph-*`) into the request so the downstream app knows who the user is and what they can do.
+
+### Header-Based Identity Propagation
+
+Rather than requiring each application to implement its own authentication, Aleph Platform forwards user identity via HTTP headers. Applications use the `@aleph-platform/sdk` to parse these headers and enforce permissions. See [Header Protocol](/architecture/header-protocol) for the full specification.
+
+### Agent Orchestration
+
+The platform includes a conversational AI agent that can route user requests to registered application agents. Each app can register an agent with specific capabilities (e.g., "create appointment", "query inventory"). The platform agent determines which app agent to invoke based on the user's message and permissions.
+
+### Multi-Tenant Model
+
+Everything in the platform is scoped to an organization. Users belong to an organization, departments belong to an organization, and apps are registered per organization. The database schema enforces this with `orgId` foreign keys on all major tables.
+
+## Request Flow
+
+1. **User authenticates** with the platform via `/api/auth/login`
+2. **Platform issues JWT** stored in HttpOnly cookies
+3. **User accesses an app** through the platform
+4. **Platform validates the JWT** and resolves the user's full identity (org, department, role, permissions)
+5. **Platform injects `x-aleph-*` headers** into the proxied request
+6. **App reads headers** using the SDK and makes authorization decisions
+
+## Technology Choices
+
+| Concern | Technology | Rationale |
+|---------|-----------|-----------|
+| Runtime | Node.js 20+ | LTS, broad ecosystem |
+| Framework | Next.js 15 (App Router) | Server components, API routes, modern React |
+| Language | TypeScript 5.7 | Type safety across the monorepo |
+| Database | PostgreSQL 16 | Mature, JSONB support for flexible schemas |
+| ORM | Drizzle ORM | Type-safe, lightweight, SQL-first |
+| Auth | JWT + bcrypt | Stateless tokens, industry-standard password hashing |
+| AI | Anthropic Claude | High-quality language model for agent routing |
+| Build | Turborepo | Fast incremental builds, dependency-aware task execution |
+| Package Manager | npm workspaces | Native monorepo support, no extra tooling |
+| UI | Tailwind CSS + Radix UI | Utility-first CSS with accessible headless components |

@@ -1,0 +1,102 @@
+# Apps
+
+The application registry is where you manage all internal applications integrated with the Aleph Platform. Each app can have deployment instances, access policies, and an optional AI agent.
+
+## Accessing App Management
+
+Navigate to **Admin > Apps** (`/admin/apps`). This page requires admin role.
+
+## App Properties
+
+| Field | Description |
+|-------|-------------|
+| Name | Display name of the application |
+| Slug | URL-safe identifier (unique per org) |
+| Description | What the application does |
+| Icon | Lucide icon name |
+| Color | Hex color for the app card |
+| Category | Grouping category (e.g., "Logistica") |
+| Version | Version string |
+| Is Active | Whether the app is visible and accessible |
+| Is Maintenance | Whether the app is in maintenance mode |
+
+## Registering an App
+
+1. Navigate to **Admin > Apps**
+2. Click **Add App**
+3. Fill in the basic information:
+   - **Name** -- Application display name
+   - **Slug** -- URL-safe identifier
+   - **Description** -- Brief description
+   - **Category** -- Logical grouping
+   - **Icon** and **Color** -- Visual identity
+4. Click **Save**
+
+## App Instances
+
+An app instance represents a specific deployment of the application. Each app can have multiple instances (e.g., staging and production).
+
+### Instance Properties
+
+| Field | Description |
+|-------|-------------|
+| Internal URL | The URL where the service is reachable from the platform (e.g., `http://elias:5000`) |
+| External Domain | The public-facing domain (e.g., `citas.centrohogarsanchez.es`) |
+| Health Endpoint | Path for health checks (default: `/api/health`) |
+| Public Paths | JSON array of paths that do not require authentication |
+| Traefik Config Path | Path to generated Traefik configuration |
+| Status | Current health status |
+| Last Health Check | Timestamp of the last health check |
+
+### Public Paths
+
+Certain paths on an application may need to be accessible without authentication. These are configured as `publicPaths` on the app instance:
+
+```json
+["/api/health", "/chat", "/api/chat", "/api/appointments/confirm", "/docs"]
+```
+
+Requests to public paths bypass the Aleph header injection, allowing unauthenticated access.
+
+## Access Policies
+
+Access policies control which departments can access each application and at what level.
+
+### Creating an Access Policy
+
+Each policy defines:
+- **App** -- The application
+- **Department** -- Which department gets access
+- **Role** (optional) -- Specific role within the department (null means all roles)
+- **Access Level** -- `full` or `readonly`
+- **Granted By** -- The admin who created the policy
+
+### Example Configuration
+
+The seed data creates these access policies:
+
+| App | Department | Access Level |
+|-----|-----------|-------------|
+| Citas Almacen | Logistica y Almacen | full |
+| Citas Almacen | IT | full |
+| Citas Almacen | Compras | readonly |
+| Route Optimizer | Logistica y Almacen | full |
+| Route Optimizer | IT | full |
+
+## App Agents
+
+Each application can optionally register an AI agent. The agent is defined with:
+- **Name** -- Agent display name
+- **Description** -- What the agent can do
+- **Endpoint** -- API path on the application (e.g., `/api/agent`)
+- **Capabilities** -- List of actions the agent can perform
+
+See [Agent System](/architecture/agent-system) for details on how app agents work.
+
+## Maintenance Mode
+
+Setting an app to maintenance mode (`is_maintenance: true`) marks it as unavailable to regular users. Super admins can still access the app. The platform UI shows a maintenance indicator on the app card.
+
+## Health Monitoring
+
+The platform periodically checks the health of all app instances by sending HTTP requests to their configured `health_endpoint`. Results are stored in the `service_status` table and displayed in the [Monitoring](/admin-guide/monitoring) section.

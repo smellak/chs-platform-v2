@@ -1,0 +1,145 @@
+# Monitoring API
+
+The monitoring API provides endpoints for checking service health and viewing system activity.
+
+## GET /api/health
+
+Platform health check endpoint. Returns the current status of the platform itself. This endpoint does not require authentication.
+
+**Response (200):**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2026-03-07T10:00:00Z"
+}
+```
+
+This endpoint is used by:
+- Docker health checks
+- External monitoring tools
+- Load balancers
+
+## GET /api/monitor/services
+
+Returns the current health status of all registered application instances. Requires authentication.
+
+**Response (200):**
+```json
+{
+  "services": [
+    {
+      "id": "uuid",
+      "appName": "Citas Almacen",
+      "appSlug": "citas-almacen",
+      "internalUrl": "http://elias:5000",
+      "externalDomain": "citas.centrohogarsanchez.es",
+      "healthEndpoint": "/api/health",
+      "status": "healthy",
+      "lastCheck": {
+        "status": "healthy",
+        "responseMs": 45,
+        "httpCode": 200,
+        "checkedAt": "2026-03-07T10:00:00Z"
+      }
+    }
+  ]
+}
+```
+
+### Status Values
+
+| Status | Description |
+|--------|-------------|
+| `healthy` | Service responded with 2xx status code |
+| `unhealthy` | Service responded with non-2xx status code |
+| `timeout` | Service did not respond within the timeout |
+| `unknown` | No health check has been performed |
+
+## GET /api/monitor/overview
+
+Returns an aggregated overview of the system's health status. Requires authentication.
+
+**Response (200):**
+```json
+{
+  "totalServices": 2,
+  "healthyServices": 2,
+  "unhealthyServices": 0,
+  "averageResponseMs": 42,
+  "lastChecked": "2026-03-07T10:00:00Z"
+}
+```
+
+## GET /api/monitor/activity
+
+Returns recent platform activity. Requires authentication with admin privileges.
+
+**Response (200):**
+```json
+{
+  "activities": [
+    {
+      "id": "uuid",
+      "action": "user.login",
+      "entityType": "user",
+      "entityId": "uuid",
+      "userId": "uuid",
+      "userName": "Admin Principal",
+      "details": {},
+      "ipAddress": "192.168.1.100",
+      "createdAt": "2026-03-07T10:00:00Z"
+    }
+  ]
+}
+```
+
+## GET /api/activity-logs
+
+Returns the full activity audit log. Requires admin authentication.
+
+**Query Parameters:**
+- `action` -- Filter by action type
+- `entityType` -- Filter by entity type
+- `userId` -- Filter by user
+- `limit` -- Number of records to return (default: 50)
+- `offset` -- Pagination offset
+
+**Response (200):**
+```json
+{
+  "logs": [
+    {
+      "id": "uuid",
+      "action": "app.created",
+      "entityType": "app",
+      "entityId": "uuid",
+      "userId": "uuid",
+      "details": {
+        "appName": "New App",
+        "appSlug": "new-app"
+      },
+      "ipAddress": "192.168.1.100",
+      "createdAt": "2026-03-07T09:00:00Z"
+    }
+  ],
+  "total": 150
+}
+```
+
+### Activity Action Types
+
+Common action types logged by the platform:
+
+| Action | Description |
+|--------|-------------|
+| `user.login` | User logged in |
+| `user.logout` | User logged out |
+| `user.created` | New user created |
+| `user.updated` | User account modified |
+| `app.created` | New app registered |
+| `app.updated` | App configuration changed |
+| `department.created` | New department created |
+| `role.created` | New role created |
+| `access_policy.created` | New access policy created |
+| `webhook.created` | New webhook configured |
+| `api_key.created` | New API key generated |

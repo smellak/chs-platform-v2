@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
+import { getDb, schema } from "@/lib/db";
 import { Navbar } from "@/components/navbar";
 import { Toaster } from "@/components/ui/toaster";
 import { CommandPalette } from "@/components/command-palette";
@@ -24,12 +25,22 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  // Fetch organization name from DB
+  let orgName = "Aleph Platform";
+  try {
+    const db = getDb();
+    const [org] = await db.select({ name: schema.organizations.name }).from(schema.organizations).limit(1);
+    if (org) orgName = org.name;
+  } catch {
+    // DB may not be ready yet during build
+  }
+
   const userInitials = `${user.firstName[0] ?? ""}${user.lastName[0] ?? ""}`.toUpperCase();
   const userName = `${user.firstName} ${user.lastName}`;
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar user={user} />
+      <Navbar user={user} orgName={orgName} />
       <main>{children}</main>
       <Toaster />
       <CommandPalette isSuperAdmin={user.isSuperAdmin} />

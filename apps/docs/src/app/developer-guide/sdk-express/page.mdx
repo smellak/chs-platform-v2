@@ -1,0 +1,220 @@
+# Express Middleware
+
+The `@aleph-platform/sdk/express` entry point provides middleware functions for Express applications. These middleware functions parse Aleph headers, enforce authentication, and check permissions.
+
+## Installation
+
+```bash
+npm install @aleph-platform/sdk
+```
+
+## Middleware Functions
+
+### `alephMiddleware()`
+
+Parses Aleph headers from the incoming request and attaches the user information to `req.aleph`. This middleware does not block requests -- it simply makes user information available if present.
+
+```typescript
+import express from "express";
+import { alephMiddleware } from "@aleph-platform/sdk/express";
+
+const app = express();
+
+// Apply to all routes
+app.use(alephMiddleware());
+
+app.get("/api/data", (req, res) => {
+  if (req.aleph) {
+    res.json({ message: `Hello, ${req.aleph.name}` });
+  } else {
+    res.json({ message: "Hello, anonymous user" });
+  }
+});
+```
+
+After this middleware runs, `req.aleph` will be:
+- An `AlephUser` object if valid Aleph headers are present
+- `undefined` if the `x-aleph-user-id` header is missing
+
+### `requireAleph()`
+
+Ensures that a valid Aleph user is present on the request. Returns a 401 response if `req.aleph` is not set.
+
+```typescript
+import { alephMiddleware, requireAleph } from "@aleph-platform/sdk/express";
+
+app.use(alephMiddleware());
+
+// This route requires an authenticated Aleph user
+app.get("/api/protected", requireAleph(), (req, res) => {
+  // req.aleph is guaranteed to be defined here
+  res.json({ user: req.aleph });
+});
+```
+
+**Response on failure:**
+```json
+{ "error": "Aleph authentication required" }
+```
+Status code: `401`
+
+### `requireAlephPermission(permission)`
+
+Checks that the authenticated user has a specific permission. Returns 401 if no user, or 403 if the permission is not present. Super admins (`role: "super-admin"`) bypass this check.
+
+```typescript
+import {
+  alephMiddleware,
+  requireAlephPermission,
+} from "@aleph-platform/sdk/express";
+
+app.use(alephMiddleware());
+
+// Only users with "apps.manage" permission can access
+app.post(
+  "/api/admin/settings",
+  requireAlephPermission("apps.manage"),
+  (req, res) => {
+    res.json({ message: "Settings updated" });
+  }
+);
+```
+
+**Response on missing user:**
+```json
+{ "error": "Aleph authentication required" }
+```
+Status code: `401`
+
+**Response on missing permission:**
+```json
+{ "error": "Permission 'apps.manage' required" }
+```
+Status code: `403`
+
+### `requireAlephAccessLevel(level)`
+
+Checks that the authenticated user has the required access level. Accepts `"full"` or `"readonly"`.
+
+```typescript
+import {
+  alephMiddleware,
+  requireAlephAccessLevel,
+} from "@aleph-platform/sdk/express";
+
+app.use(alephMiddleware());
+
+// Only users with full access can modify data
+app.put(
+  "/api/records/:id",
+  requireAlephAccessLevel("full"),
+  (req, res) => {
+    res.json({ message: "Record updated" });
+  }
+);
+
+// Users with readonly access can still read
+app.get(
+  "/api/records",
+  requireAlephAccessLevel("readonly"),
+  (req, res) => {
+    res.json({ records: [] });
+  }
+);
+```
+
+**Response on failure:**
+```json
+{ "error": "Full access required" }
+```
+Status code: `403`
+
+Note: When `level` is `"readonly"`, both `"full"` and `"readonly"` users pass the check (since `"full"` implies read access). When `level` is `"full"`, only users with `accessLevel: "full"` pass.
+
+## Complete Example
+
+Here is a full Express application integrated with Aleph Platform:
+
+```typescript
+import express from "express";
+import {
+  alephMiddleware,
+  requireAleph,
+  requireAlephPermission,
+  requireAlephAccessLevel,
+} from "@aleph-platform/sdk/express";
+
+const app = express();
+app.use(express.json());
+
+// Parse Aleph headers on all requests
+app.use(alephMiddleware());
+
+// Public health endpoint (no auth required)
+app.get("/api/health", (req, res) => {
+  res.json({ status: "healthy" });
+});
+
+// Protected route: requires any authenticated user
+app.get("/api/profile", requireAleph(), (req, res) => {
+  res.json({
+    name: req.aleph!.name,
+    email: req.aleph!.email,
+    department: req.aleph!.dept,
+    role: req.aleph!.role,
+  });
+});
+
+// Read-only route
+app.get(
+  "/api/reports",
+  requireAleph(),
+  requireAlephAccessLevel("readonly"),
+  (req, res) => {
+    res.json({ reports: [] });
+  }
+);
+
+// Write route: requires full access
+app.post(
+  "/api/reports",
+  requireAleph(),
+  requireAlephAccessLevel("full"),
+  (req, res) => {
+    res.json({ message: "Report created" });
+  }
+);
+
+// Admin route: requires specific permission
+app.delete(
+  "/api/reports/:id",
+  requireAlephPermission("apps.manage"),
+  (req, res) => {
+    res.json({ message: "Report deleted" });
+  }
+);
+
+app.listen(5000, () => {
+  console.log("App running on port 5000");
+});
+```
+
+## TypeScript Types
+
+When using TypeScript, the `req.aleph` property is typed as `AlephUser | undefined`. After `requireAleph()` middleware, you can safely assert it is defined:
+
+```typescript
+app.get("/api/data", requireAleph(), (req, res) => {
+  const user = req.aleph!; // Safe assertion after requireAleph
+  res.json({ userId: user.id });
+});
+```
+
+If you want full type safety without assertions, you can use a type guard:
+
+```typescript
+app.get("/api/data", requireAleph(), (req, res) => {
+  if (!req.aleph) return; // TypeScript narrows the type
+  res.json({ userId: req.aleph.id });
+});
+```

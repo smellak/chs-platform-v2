@@ -13,11 +13,16 @@ async function seed(): Promise<void> {
   const pool = new Pool({ connectionString });
   const db = drizzle(pool, { schema });
 
+  // Organization from environment or defaults
+  const orgName = process.env["ORG_NAME"] ?? "Centro Hogar Sánchez";
+  const orgSlug = process.env["ORG_SLUG"] ?? "chs";
+  const orgDomain = process.env["ORG_DOMAIN"] ?? ".centrohogarsanchez.es";
+
   // Check if org already exists (idempotent)
   const existingOrgs = await db
     .select()
     .from(schema.organizations)
-    .where(eq(schema.organizations.slug, "chs"));
+    .where(eq(schema.organizations.slug, orgSlug));
 
   if (existingOrgs.length > 0) {
     process.stdout.write("Seed data already exists, skipping.\n");
@@ -31,9 +36,9 @@ async function seed(): Promise<void> {
   const [org] = await db
     .insert(schema.organizations)
     .values({
-      name: "Centro Hogar Sánchez",
-      slug: "chs",
-      domain: ".centrohogarsanchez.es",
+      name: orgName,
+      slug: orgSlug,
+      domain: orgDomain,
       settings: {},
     })
     .returning();

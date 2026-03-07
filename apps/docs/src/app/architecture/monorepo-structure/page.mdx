@@ -1,0 +1,157 @@
+# Monorepo Structure
+
+Aleph Platform is organized as a Turborepo monorepo with npm workspaces. The project is split into `apps/` (deployable applications) and `packages/` (shared libraries).
+
+## Directory Layout
+
+```
+aleph-platform/
+├── apps/
+│   ├── platform/          # Main Next.js application
+│   └── docs/              # Documentation site (Nextra)
+├── packages/
+│   ├── sdk/               # @aleph-platform/sdk
+│   ├── agent-sdk/         # @aleph-platform/agent-sdk
+│   ├── db/                # @aleph/db
+│   ├── auth/              # @aleph/auth
+│   ├── config/            # @aleph/config
+│   └── ui/                # @aleph/ui
+├── docker/
+│   ├── Dockerfile
+│   └── docker-compose.yml
+├── tests/                 # Playwright E2E tests
+├── turbo.json
+├── package.json           # Root workspace config
+└── playwright.config.ts
+```
+
+## Apps
+
+### `apps/platform`
+
+The main Aleph Platform application. A Next.js 15 app using the App Router with:
+
+- **Authentication pages** (`/login`)
+- **Admin dashboard** (`/admin/*`) for managing users, departments, roles, apps, API providers, API keys, webhooks, and audit logs
+- **Monitoring** (`/monitor`) for service health checks
+- **Agent UI** (floating panel) for conversational AI interactions
+- **API routes** (`/api/*`) for authentication, admin operations, agent chat, and monitoring
+
+Key directories:
+```
+apps/platform/src/
+├── app/
+│   ├── (auth)/login/           # Login page
+│   ├── (dashboard)/            # Dashboard layout
+│   │   ├── admin/              # Admin pages
+│   │   ├── monitor/            # Monitoring page
+│   │   └── profile/            # User profile
+│   └── api/                    # API route handlers
+│       ├── auth/               # Login, logout, refresh, me, verify-access, sso-info
+│       ├── agent/              # Chat, conversations
+│       ├── apps/               # App management
+│       ├── monitor/            # Service health, overview, activity
+│       ├── search/             # Global search
+│       └── health/             # Health check endpoint
+└── components/                 # React components
+    ├── agent/                  # Agent chat UI components
+    └── ui/                     # Shared UI primitives (shadcn/ui)
+```
+
+### `apps/docs`
+
+This documentation site, built with Nextra and Next.js.
+
+## Packages
+
+### `@aleph-platform/sdk`
+
+The integration SDK for connecting external applications with Aleph Platform. It provides three entry points:
+
+- **`@aleph-platform/sdk`** -- Core exports: `parseAlephHeaders`, `getAlephLoginUrl`, `AlephUser`, `AlephHeaders`
+- **`@aleph-platform/sdk/express`** -- Express middleware: `alephMiddleware()`, `requireAleph()`, `requireAlephPermission()`, `requireAlephAccessLevel()`
+- **`@aleph-platform/sdk/next`** -- Next.js helper: `getAlephUser()`
+
+```
+packages/sdk/
+├── src/
+│   ├── index.ts              # Core exports
+│   ├── types.ts              # AlephUser, AlephHeaders interfaces
+│   ├── parse-headers.ts      # Header parsing logic
+│   ├── client.ts             # getAlephLoginUrl helper
+│   └── middleware/
+│       ├── express.ts        # Express middleware functions
+│       └── next.ts           # Next.js getAlephUser helper
+├── package.json
+└── tsconfig.json
+```
+
+### `@aleph-platform/agent-sdk`
+
+The Agent SDK for building application agents that integrate with the platform's agent orchestration system.
+
+```
+packages/agent-sdk/
+├── src/
+│   ├── index.ts              # Exports AlephAgent, types, validators
+│   ├── agent.ts              # AlephAgent class
+│   ├── types.ts              # AgentCapability, AgentConfig, etc.
+│   ├── parse-headers.ts      # Header parsing for agents
+│   └── validation.ts         # Capability and parameter validation
+├── package.json
+└── tsconfig.json
+```
+
+### `@aleph/db`
+
+Database package using Drizzle ORM with PostgreSQL. Contains the schema definition, migration runner, and seed script.
+
+```
+packages/db/
+├── src/
+│   ├── client.ts             # Drizzle client setup
+│   ├── schema/
+│   │   └── index.ts          # All 20 table definitions
+│   ├── migrate.ts            # Migration runner
+│   └── seed.ts               # Database seeding
+├── drizzle/                  # Generated migrations
+├── drizzle.config.ts
+├── package.json
+└── tsconfig.json
+```
+
+### `@aleph/auth`
+
+Authentication utilities shared between the platform and any server that needs to verify tokens.
+
+- Password hashing and verification (bcrypt, 10 salt rounds)
+- JWT generation and verification (HS256)
+- Refresh token generation (cryptographic random bytes)
+- Cookie configuration helpers
+
+### `@aleph/config`
+
+Shared configuration constants used across packages.
+
+### `@aleph/ui`
+
+Shared UI components used across applications. Built on Radix UI primitives with Tailwind CSS styling.
+
+## Build System
+
+The `turbo.json` at the root defines the build pipeline. Turborepo handles:
+
+- **Dependency-aware builds** -- Packages are built in the correct order based on their dependencies
+- **Caching** -- Build outputs are cached and reused when source files have not changed
+- **Parallel execution** -- Independent tasks run in parallel
+
+Key scripts:
+
+```bash
+npm run dev          # Start all apps in development mode
+npm run build        # Build all packages and apps
+npm run type-check   # Run TypeScript type checking across all workspaces
+npm run lint         # Run linting across all workspaces
+npm run db:migrate   # Run database migrations
+npm run db:seed      # Seed the database
+```

@@ -1,0 +1,385 @@
+# Database Schema
+
+Aleph Platform uses PostgreSQL 16 with Drizzle ORM. The schema is defined in `packages/db/src/schema/index.ts` and consists of 20 tables organized into logical groups.
+
+## Schema Overview
+
+The database is organized into these domains:
+
+- **Organization & Identity** -- organizations, departments, roles, users, userDepartmentRoles
+- **Application Registry** -- apps, appInstances, appAccessPolicies, appAgents
+- **Agent System** -- agentConversations, agentMessages, agentToolCalls
+- **Operations** -- serviceStatus, notifications, activityLogs
+- **API Management** -- apiProviders, apiCostLogs, apiKeys
+- **Auth Tokens** -- refreshTokens
+- **Integrations** -- webhooks
+
+## Entity Relationship Diagram
+
+```
+organizations ──1:N──> departments
+     │                      │
+     │                      └──M:N──> users (via userDepartmentRoles + roles)
+     │
+     ├──1:N──> users
+     ├──1:N──> roles
+     ├──1:N──> apps ──1:N──> appInstances ──1:N──> serviceStatus
+     │              │
+     │              ├──1:N──> appAccessPolicies
+     │              └──1:1──> appAgents
+     │
+     ├──1:N──> agentConversations ──1:N──> agentMessages ──1:N──> agentToolCalls
+     ├──1:N──> notifications
+     ├──1:N──> activityLogs
+     ├──1:N──> apiProviders ──1:N──> apiCostLogs
+     ├──1:N──> apiKeys
+     └──1:N──> webhooks
+```
+
+## Table Definitions
+
+### organizations
+
+The top-level tenant entity. All other entities are scoped to an organization.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID (PK) | Auto-generated |
+| `name` | VARCHAR(200) | Organization display name |
+| `slug` | VARCHAR(100) | URL-safe unique identifier |
+| `domain` | VARCHAR(200) | Domain for cookie sharing (e.g., `.example.com`) |
+| `logo` | TEXT | Logo URL |
+| `settings` | JSONB | Flexible settings object |
+| `created_at` | TIMESTAMPTZ | Creation timestamp |
+| `updated_at` | TIMESTAMPTZ | Last update timestamp |
+
+### departments
+
+Organizational units within a company.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID (PK) | Auto-generated |
+| `org_id` | UUID (FK) | References organizations |
+| `name` | VARCHAR(200) | Department name |
+| `slug` | VARCHAR(100) | URL-safe identifier (unique per org) |
+| `icon` | VARCHAR(50) | Lucide icon name |
+| `color` | VARCHAR(7) | Hex color code |
+| `description` | TEXT | Description |
+| `is_active` | BOOLEAN | Whether department is active |
+| `created_at` | TIMESTAMPTZ | Creation timestamp |
+
+**Unique index**: `(org_id, slug)`
+
+### roles
+
+Permission sets that can be assigned to users within departments.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID (PK) | Auto-generated |
+| `org_id` | UUID (FK) | References organizations |
+| `name` | VARCHAR(100) | Role name (e.g., "Super Admin") |
+| `slug` | VARCHAR(50) | URL-safe identifier (unique per org) |
+| `description` | TEXT | Role description |
+| `permissions` | JSONB | Permission map (e.g., `{"apps.read": true}`) |
+| `is_system` | BOOLEAN | Whether this is a built-in system role |
+| `created_at` | TIMESTAMPTZ | Creation timestamp |
+
+**Unique index**: `(org_id, slug)`
+
+### users
+
+User accounts within an organization.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID (PK) | Auto-generated |
+| `org_id` | UUID (FK) | References organizations |
+| `email` | VARCHAR(255) | User email (unique per org) |
+| `username` | VARCHAR(100) | Username (unique per org) |
+| `password_hash` | TEXT | bcrypt-hashed password |
+| `first_name` | VARCHAR(100) | First name |
+| `last_name` | VARCHAR(100) | Last name |
+| `avatar` | TEXT | Avatar URL |
+| `is_active` | BOOLEAN | Account active status |
+| `is_super_admin` | BOOLEAN | Super admin flag |
+| `last_login` | TIMESTAMPTZ | Last login timestamp |
+| `created_at` | TIMESTAMPTZ | Creation timestamp |
+| `updated_at` | TIMESTAMPTZ | Last update timestamp |
+
+**Unique indexes**: `(org_id, email)`, `(org_id, username)`
+
+### user_department_roles
+
+Junction table that assigns users to departments with specific roles. A user can belong to multiple departments.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID (PK) | Auto-generated |
+| `user_id` | UUID (FK) | References users (cascade delete) |
+| `department_id` | UUID (FK) | References departments (cascade delete) |
+| `role_id` | UUID (FK) | References roles |
+| `assigned_at` | TIMESTAMPTZ | Assignment timestamp |
+
+**Unique index**: `(user_id, department_id)` -- a user can only have one role per department.
+
+### apps
+
+Registered applications within the platform.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID (PK) | Auto-generated |
+| `org_id` | UUID (FK) | References organizations |
+| `name` | VARCHAR(200) | App display name |
+| `slug` | VARCHAR(100) | URL-safe identifier (unique per org) |
+| `description` | TEXT | App description |
+| `icon` | VARCHAR(50) | Lucide icon name |
+| `color` | VARCHAR(7) | Hex color code |
+| `category` | VARCHAR(100) | App category |
+| `version` | VARCHAR(20) | Version string |
+| `is_active` | BOOLEAN | Whether app is active |
+| `is_maintenance` | BOOLEAN | Maintenance mode flag |
+| `created_at` | TIMESTAMPTZ | Creation timestamp |
+| `updated_at` | TIMESTAMPTZ | Last update timestamp |
+
+### app_instances
+
+Deployment instances of registered applications. Stores connection details for health checking and routing.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID (PK) | Auto-generated |
+| `app_id` | UUID (FK) | References apps (cascade delete) |
+| `internal_url` | TEXT | Internal URL for the service |
+| `external_domain` | VARCHAR(255) | Public-facing domain |
+| `health_endpoint` | VARCHAR(255) | Health check path (default: `/api/health`) |
+| `public_paths` | JSONB | Array of paths that do not require auth |
+| `traefik_config_path` | TEXT | Path to Traefik config file |
+| `status` | VARCHAR(20) | Current status |
+| `last_health_check` | TIMESTAMPTZ | Last health check timestamp |
+| `created_at` | TIMESTAMPTZ | Creation timestamp |
+
+### app_access_policies
+
+Access control rules that determine which departments/roles can access which apps.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID (PK) | Auto-generated |
+| `app_id` | UUID (FK) | References apps (cascade delete) |
+| `department_id` | UUID (FK) | References departments (cascade delete) |
+| `role_id` | UUID (FK) | References roles (optional, null = all roles) |
+| `access_level` | VARCHAR(20) | `full` or `readonly` |
+| `granted_by` | UUID (FK) | References users (who granted access) |
+| `created_at` | TIMESTAMPTZ | Creation timestamp |
+
+**Unique index**: `(app_id, department_id, role_id)`
+
+### app_agents
+
+Agent configuration for applications. Each app can have at most one agent.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID (PK) | Auto-generated |
+| `app_id` | UUID (FK) | References apps (cascade delete, unique) |
+| `name` | VARCHAR(100) | Agent display name |
+| `description` | TEXT | Agent description |
+| `endpoint` | VARCHAR(255) | Agent API endpoint path |
+| `capabilities` | JSONB | Array of capability definitions |
+| `is_active` | BOOLEAN | Whether agent is active |
+| `created_at` | TIMESTAMPTZ | Creation timestamp |
+| `updated_at` | TIMESTAMPTZ | Last update timestamp |
+
+### agent_conversations
+
+Chat conversations between users and the platform agent.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID (PK) | Auto-generated |
+| `user_id` | UUID (FK) | References users (cascade delete) |
+| `org_id` | UUID (FK) | References organizations |
+| `title` | VARCHAR(200) | Conversation title |
+| `created_at` | TIMESTAMPTZ | Creation timestamp |
+| `updated_at` | TIMESTAMPTZ | Last update timestamp |
+
+### agent_messages
+
+Individual messages within agent conversations.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID (PK) | Auto-generated |
+| `conversation_id` | UUID (FK) | References agent_conversations (cascade delete) |
+| `role` | VARCHAR(20) | Message role (`user`, `assistant`, `system`) |
+| `content` | TEXT | Message content |
+| `routed_to_app_id` | UUID (FK) | References apps (if message was routed to an app agent) |
+| `tool_calls` | JSONB | Array of tool call objects |
+| `tokens_used` | INTEGER | Number of tokens consumed |
+| `model` | VARCHAR(50) | AI model used |
+| `latency_ms` | INTEGER | Response latency in milliseconds |
+| `created_at` | TIMESTAMPTZ | Creation timestamp |
+
+### agent_tool_calls
+
+Records of individual tool calls made by the agent during conversations.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID (PK) | Auto-generated |
+| `message_id` | UUID (FK) | References agent_messages (cascade delete) |
+| `app_id` | UUID (FK) | References apps |
+| `capability` | VARCHAR(100) | Capability name that was invoked |
+| `parameters` | JSONB | Parameters passed to the capability |
+| `response` | JSONB | Response from the capability |
+| `status` | VARCHAR(20) | Execution status (`pending`, `success`, `error`) |
+| `executed_at` | TIMESTAMPTZ | Execution timestamp |
+| `duration_ms` | INTEGER | Execution duration in milliseconds |
+
+### service_status
+
+Health check history for app instances.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID (PK) | Auto-generated |
+| `app_instance_id` | UUID (FK) | References app_instances (cascade delete) |
+| `status` | VARCHAR(20) | Health status |
+| `response_ms` | INTEGER | Response time in milliseconds |
+| `http_code` | INTEGER | HTTP status code returned |
+| `checked_at` | TIMESTAMPTZ | Check timestamp |
+| `details` | JSONB | Additional details |
+
+### notifications
+
+User notifications within the platform.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID (PK) | Auto-generated |
+| `org_id` | UUID (FK) | References organizations |
+| `user_id` | UUID (FK) | References users (null = broadcast) |
+| `title` | VARCHAR(200) | Notification title |
+| `message` | TEXT | Notification body |
+| `type` | VARCHAR(50) | Notification type |
+| `is_read` | BOOLEAN | Read status |
+| `entity_type` | VARCHAR(50) | Related entity type |
+| `entity_id` | UUID | Related entity ID |
+| `created_at` | TIMESTAMPTZ | Creation timestamp |
+
+### activity_logs
+
+Audit trail for all significant platform actions.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID (PK) | Auto-generated |
+| `org_id` | UUID (FK) | References organizations |
+| `user_id` | UUID (FK) | References users |
+| `action` | VARCHAR(100) | Action identifier |
+| `entity_type` | VARCHAR(50) | Affected entity type |
+| `entity_id` | UUID | Affected entity ID |
+| `details` | JSONB | Additional action details |
+| `ip_address` | VARCHAR(45) | Client IP address |
+| `created_at` | TIMESTAMPTZ | Action timestamp |
+
+**Indexes**: `(org_id, created_at)`, `(org_id, action)`
+
+### api_providers
+
+Configured AI API providers (e.g., Anthropic, OpenAI, Google AI).
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID (PK) | Auto-generated |
+| `org_id` | UUID (FK) | References organizations |
+| `name` | VARCHAR(100) | Provider name |
+| `slug` | VARCHAR(50) | URL-safe identifier |
+| `model` | VARCHAR(100) | Default model identifier |
+| `cost_per_1k_input` | REAL | Cost per 1000 input tokens |
+| `cost_per_1k_output` | REAL | Cost per 1000 output tokens |
+| `is_active` | BOOLEAN | Whether provider is active |
+| `created_at` | TIMESTAMPTZ | Creation timestamp |
+
+### api_cost_logs
+
+Token usage and cost tracking for AI API calls.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID (PK) | Auto-generated |
+| `provider_id` | UUID (FK) | References api_providers (cascade delete) |
+| `org_id` | UUID (FK) | References organizations |
+| `tokens` | INTEGER | Number of tokens used |
+| `cost` | REAL | Calculated cost |
+| `endpoint` | VARCHAR(200) | API endpoint called |
+| `user_id` | UUID (FK) | References users |
+| `created_at` | TIMESTAMPTZ | Call timestamp |
+
+**Index**: `(org_id, created_at)`
+
+### api_keys
+
+API keys for programmatic access to the platform.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID (PK) | Auto-generated |
+| `org_id` | UUID (FK) | References organizations |
+| `name` | VARCHAR(100) | Key display name |
+| `key_hash` | TEXT | Hashed API key |
+| `key_prefix` | VARCHAR(20) | First characters of the key (for identification) |
+| `permissions` | JSONB | Permission map |
+| `last_used` | TIMESTAMPTZ | Last usage timestamp |
+| `expires_at` | TIMESTAMPTZ | Expiration timestamp |
+| `is_active` | BOOLEAN | Whether key is active |
+| `created_by` | UUID (FK) | References users |
+| `created_at` | TIMESTAMPTZ | Creation timestamp |
+
+### refresh_tokens
+
+Long-lived tokens for obtaining new access tokens.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID (PK) | Auto-generated |
+| `user_id` | UUID (FK) | References users (cascade delete) |
+| `token` | TEXT | Opaque token value (unique) |
+| `expires_at` | TIMESTAMPTZ | Expiration timestamp |
+| `created_at` | TIMESTAMPTZ | Creation timestamp |
+
+### webhooks
+
+Webhook configurations for event notifications.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID (PK) | Auto-generated |
+| `org_id` | UUID (FK) | References organizations |
+| `name` | VARCHAR(100) | Webhook display name |
+| `url` | TEXT | Target URL |
+| `events` | JSONB | Array of event types to subscribe to |
+| `secret` | TEXT | Signing secret for HMAC verification |
+| `is_active` | BOOLEAN | Whether webhook is active |
+| `last_triggered` | TIMESTAMPTZ | Last trigger timestamp |
+| `last_status` | INTEGER | Last HTTP status code |
+| `fail_count` | INTEGER | Consecutive failure count |
+| `created_by` | UUID (FK) | References users |
+| `created_at` | TIMESTAMPTZ | Creation timestamp |
+
+## Migrations
+
+Drizzle ORM generates and manages migrations in the `packages/db/drizzle/` directory. To generate a new migration after modifying the schema:
+
+```bash
+npm run db:generate
+```
+
+To apply pending migrations:
+
+```bash
+npm run db:migrate
+```

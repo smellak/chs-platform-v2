@@ -1,0 +1,141 @@
+# App Registration
+
+To integrate your application with the Aleph Platform, you need to register it as an app in the platform's application registry. This page covers the full registration process and configuration options.
+
+## Registration Steps
+
+### 1. Create the App Record
+
+Register your application in the platform through the Admin UI:
+
+1. Navigate to **Admin > Apps** (`/admin/apps`)
+2. Click **Add App**
+3. Fill in:
+   - **Name** -- Your app's display name
+   - **Slug** -- URL-safe identifier (e.g., `my-app`)
+   - **Description** -- Brief description
+   - **Category** -- Logical grouping (e.g., "Logistica", "Marketing")
+   - **Icon** -- A Lucide icon name (e.g., `CalendarDays`, `MapPin`)
+   - **Color** -- Hex color for the app card
+
+### 2. Add an App Instance
+
+After creating the app, add a deployment instance:
+
+- **Internal URL** -- The network address where the platform can reach your app (e.g., `http://my-app:5000` in Docker, or `http://localhost:5000` in development)
+- **External Domain** -- The public-facing domain, if any (e.g., `myapp.example.com`)
+- **Health Endpoint** -- Path for health checks (default: `/api/health`)
+- **Public Paths** -- Paths that should be accessible without authentication
+
+### 3. Configure Access Policies
+
+Define which departments can access your app:
+
+| Department | Access Level | Notes |
+|-----------|-------------|-------|
+| IT | `full` | Typically has full access to all apps |
+| Target Department | `full` or `readonly` | Based on the app's purpose |
+
+### 4. Integrate the SDK
+
+Install the SDK in your application:
+
+```bash
+npm install @aleph-platform/sdk
+```
+
+Then integrate it based on your framework:
+
+**Express:**
+```typescript
+import { alephMiddleware, requireAleph } from "@aleph-platform/sdk/express";
+
+app.use(alephMiddleware());
+app.use("/api", requireAleph());
+```
+
+**Next.js:**
+```typescript
+import { getAlephUser } from "@aleph-platform/sdk/next";
+
+export async function GET(request: Request) {
+  const user = getAlephUser(request);
+  // ...
+}
+```
+
+### 5. Add a Health Endpoint
+
+Your app must expose a health endpoint that returns a 200 status when the service is healthy:
+
+```typescript
+// Express
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "healthy",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Next.js App Router
+export async function GET() {
+  return Response.json({
+    status: "healthy",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+}
+```
+
+### 6. (Optional) Register an Agent
+
+If your app provides AI-powered capabilities, register an agent:
+
+1. Install the Agent SDK:
+   ```bash
+   npm install @aleph-platform/agent-sdk
+   ```
+
+2. Implement the agent (see [Building Agents](/developer-guide/building-agents))
+
+3. Expose the agent endpoint (e.g., `/api/agent`)
+
+4. In the platform, configure the agent for your app:
+   - **Agent Name** -- Display name
+   - **Description** -- What the agent does
+   - **Endpoint** -- The API path (e.g., `/api/agent`)
+   - **Capabilities** -- JSON array of capability definitions
+
+## Docker Integration
+
+If your app runs alongside the platform in Docker, configure it in `docker-compose.yml`:
+
+```yaml
+services:
+  platform:
+    # ... existing platform config
+
+  my-app:
+    build: ./apps/my-app
+    environment:
+      - PORT=5000
+    networks:
+      - default
+    restart: unless-stopped
+```
+
+The internal URL for the app instance would be `http://my-app:5000`.
+
+## Checklist
+
+Before going live with your app integration, verify:
+
+- [ ] App is registered in the platform with correct metadata
+- [ ] App instance is configured with the correct internal URL
+- [ ] Health endpoint returns 200 when healthy
+- [ ] SDK is integrated and headers are being parsed correctly
+- [ ] Access policies are configured for the appropriate departments
+- [ ] Public paths are set for any unauthenticated endpoints
+- [ ] (If using an agent) Agent endpoint is functional and registered
+- [ ] (If using an agent) Capabilities are properly defined with correct permissions

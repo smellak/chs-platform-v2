@@ -1,0 +1,101 @@
+# Configuration
+
+Aleph Platform is configured through environment variables. This page documents every variable and its purpose.
+
+## Required Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://aleph:secret@localhost:5432/aleph` |
+| `JWT_SECRET` | Secret key for signing JWT tokens (min 64 chars in production) | `openssl rand -hex 32` |
+
+## Application Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DOMAIN` | The domain for cookie configuration. Set to `localhost` for local development. | `localhost` |
+| `NODE_ENV` | Runtime environment (`development` or `production`) | `development` |
+| `PORT` | Port the Next.js server listens on | `3000` |
+
+## AI / Agent Variables
+
+These variables configure the AI agent system. The agent is the built-in conversational assistant that routes user requests to registered app agents.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ANTHROPIC_API_KEY` | API key for Anthropic Claude | (none -- agent features are disabled without this) |
+| `AI_MODEL` | The AI model identifier to use | `claude-sonnet-4-20250514` |
+| `AI_MAX_TOKENS` | Maximum tokens per AI response | `4096` |
+| `AI_RATE_LIMIT_MESSAGES_PER_HOUR` | Max messages a user can send per hour | `50` |
+| `AI_RATE_LIMIT_TOKENS_PER_DAY` | Max total tokens a user can consume per day | `100000` |
+
+## Database Configuration
+
+The `DATABASE_URL` follows the standard PostgreSQL connection string format:
+
+```
+postgresql://USER:PASSWORD@HOST:PORT/DATABASE
+```
+
+### Local Development
+
+```bash
+DATABASE_URL=postgresql://aleph:aleph_secret@localhost:5432/aleph
+```
+
+### Docker Compose
+
+When using Docker Compose, the database hostname is the service name (`db`):
+
+```bash
+DATABASE_URL=postgresql://aleph:aleph_secret@db:5432/aleph
+```
+
+## JWT Configuration
+
+The authentication system uses HS256-signed JWTs with the following fixed parameters:
+
+| Parameter | Value |
+|-----------|-------|
+| Algorithm | HS256 |
+| Access token expiry | 15 minutes |
+| Refresh token expiry | 7 days |
+| Access token cookie | `aleph_access_token` (HttpOnly, path `/`) |
+| Refresh token cookie | `aleph_refresh_token` (HttpOnly, path `/api/auth`) |
+
+The `JWT_SECRET` must be identical across all instances of the platform to ensure tokens are valid across restarts and replicas.
+
+## Cookie Configuration
+
+Cookie behavior varies based on `NODE_ENV` and `DOMAIN`:
+
+| Setting | Development | Production (localhost) | Production |
+|---------|------------|----------------------|------------|
+| `httpOnly` | `true` | `true` | `true` |
+| `secure` | `false` | `false` | `true` |
+| `sameSite` (access) | `lax` | `lax` | `lax` |
+| `sameSite` (refresh) | `strict` | `strict` | `strict` |
+
+When `DOMAIN` is set (and is not `localhost`), the access token cookie includes a `domain` attribute to allow cookie sharing across subdomains. This is important for the Aleph header protocol where the platform authenticates users and forwards their identity to registered applications.
+
+## Example .env File
+
+```bash
+# Database
+DATABASE_URL=postgresql://aleph:aleph_secret@localhost:5432/aleph
+
+# Auth
+JWT_SECRET=a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2
+
+# Application
+DOMAIN=localhost
+NODE_ENV=development
+PORT=3000
+
+# AI Agent
+ANTHROPIC_API_KEY=sk-ant-api03-your-key-here
+AI_MODEL=claude-sonnet-4-20250514
+AI_MAX_TOKENS=4096
+AI_RATE_LIMIT_MESSAGES_PER_HOUR=50
+AI_RATE_LIMIT_TOKENS_PER_DAY=100000
+```

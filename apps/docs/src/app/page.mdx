@@ -1,0 +1,53 @@
+# Aleph Platform
+
+Aleph Platform is a multi-tenant enterprise platform for managing internal applications, users, departments, and AI-powered agents within an organization. It provides centralized authentication, role-based access control, service monitoring, and an agent orchestration layer that routes user requests to registered application agents.
+
+## Key Features
+
+- **Centralized Authentication** -- JWT-based auth with HttpOnly cookies, shared across all registered applications via the Aleph header protocol.
+- **Multi-Tenant Organization Model** -- Organizations, departments, roles, and users with fine-grained access policies.
+- **Application Registry** -- Register internal apps, define access policies per department/role, and monitor their health.
+- **AI Agent Orchestration** -- A built-in conversational agent that routes requests to registered app agents based on user intent and permissions.
+- **SDK & Agent SDK** -- TypeScript packages for integrating Express and Next.js applications with the platform, including an Agent SDK for building custom agents.
+- **Admin Dashboard** -- Full administration UI for managing users, departments, roles, apps, API providers, API keys, webhooks, and monitoring services.
+- **Monorepo Architecture** -- Turborepo-powered monorepo with shared packages for database, auth, SDK, agent SDK, config, and UI components.
+
+## Packages
+
+| Package | Description |
+|---------|-------------|
+| `@aleph-platform/sdk` | Core SDK with header parsing, Express middleware, and Next.js helpers |
+| `@aleph-platform/agent-sdk` | Agent SDK for building app agents with capability-based permissions |
+| `@aleph/db` | Drizzle ORM schema, migrations, and seed data (PostgreSQL) |
+| `@aleph/auth` | Password hashing (bcrypt), JWT generation/verification, cookie config |
+| `@aleph/config` | Shared configuration constants |
+| `@aleph/ui` | Shared UI components |
+
+## Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/smellak/aleph-platform.git
+cd aleph-platform
+
+# Start with Docker
+cd docker
+docker compose up -d
+
+# Access the platform
+open http://localhost:3000
+```
+
+Default credentials: `admin` / `admin123`
+
+## Technology Stack
+
+- **Runtime**: Node.js 20+
+- **Framework**: Next.js 15 (App Router)
+- **Language**: TypeScript 5.7
+- **Database**: PostgreSQL 16 with Drizzle ORM
+- **Auth**: JWT (HS256), bcrypt, HttpOnly cookies
+- **AI**: Anthropic Claude (configurable model)
+- **Build System**: Turborepo
+- **Containerization**: Docker with Docker Compose
+- **UI**: Tailwind CSS, Radix UI, Lucide icons

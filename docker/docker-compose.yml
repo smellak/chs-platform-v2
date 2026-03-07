@@ -8,7 +8,10 @@ services:
     environment:
       - DATABASE_URL=postgresql://aleph:aleph_secret@db:5432/aleph
       - JWT_SECRET=change-me-in-production-use-at-least-64-chars-random-string-here
-      - DOMAIN=localhost
+      - DOMAIN=${DOMAIN:-localhost}
+      - ORG_NAME=${ORG_NAME:-Aleph Demo}
+      - ORG_SLUG=${ORG_SLUG:-aleph}
+      - ORG_DOMAIN=${ORG_DOMAIN:-}
       - NODE_ENV=production
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - AI_MODEL=${AI_MODEL:-claude-sonnet-4-20250514}

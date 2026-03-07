@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, User, Eye, EyeOff, AlertCircle } from "lucide-react";
+import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -57,12 +58,9 @@ export default function LoginPage() {
       <div className="glass-card rounded-2xl p-8 w-full max-w-md relative z-10">
         {/* Logo / Branding */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 mb-4">
-            <span className="text-2xl font-bold text-white tracking-wider">A</span>
+          <div className="inline-block mb-4">
+            <Image src="/logo.svg" alt="Aleph Platform" width={180} height={45} priority />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-wide">
-            ALEPH
-          </h1>
           <p className="text-blue-200/70 text-sm mt-1">Portal Corporativo</p>
           {/* Decorative line */}
           <div className="mx-auto mt-4 h-0.5 w-16 bg-gradient-to-r from-transparent via-blue-400 to-transparent" />

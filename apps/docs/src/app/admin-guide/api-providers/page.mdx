@@ -1,0 +1,72 @@
+# API Providers
+
+API providers represent the AI model services used by the platform's agent system. You can configure multiple providers and track their costs.
+
+## Accessing API Provider Management
+
+Navigate to **Admin > API Providers** (`/admin/api-providers`). This page requires admin role.
+
+## Provider Properties
+
+| Field | Description |
+|-------|-------------|
+| Name | Provider display name (e.g., "Anthropic") |
+| Slug | URL-safe identifier |
+| Model | Default model identifier (e.g., `claude-sonnet-4-20250514`) |
+| Cost Per 1K Input | Cost per 1,000 input tokens (in USD) |
+| Cost Per 1K Output | Cost per 1,000 output tokens (in USD) |
+| Is Active | Whether the provider is available for use |
+
+## Default Providers
+
+The database seed creates three providers:
+
+| Provider | Model | Status |
+|----------|-------|--------|
+| Anthropic | `claude-sonnet-4-20250514` | Active |
+| OpenAI | `gpt-4o` | Active |
+| Google AI | `gemini-2.0-flash` | Active |
+
+## Active Provider
+
+The AI model actually used by the platform agent is determined by the `AI_MODEL` environment variable, not by the database provider configuration. The provider records are primarily for cost tracking and configuration purposes.
+
+To change the active model:
+
+```bash
+# In your .env or docker-compose environment
+AI_MODEL=claude-sonnet-4-20250514
+```
+
+## Cost Tracking
+
+Every AI API call is logged in the `api_cost_logs` table with:
+
+| Field | Description |
+|-------|-------------|
+| Provider | Which provider was used |
+| Tokens | Number of tokens consumed |
+| Cost | Calculated cost based on the provider's rates |
+| Endpoint | Which API endpoint was called |
+| User | Which user triggered the call |
+| Timestamp | When the call was made |
+
+### Viewing Cost Data
+
+The AI Analytics page (`/admin/ai-analytics`) provides aggregated views of:
+- Total token usage over time
+- Cost breakdown by provider
+- Usage per user
+- Usage per application
+
+## Configuration
+
+The agent system's behavior is controlled by environment variables:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ANTHROPIC_API_KEY` | Anthropic API key | Required for agent features |
+| `AI_MODEL` | Model to use | `claude-sonnet-4-20250514` |
+| `AI_MAX_TOKENS` | Max tokens per response | `4096` |
+| `AI_RATE_LIMIT_MESSAGES_PER_HOUR` | Per-user message rate limit | `50` |
+| `AI_RATE_LIMIT_TOKENS_PER_DAY` | Per-user daily token limit | `100000` |

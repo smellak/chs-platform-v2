@@ -1,0 +1,127 @@
+# SDK Overview
+
+The `@aleph-platform/sdk` package enables external applications to integrate with the Aleph Platform. It provides header parsing, authentication middleware, and helper functions for both Express and Next.js applications.
+
+## Installation
+
+```bash
+npm install @aleph-platform/sdk
+```
+
+## Package Entry Points
+
+The SDK provides three entry points:
+
+| Import | Description |
+|--------|-------------|
+| `@aleph-platform/sdk` | Core exports: `parseAlephHeaders`, `getAlephLoginUrl`, types |
+| `@aleph-platform/sdk/express` | Express middleware functions |
+| `@aleph-platform/sdk/next` | Next.js helper functions |
+
+## Core Exports
+
+### `parseAlephHeaders(headers)`
+
+Parses raw HTTP headers into an `AlephUser` object. Returns `null` if the `x-aleph-user-id` header is missing.
+
+```typescript
+import { parseAlephHeaders } from "@aleph-platform/sdk";
+
+const user = parseAlephHeaders(request.headers);
+
+if (user) {
+  console.log(user.id);          // UUID
+  console.log(user.name);        // "Carlos Martinez"
+  console.log(user.email);       // "carlos@centrohogar.es"
+  console.log(user.orgId);       // UUID
+  console.log(user.orgName);     // "Centro Hogar Sanchez"
+  console.log(user.dept);        // "Logistica y Almacen"
+  console.log(user.deptId);      // UUID
+  console.log(user.role);        // "user"
+  console.log(user.accessLevel); // "full"
+  console.log(user.permissions); // { "apps.read": true }
+}
+```
+
+**Parameters:**
+- `headers: Record<string, string | string[] | undefined>` -- A headers object (supports Express `req.headers`, Next.js headers, or plain objects)
+
+**Returns:** `AlephUser | null`
+
+### `getAlephLoginUrl(platformUrl, redirectUrl?)`
+
+Generates a URL that redirects the user to the Aleph Platform login page with a redirect parameter.
+
+```typescript
+import { getAlephLoginUrl } from "@aleph-platform/sdk";
+
+const loginUrl = getAlephLoginUrl("https://platform.example.com", "https://myapp.example.com/dashboard");
+// Returns: "https://platform.example.com/login?redirect=https%3A%2F%2Fmyapp.example.com%2Fdashboard"
+```
+
+**Parameters:**
+- `platformUrl: string` -- The base URL of the Aleph Platform
+- `redirectUrl?: string` -- Where to redirect after login (defaults to `window.location.href` in browser environments)
+
+**Returns:** `string`
+
+## Types
+
+### `AlephUser`
+
+```typescript
+interface AlephUser {
+  id: string;
+  name: string;
+  email: string;
+  orgId: string;
+  orgName: string;
+  dept: string;
+  deptId: string;
+  role: "super-admin" | "dept-admin" | "user" | "viewer";
+  accessLevel: "full" | "readonly";
+  permissions: Record<string, boolean>;
+}
+```
+
+### `AlephHeaders`
+
+```typescript
+interface AlephHeaders {
+  "x-aleph-user-id": string;
+  "x-aleph-user-name": string;
+  "x-aleph-user-email": string;
+  "x-aleph-org-id": string;
+  "x-aleph-org-name": string;
+  "x-aleph-dept": string;
+  "x-aleph-dept-id": string;
+  "x-aleph-role": string;
+  "x-aleph-access-level": string;
+  "x-aleph-permissions": string;
+}
+```
+
+## Package Structure
+
+```
+@aleph-platform/sdk/
+├── dist/
+│   ├── index.js            # CJS entry
+│   ├── index.mjs           # ESM entry
+│   ├── index.d.ts          # Type declarations
+│   └── middleware/
+│       ├── express.js      # CJS Express middleware
+│       ├── express.mjs     # ESM Express middleware
+│       ├── express.d.ts    # Express type declarations
+│       ├── next.js         # CJS Next.js helpers
+│       ├── next.mjs        # ESM Next.js helpers
+│       └── next.d.ts       # Next.js type declarations
+```
+
+The package is built with [tsup](https://tsup.egoist.dev/) and supports both CommonJS and ESM imports.
+
+## Next Steps
+
+- [Express Middleware](/developer-guide/sdk-express) -- Detailed guide for Express integration
+- [Next.js Integration](/developer-guide/sdk-nextjs) -- Detailed guide for Next.js integration
+- [Agent SDK](/developer-guide/agent-sdk) -- Build AI agents for your application

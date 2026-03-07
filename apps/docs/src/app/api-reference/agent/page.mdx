@@ -1,0 +1,217 @@
+# Agent Endpoints
+
+The agent API handles AI-powered conversations and routes user requests to registered application agents.
+
+## POST /api/agent/chat
+
+Send a message to the platform agent and receive a response.
+
+**Request:**
+```json
+{
+  "message": "Show me the appointments for next week",
+  "conversationId": "uuid-optional"
+}
+```
+
+If `conversationId` is omitted, a new conversation is created.
+
+**Success Response (200):**
+```json
+{
+  "message": "Here are the appointments for next week:\n\n1. Supplier X - March 10, Dock 3\n2. Supplier Y - March 12, Dock 1",
+  "conversationId": "uuid",
+  "messageId": "uuid",
+  "tokensUsed": 1250,
+  "model": "claude-sonnet-4-20250514",
+  "latencyMs": 2340,
+  "toolCalls": [
+    {
+      "appId": "uuid",
+      "appName": "Citas Almacen",
+      "capability": "consultar_citas",
+      "parameters": {
+        "date": "2026-03-10"
+      },
+      "status": "success",
+      "durationMs": 150
+    }
+  ]
+}
+```
+
+**Error Responses:**
+- `401` -- Not authenticated
+- `429` -- Rate limit exceeded (messages per hour or tokens per day)
+- `500` -- AI model error or agent error
+
+### How Routing Works
+
+When the platform receives a chat message:
+
+1. The message is stored in `agent_messages` with `role: "user"`
+2. The conversation history is loaded from the database
+3. The AI model is called with:
+   - The conversation history
+   - A system prompt that includes all registered app agents and their capabilities
+   - The user's permissions and role
+4. If the AI determines a tool call is needed:
+   - The platform identifies the target app agent
+   - It verifies the user has permission to use the capability
+   - It sends a POST request to the app's agent endpoint
+   - The response is fed back to the AI model
+5. The final response is stored in `agent_messages` with `role: "assistant"`
+6. Tool calls are recorded in `agent_tool_calls`
+
+## GET /api/agent/conversations
+
+List the current user's conversations.
+
+**Response (200):**
+```json
+{
+  "conversations": [
+    {
+      "id": "uuid",
+      "title": "Appointments inquiry",
+      "createdAt": "2026-03-07T10:00:00Z",
+      "updatedAt": "2026-03-07T10:05:00Z",
+      "messageCount": 4
+    }
+  ]
+}
+```
+
+## POST /api/agent/conversations
+
+Create a new conversation.
+
+**Request:**
+```json
+{
+  "title": "New conversation"
+}
+```
+
+**Response (201):**
+```json
+{
+  "conversation": {
+    "id": "uuid",
+    "title": "New conversation",
+    "createdAt": "2026-03-07T10:00:00Z"
+  }
+}
+```
+
+## GET /api/agent/conversations/[id]
+
+Get a conversation with all its messages.
+
+**Response (200):**
+```json
+{
+  "conversation": {
+    "id": "uuid",
+    "title": "Appointments inquiry",
+    "createdAt": "2026-03-07T10:00:00Z",
+    "messages": [
+      {
+        "id": "uuid",
+        "role": "user",
+        "content": "Show me the appointments for next week",
+        "createdAt": "2026-03-07T10:00:00Z"
+      },
+      {
+        "id": "uuid",
+        "role": "assistant",
+        "content": "Here are the appointments...",
+        "tokensUsed": 1250,
+        "model": "claude-sonnet-4-20250514",
+        "latencyMs": 2340,
+        "toolCalls": [
+          {
+            "capability": "consultar_citas",
+            "status": "success"
+          }
+        ],
+        "createdAt": "2026-03-07T10:00:03Z"
+      }
+    ]
+  }
+}
+```
+
+## DELETE /api/agent/conversations/[id]
+
+Delete a conversation and all its messages.
+
+**Response (200):**
+```json
+{
+  "message": "Conversation deleted"
+}
+```
+
+**Error Responses:**
+- `401` -- Not authenticated
+- `404` -- Conversation not found
+- `403` -- Conversation belongs to a different user
+
+## Rate Limiting
+
+The chat endpoint enforces two rate limits:
+
+| Limit | Default | Env Variable |
+|-------|---------|-------------|
+| Messages per hour | 50 | `AI_RATE_LIMIT_MESSAGES_PER_HOUR` |
+| Tokens per day | 100,000 | `AI_RATE_LIMIT_TOKENS_PER_DAY` |
+
+When a rate limit is exceeded:
+
+```json
+{
+  "error": "Rate limit exceeded. You have sent too many messages this hour.",
+  "retryAfter": 1800
+}
+```
+Status code: `429`
+
+## App Agent Request Format
+
+When the platform routes a request to an app agent, it sends a POST to the app's agent endpoint with:
+
+**Headers:**
+```
+x-aleph-user-id: uuid
+x-aleph-user-name: Carlos Martinez
+x-aleph-user-email: carlos@centrohogar.es
+x-aleph-org-id: uuid
+x-aleph-role: user
+x-aleph-access-level: full
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "capability": "consultar_citas",
+  "parameters": {
+    "date": "2026-03-15"
+  },
+  "conversationContext": [
+    {
+      "role": "user",
+      "content": "Show me appointments for March 15th"
+    }
+  ]
+}
+```
+
+**Expected Response:**
+```json
+{
+  "text": "Found 3 appointments for March 15th.",
+  "data": [...]
+}
+```

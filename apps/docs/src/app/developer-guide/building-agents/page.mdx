@@ -1,0 +1,262 @@
+# Building Agents
+
+This guide walks through building a complete application agent that integrates with the Aleph Platform's agent orchestration system.
+
+## Prerequisites
+
+- An application registered in the Aleph Platform
+- The `@aleph-platform/agent-sdk` package installed
+- An endpoint on your application to handle agent requests
+
+## Step 1: Design Your Capabilities
+
+Before writing code, define what your agent can do. Each capability should represent a discrete action with clear parameters.
+
+Example for a warehouse appointment system:
+
+```typescript
+const capabilities = [
+  {
+    name: "consultar_citas",
+    description: "Query existing appointments with optional date filtering",
+    requiredPermission: "read" as const,
+    parameters: {
+      date: {
+        type: "string" as const,
+        description: "Date to filter by (ISO 8601 format)",
+        required: false,
+      },
+      status: {
+        type: "string" as const,
+        description: "Filter by appointment status",
+        required: false,
+        enum: ["pending", "confirmed", "cancelled"],
+      },
+    },
+  },
+  {
+    name: "crear_cita",
+    description: "Create a new appointment",
+    requiredPermission: "write" as const,
+    parameters: {
+      supplier: {
+        type: "string" as const,
+        description: "Supplier name",
+        required: true,
+      },
+      date: {
+        type: "string" as const,
+        description: "Appointment date (ISO 8601)",
+        required: true,
+      },
+      dock: {
+        type: "number" as const,
+        description: "Dock number",
+        required: true,
+      },
+    },
+  },
+  {
+    name: "ver_calendario",
+    description: "View the appointment calendar for a date range",
+    requiredPermission: "read" as const,
+    parameters: {
+      startDate: {
+        type: "string" as const,
+        description: "Start date (ISO 8601)",
+        required: true,
+      },
+      endDate: {
+        type: "string" as const,
+        description: "End date (ISO 8601)",
+        required: true,
+      },
+    },
+  },
+];
+```
+
+## Step 2: Implement the Handler
+
+The handler receives validated requests and returns responses:
+
+```typescript
+import { AlephAgent, AgentRequest, AgentResponse } from "@aleph-platform/agent-sdk";
+import { db } from "./database";
+
+const agent = new AlephAgent({
+  name: "Elias",
+  description: "Warehouse appointment management agent",
+  capabilities,
+  handler: async (request: AgentRequest): Promise<AgentResponse> => {
+    const { capability, parameters, user } = request;
+
+    switch (capability) {
+      case "consultar_citas": {
+        const appointments = await db.getAppointments({
+          date: parameters.date as string | undefined,
+          status: parameters.status as string | undefined,
+        });
+
+        if (appointments.length === 0) {
+          return { text: "No appointments found matching the criteria." };
+        }
+
+        return {
+          text: `Found ${appointments.length} appointment(s).`,
+          data: appointments,
+        };
+      }
+
+      case "crear_cita": {
+        const appointment = await db.createAppointment({
+          supplier: parameters.supplier as string,
+          date: parameters.date as string,
+          dock: parameters.dock as number,
+          createdBy: user.id,
+        });
+
+        return {
+          text: `Appointment created for ${parameters.supplier} on ${parameters.date} at dock ${parameters.dock}.`,
+          data: appointment,
+        };
+      }
+
+      case "ver_calendario": {
+        const calendar = await db.getCalendar(
+          parameters.startDate as string,
+          parameters.endDate as string
+        );
+
+        return {
+          text: `Calendar from ${parameters.startDate} to ${parameters.endDate}:`,
+          data: calendar,
+        };
+      }
+
+      default:
+        return { text: "Unknown capability", error: "Not implemented" };
+    }
+  },
+});
+```
+
+## Step 3: Expose the Endpoint
+
+### Express
+
+```typescript
+import express from "express";
+
+const app = express();
+app.use(express.json());
+
+app.post("/api/agent", agent.middleware());
+
+app.listen(5000);
+```
+
+### Next.js App Router
+
+```typescript
+// app/api/agent/route.ts
+export async function POST(request: Request) {
+  return agent.routeHandler(request);
+}
+```
+
+## Step 4: Register in the Platform
+
+Once your agent endpoint is running, register it in the Aleph Platform:
+
+1. Navigate to **Admin > Apps**
+2. Select your application (or create a new one)
+3. In the agent configuration section, set:
+   - **Agent Name** -- e.g., "Elias"
+   - **Description** -- e.g., "Warehouse appointment management agent"
+   - **Endpoint** -- e.g., `/api/agent`
+   - **Capabilities** -- The JSON array of capabilities
+
+The platform stores this in the `app_agents` table. The platform's AI agent will use this information to route user requests to your agent.
+
+## How Routing Works
+
+When a user sends a message to the platform agent (e.g., "Show me the appointments for next week"):
+
+1. The platform agent receives the message via `/api/agent/chat`
+2. It analyzes the message using the AI model
+3. It checks all registered app agents and their capabilities
+4. It identifies that "Elias" has a `consultar_citas` capability that matches the request
+5. It checks that the user has the required permission (`read`) for this capability
+6. It sends a POST request to the app's agent endpoint with the capability name and parameters
+7. Your handler processes the request and returns a response
+8. The platform agent formats the response and presents it to the user
+
+## Request Body Format
+
+When the platform calls your agent, the request body has this structure:
+
+```json
+{
+  "capability": "consultar_citas",
+  "parameters": {
+    "date": "2026-03-15"
+  },
+  "conversationContext": [
+    { "role": "user", "content": "Show me appointments for March 15th" },
+    { "role": "assistant", "content": "Let me check the appointments..." }
+  ]
+}
+```
+
+The `conversationContext` field provides the conversation history so your agent can understand the broader context of the request.
+
+## Error Handling
+
+If your handler throws an error, the SDK catches it and returns a 500 response with the error message:
+
+```typescript
+handler: async (request) => {
+  // If this throws, the SDK returns:
+  // { status: 500, body: { error: "Error message" } }
+  const result = await someOperation();
+  return { text: "Success", data: result };
+},
+```
+
+For expected errors, return them in the response:
+
+```typescript
+handler: async (request) => {
+  const appointment = await findAppointment(request.parameters.id as string);
+
+  if (!appointment) {
+    return {
+      text: "Appointment not found",
+      error: "not_found",
+    };
+  }
+
+  return { text: `Found appointment: ${appointment.title}`, data: appointment };
+},
+```
+
+## Testing Your Agent
+
+You can test your agent directly with curl:
+
+```bash
+curl -X POST http://localhost:5000/api/agent \
+  -H "Content-Type: application/json" \
+  -H "x-aleph-user-id: test-user-id" \
+  -H "x-aleph-user-name: Test User" \
+  -H "x-aleph-user-email: test@example.com" \
+  -H "x-aleph-role: user" \
+  -H "x-aleph-access-level: full" \
+  -d '{
+    "capability": "consultar_citas",
+    "parameters": { "date": "2026-03-15" }
+  }'
+```
+
+All five required headers (`x-aleph-user-id`, `x-aleph-user-name`, `x-aleph-user-email`, `x-aleph-role`, `x-aleph-access-level`) must be present for the agent to process the request. Missing any of them results in a 401 response.
