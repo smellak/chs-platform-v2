@@ -8,6 +8,8 @@ const PUBLIC_PATHS = [
   "/login",
   "/api/auth/login",
   "/api/auth/refresh",
+  "/api/auth/verify-access",
+  "/api/auth/sso-info",
   "/api/health",
 ];
 

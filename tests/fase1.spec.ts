@@ -166,6 +166,8 @@ test.describe("Fase 1: Core Platform UI", () => {
       "Roles",
       "Auditoría",
       "Proveedores API",
+      "Claves API",
+      "Webhooks",
     ];
     for (const link of sidebarLinks) {
       await expect(page.locator(`a:has-text("${link}")`).first()).toBeVisible();

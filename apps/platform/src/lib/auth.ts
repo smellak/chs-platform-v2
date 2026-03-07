@@ -49,6 +49,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
   return {
     id: user.id,
+    orgId: user.orgId,
     username: user.username,
     email: user.email,
     firstName: user.firstName,

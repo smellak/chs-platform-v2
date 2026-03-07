@@ -3,6 +3,14 @@ import { getCurrentUser } from "@/lib/auth";
 import { Navbar } from "@/components/navbar";
 import { Toaster } from "@/components/ui/toaster";
 import { CommandPalette } from "@/components/command-palette";
+import { startHealthChecker } from "@/lib/health-checker";
+
+// Start health checker once on server
+const g = globalThis as unknown as Record<string, unknown>;
+if (typeof g["__healthCheckerStarted"] === "undefined") {
+  g["__healthCheckerStarted"] = true;
+  startHealthChecker();
+}
 
 export default async function DashboardLayout({
   children,

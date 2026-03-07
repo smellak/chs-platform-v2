@@ -37,6 +37,8 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
   apiProviders: many(apiProviders),
   apiCostLogs: many(apiCostLogs),
   agentConversations: many(agentConversations),
+  apiKeys: many(apiKeys),
+  webhooks: many(webhooks),
 }));
 
 // ─── Departments ─────────────────────────────────────────────────────────────
@@ -535,6 +537,35 @@ export const apiCostLogsRelations = relations(apiCostLogs, ({ one }) => ({
   }),
 }));
 
+// ─── API Keys ────────────────────────────────────────────────────────────────
+
+export const apiKeys = pgTable("api_keys", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organizations.id),
+  name: varchar("name", { length: 100 }).notNull(),
+  keyHash: text("key_hash").notNull(),
+  keyPrefix: varchar("key_prefix", { length: 20 }).notNull(),
+  permissions: jsonb("permissions").default({}).$type<Record<string, boolean>>(),
+  lastUsed: timestamp("last_used", { withTimezone: true }),
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdBy: uuid("created_by").references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const apiKeysRelations = relations(apiKeys, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [apiKeys.orgId],
+    references: [organizations.id],
+  }),
+  createdByUser: one(users, {
+    fields: [apiKeys.createdBy],
+    references: [users.id],
+  }),
+}));
+
 // ─── Refresh Tokens ──────────────────────────────────────────────────────────
 
 export const refreshTokens = pgTable("refresh_tokens", {
@@ -550,6 +581,36 @@ export const refreshTokens = pgTable("refresh_tokens", {
 export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
   user: one(users, {
     fields: [refreshTokens.userId],
+    references: [users.id],
+  }),
+}));
+
+// ─── Webhooks ─────────────────────────────────────────────────────────────────
+
+export const webhooks = pgTable("webhooks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organizations.id),
+  name: varchar("name", { length: 100 }).notNull(),
+  url: text("url").notNull(),
+  events: jsonb("events").default([]).$type<string[]>(),
+  secret: text("secret").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  lastTriggered: timestamp("last_triggered", { withTimezone: true }),
+  lastStatus: integer("last_status"),
+  failCount: integer("fail_count").default(0).notNull(),
+  createdBy: uuid("created_by").references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const webhooksRelations = relations(webhooks, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [webhooks.orgId],
+    references: [organizations.id],
+  }),
+  createdByUser: one(users, {
+    fields: [webhooks.createdBy],
     references: [users.id],
   }),
 }));

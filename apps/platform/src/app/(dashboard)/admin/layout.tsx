@@ -9,6 +9,8 @@ import {
   Shield,
   ScrollText,
   Cpu,
+  Key,
+  Webhook,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +21,8 @@ const sidebarItems = [
   { href: "/admin/roles", label: "Roles", icon: Shield },
   { href: "/admin/audit", label: "Auditoría", icon: ScrollText },
   { href: "/admin/api-providers", label: "Proveedores API", icon: Cpu },
+  { href: "/admin/api-keys", label: "Claves API", icon: Key },
+  { href: "/admin/webhooks", label: "Webhooks", icon: Webhook },
 ];
 
 export default function AdminLayout({

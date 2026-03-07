@@ -1,0 +1,33 @@
+{
+  "name": "@aleph-platform/sdk",
+  "version": "0.1.0",
+  "description": "SDK for integrating apps with Aleph Platform",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./express": {
+      "import": "./dist/middleware/express.mjs",
+      "require": "./dist/middleware/express.js",
+      "types": "./dist/middleware/express.d.ts"
+    },
+    "./next": {
+      "import": "./dist/middleware/next.mjs",
+      "require": "./dist/middleware/next.js",
+      "types": "./dist/middleware/next.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts src/middleware/express.ts src/middleware/next.ts --format cjs,esm --dts",
+    "type-check": "tsc --noEmit"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "tsup": "^8.5.0",
+    "typescript": "^5.7.3"
+  }
+}

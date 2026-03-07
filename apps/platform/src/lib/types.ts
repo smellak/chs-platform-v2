@@ -12,6 +12,7 @@ export interface UserDepartment {
 
 export interface AuthUser {
   id: string;
+  orgId: string;
   username: string;
   email: string;
   firstName: string;

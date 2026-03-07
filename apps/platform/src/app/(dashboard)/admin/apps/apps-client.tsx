@@ -27,6 +27,12 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { createApp, updateApp } from "@/lib/actions/apps";
+import {
+  previewTraefikConfig,
+  applyTraefikConfig,
+  removeTraefikConfig,
+  checkAppConnectivity,
+} from "@/lib/actions/traefik";
 import { slugify } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -73,6 +79,8 @@ export function AppsClient({ apps, departments }: AppsClientProps) {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [accessMap, setAccessMap] = useState<Record<string, string>>({});
+  const [yamlPreview, setYamlPreview] = useState<string | null>(null);
+  const [connectivityResult, setConnectivityResult] = useState<string | null>(null);
 
   const filtered = apps.filter(
     (a) =>
@@ -387,6 +395,82 @@ export function AppsClient({ apps, departments }: AppsClientProps) {
                     }
                   />
                 </div>
+
+                {editing && editing.instance?.externalDomain && (
+                  <div className="border-t border-border pt-4 space-y-3">
+                    <h3 className="text-sm font-semibold">Proxy Traefik</h3>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          const result = await previewTraefikConfig(editing.id);
+                          if (result.success && result.yaml) {
+                            setYamlPreview(result.yaml);
+                          } else {
+                            toast({ title: result.error ?? "Error", variant: "destructive" });
+                          }
+                        }}
+                      >
+                        Vista previa YAML
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          const result = await applyTraefikConfig(editing.id);
+                          if (result.success) {
+                            toast({ title: "Configuración de proxy aplicada" });
+                          } else {
+                            toast({ title: result.error ?? "Error", variant: "destructive" });
+                          }
+                        }}
+                      >
+                        Aplicar proxy
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          const result = await removeTraefikConfig(editing.id);
+                          if (result.success) {
+                            toast({ title: "Configuración de proxy eliminada" });
+                          } else {
+                            toast({ title: result.error ?? "Error", variant: "destructive" });
+                          }
+                        }}
+                      >
+                        Eliminar proxy
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          const result = await checkAppConnectivity(editing.id);
+                          if (result.error) {
+                            setConnectivityResult(`Error: ${result.error}`);
+                          } else {
+                            setConnectivityResult(`HTTP ${result.status} — ${result.responseMs}ms`);
+                          }
+                        }}
+                      >
+                        Verificar conectividad
+                      </Button>
+                    </div>
+                    {connectivityResult && (
+                      <p className="text-sm text-muted-foreground">{connectivityResult}</p>
+                    )}
+                    {yamlPreview && (
+                      <pre className="text-xs bg-muted p-3 rounded-lg overflow-x-auto max-h-60 whitespace-pre">
+                        {yamlPreview}
+                      </pre>
+                    )}
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="access" className="space-y-4">
