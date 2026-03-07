@@ -16,20 +16,32 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
-// Simple in-memory rate limiter for login
-const loginAttempts = new Map<string, { count: number; resetAt: number }>();
-const MAX_ATTEMPTS = 5;
+// In-memory rate limiter for failed login attempts
+const failedAttempts = new Map<string, { count: number; resetAt: number }>();
+const MAX_FAILED_ATTEMPTS = 5;
 const WINDOW_MS = 60_000; // 1 minute
 
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
-  const entry = loginAttempts.get(ip);
+  const entry = failedAttempts.get(ip);
   if (!entry || now > entry.resetAt) {
-    loginAttempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
     return false;
   }
-  entry.count++;
-  return entry.count > MAX_ATTEMPTS;
+  return entry.count >= MAX_FAILED_ATTEMPTS;
+}
+
+function recordFailedAttempt(ip: string): void {
+  const now = Date.now();
+  const entry = failedAttempts.get(ip);
+  if (!entry || now > entry.resetAt) {
+    failedAttempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+  } else {
+    entry.count++;
+  }
+}
+
+function clearFailedAttempts(ip: string): void {
+  failedAttempts.delete(ip);
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -64,6 +76,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const user = usersFound[0];
     if (!user) {
+      recordFailedAttempt(ip);
       return NextResponse.json(
         { error: "Credenciales inválidas" },
         { status: 401 },
@@ -71,6 +84,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     if (!user.isActive) {
+      recordFailedAttempt(ip);
       return NextResponse.json(
         { error: "Cuenta desactivada. Contacte al administrador." },
         { status: 403 },
@@ -79,11 +93,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const valid = await verifyPassword(password, user.passwordHash);
     if (!valid) {
+      recordFailedAttempt(ip);
       return NextResponse.json(
         { error: "Credenciales inválidas" },
         { status: 401 },
       );
     }
+
+    // Clear failed attempts on successful login
+    clearFailedAttempts(ip);
 
     // Generate tokens
     const accessToken = generateAccessToken({
