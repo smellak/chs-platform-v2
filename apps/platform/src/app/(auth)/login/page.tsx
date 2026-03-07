@@ -2,8 +2,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, User, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Lock, User, Eye, EyeOff, AlertCircle, ArrowRight, Loader2 } from "lucide-react";
 import Image from "next/image";
+
+// Generate deterministic particle data at module level so it's stable across renders
+const PARTICLES = Array.from({ length: 28 }, (_, i) => ({
+  left: `${(i * 37 + 13) % 100}%`,
+  bottom: `-${(i * 7) % 10}%`,
+  width: `${1 + ((i * 3) % 3)}px`,
+  height: `${1 + ((i * 3) % 3)}px`,
+  opacity: 0.3 + ((i * 13) % 5) * 0.1,
+  duration: `${10 + ((i * 7) % 16)}s`,
+  delay: `${((i * 3) % 15)}s`,
+}));
 
 export default function LoginPage() {
   const router = useRouter();
@@ -48,108 +59,170 @@ export default function LoginPage() {
 
   return (
     <div className="login-bg min-h-screen flex items-center justify-center p-4">
-      {/* Decorative particles */}
+      {/* Grid pattern overlay */}
+      <div className="fixed inset-0 login-grid-pattern pointer-events-none" />
+
+      {/* Animated particles — 28 like CHS */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-blue-400/20 animate-pulse" />
-        <div className="absolute top-3/4 right-1/3 w-1.5 h-1.5 rounded-full bg-blue-300/15 animate-pulse delay-700" />
-        <div className="absolute top-1/2 right-1/4 w-1 h-1 rounded-full bg-blue-400/25 animate-pulse delay-1000" />
+        {PARTICLES.map((p, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              left: p.left,
+              bottom: p.bottom,
+              width: p.width,
+              height: p.height,
+              backgroundColor: `rgba(66, 165, 245, ${p.opacity})`,
+              animation: `particleFloat ${p.duration} linear infinite`,
+              animationDelay: p.delay,
+            }}
+          />
+        ))}
       </div>
 
-      <div className="glass-card rounded-2xl p-8 w-full max-w-md relative z-10">
-        {/* Logo / Branding */}
-        <div className="text-center mb-8">
-          <div className="inline-block mb-4">
-            <Image src="/logo.svg" alt="Aleph Platform" width={180} height={45} priority />
-          </div>
-          <p className="text-blue-200/70 text-sm mt-1">Portal Corporativo</p>
-          {/* Decorative line */}
-          <div className="mx-auto mt-4 h-0.5 w-16 bg-gradient-to-r from-transparent via-blue-400 to-transparent" />
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
-            <p className="text-sm text-red-300">{error}</p>
-          </div>
-        )}
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="relative">
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-300/50" />
-            <input
-              type="text"
-              name="username"
-              placeholder="Nombre de usuario"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-blue-200/40 focus:outline-none focus:border-blue-400/50 focus:ring-1 focus:ring-blue-400/30 transition-all"
-              autoComplete="username"
+      {/* Login card — CHS glass styling */}
+      <div
+        className="relative z-10 w-full mx-4 animate-fade-in-up"
+        style={{ maxWidth: "420px" }}
+      >
+        <div
+          className="rounded-[20px]"
+          style={{
+            background: "rgba(10, 22, 40, 0.55)",
+            backdropFilter: "blur(40px)",
+            WebkitBackdropFilter: "blur(40px)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow:
+              "0 4px 24px rgba(0,0,0,0.3), 0 0 60px rgba(21,101,192,0.08), inset 0 1px 0 rgba(255,255,255,0.05)",
+            padding: "48px clamp(20px, 8vw, 40px) 40px",
+          }}
+        >
+          {/* Logo / Branding */}
+          <div className="text-center mb-8">
+            <div className="inline-block mb-2">
+              <Image
+                src="/chs-logo-white.png"
+                alt="Centro Hogar Sánchez"
+                width={220}
+                height={55}
+                priority
+                className="mx-auto"
+              />
+            </div>
+            {/* Decorative accent line */}
+            <div
+              className="mx-auto"
+              style={{
+                width: "40px",
+                height: "2px",
+                background:
+                  "linear-gradient(90deg, transparent, #42A5F5, transparent)",
+              }}
             />
           </div>
 
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-300/50" />
-            <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              placeholder="Contraseña"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-10 pr-12 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-blue-200/40 focus:outline-none focus:border-blue-400/50 focus:ring-1 focus:ring-blue-400/30 transition-all"
-              autoComplete="current-password"
-            />
+          {/* Error */}
+          {error && (
+            <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
+              <p className="text-sm text-red-300">{error}</p>
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Username */}
+            <div>
+              <label htmlFor="username" className="chs-login-label">
+                Usuario
+              </label>
+              <div className="relative">
+                <User
+                  className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4"
+                  style={{ color: "rgba(139, 163, 196, 0.5)" }}
+                />
+                <input
+                  id="username"
+                  type="text"
+                  name="username"
+                  placeholder="Nombre de usuario"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="chs-login-input chs-login-input-icon"
+                  autoComplete="username"
+                />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div>
+              <label htmlFor="password" className="chs-login-label">
+                Contraseña
+              </label>
+              <div className="relative">
+                <Lock
+                  className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4"
+                  style={{ color: "rgba(139, 163, 196, 0.5)" }}
+                />
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  placeholder="Contraseña"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="chs-login-input chs-login-input-icon chs-login-input-pw"
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="chs-eye-toggle"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Submit button */}
             <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-300/50 hover:text-blue-300 transition-colors"
+              type="submit"
+              disabled={loading}
+              className="chs-login-btn flex items-center justify-center gap-2"
             >
-              {showPassword ? (
-                <EyeOff className="h-4 w-4" />
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Iniciando sesión...
+                </>
               ) : (
-                <Eye className="h-4 w-4" />
+                <>
+                  Iniciar Sesión
+                  <ArrowRight className="h-4 w-4" />
+                </>
               )}
             </button>
-          </div>
+          </form>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
-          >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg
-                  className="animate-spin h-4 w-4"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                  />
-                </svg>
-                Iniciando sesión...
-              </span>
-            ) : (
-              "Iniciar Sesión"
-            )}
-          </button>
-        </form>
+          {/* Decorative line */}
+          <div
+            className="w-full my-6"
+            style={{
+              height: "1px",
+              background:
+                "linear-gradient(90deg, transparent, #42A5F5, transparent)",
+            }}
+          />
 
-        <p className="text-center text-blue-200/30 text-xs mt-6">
-          Aleph Platform v1.0
-        </p>
+          <p className="text-center text-blue-200/30 text-xs">
+            CHS Platform &copy; {new Date().getFullYear()}
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -72,7 +72,7 @@ HERRAMIENTAS DE ADMINISTRACIÓN DISPONIBLES:
 - toggle_mantenimiento_app: Poner o quitar apps en modo mantenimiento`
     : "";
 
-  return `Eres el Agente Aleph, el asistente inteligente de ${organization.name}.
+  return `Eres el Agente CHS, el asistente inteligente de ${organization.name}.
 Respondes siempre en español. Eres conciso, profesional, y útil.
 
 USUARIO ACTUAL:

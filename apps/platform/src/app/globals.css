@@ -22,9 +22,10 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --font-sans: "Open Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 3px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 }
@@ -34,8 +35,10 @@
   --foreground: 210 6% 13%;
   --card: 0 0% 100%;
   --card-foreground: 210 6% 13%;
+  --card-border: 210 4% 95%;
   --popover: 0 0% 99%;
   --popover-foreground: 210 6% 13%;
+  --popover-border: 210 4% 94%;
   --primary: 210 79% 46%;
   --primary-foreground: 0 0% 98%;
   --secondary: 210 6% 91%;
@@ -49,7 +52,27 @@
   --border: 210 4% 89%;
   --input: 210 6% 75%;
   --ring: 210 79% 46%;
-  --radius: 0.625rem;
+  --radius: 0.5625rem;
+
+  --button-outline: rgba(0,0,0, .10);
+  --badge-outline: rgba(0,0,0, .05);
+  --elevate-1: rgba(0,0,0, .03);
+  --elevate-2: rgba(0,0,0, .08);
+
+  --chart-1: 210 79% 46%;
+  --chart-2: 122 39% 49%;
+  --chart-3: 36 100% 50%;
+  --chart-4: 271 91% 65%;
+  --chart-5: 339 82% 52%;
+
+  --shadow-2xs: 0px 2px 0px 0px hsl(210 6% 13% / 0.00);
+  --shadow-xs: 0px 2px 0px 0px hsl(210 6% 13% / 0.00);
+  --shadow-sm: 0px 2px 0px 0px hsl(210 6% 13% / 0.00), 0px 1px 2px -1px hsl(210 6% 13% / 0.00);
+  --shadow: 0px 2px 0px 0px hsl(210 6% 13% / 0.00), 0px 1px 2px -1px hsl(210 6% 13% / 0.00);
+  --shadow-md: 0px 2px 0px 0px hsl(210 6% 13% / 0.00), 0px 2px 4px -1px hsl(210 6% 13% / 0.00);
+  --shadow-lg: 0px 2px 0px 0px hsl(210 6% 13% / 0.00), 0px 4px 6px -1px hsl(210 6% 13% / 0.00);
+  --shadow-xl: 0px 2px 0px 0px hsl(210 6% 13% / 0.00), 0px 8px 10px -1px hsl(210 6% 13% / 0.00);
+  --shadow-2xl: 0px 2px 0px 0px hsl(210 6% 13% / 0.00);
 }
 
 .dark {
@@ -57,8 +80,10 @@
   --foreground: 210 6% 93%;
   --card: 210 11% 17%;
   --card-foreground: 210 6% 93%;
+  --card-border: 210 8% 21%;
   --popover: 210 11% 20%;
   --popover-foreground: 210 6% 93%;
+  --popover-border: 210 8% 24%;
   --primary: 210 79% 46%;
   --primary-foreground: 0 0% 98%;
   --secondary: 210 10% 24%;
@@ -72,6 +97,26 @@
   --border: 210 8% 24%;
   --input: 210 8% 35%;
   --ring: 210 79% 46%;
+
+  --button-outline: rgba(255,255,255, .10);
+  --badge-outline: rgba(255,255,255, .05);
+  --elevate-1: rgba(255,255,255, .04);
+  --elevate-2: rgba(255,255,255, .09);
+
+  --chart-1: 210 79% 65%;
+  --chart-2: 122 39% 65%;
+  --chart-3: 36 100% 65%;
+  --chart-4: 271 91% 75%;
+  --chart-5: 339 82% 68%;
+
+  --shadow-2xs: 0px 2px 0px 0px hsl(210 6% 93% / 0.00);
+  --shadow-xs: 0px 2px 0px 0px hsl(210 6% 93% / 0.00);
+  --shadow-sm: 0px 2px 0px 0px hsl(210 6% 93% / 0.00), 0px 1px 2px -1px hsl(210 6% 93% / 0.00);
+  --shadow: 0px 2px 0px 0px hsl(210 6% 93% / 0.00), 0px 1px 2px -1px hsl(210 6% 93% / 0.00);
+  --shadow-md: 0px 2px 0px 0px hsl(210 6% 93% / 0.00), 0px 2px 4px -1px hsl(210 6% 93% / 0.00);
+  --shadow-lg: 0px 2px 0px 0px hsl(210 6% 93% / 0.00), 0px 4px 6px -1px hsl(210 6% 93% / 0.00);
+  --shadow-xl: 0px 2px 0px 0px hsl(210 6% 93% / 0.00), 0px 8px 10px -1px hsl(210 6% 93% / 0.00);
+  --shadow-2xl: 0px 2px 0px 0px hsl(210 6% 93% / 0.00);
 }
 
 @layer base {
@@ -83,23 +128,109 @@
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-sans);
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
 }
 
+/* ============================================
+   HERO GRADIENT — matches CHS exactly
+   ============================================ */
 .hero-gradient {
-  background: linear-gradient(135deg, #0D47A1 0%, #1565C0 25%, #1976D2 50%, #1A237E 100%);
+  background: linear-gradient(135deg, #0D47A1 0%, #1565C0 50%, #1976D2 100%);
 }
 
+/* ============================================
+   LOGIN BACKGROUND
+   ============================================ */
 .login-bg {
-  background: radial-gradient(ellipse at 20% 50%, #0d2847 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, #134a8a 0%, transparent 40%),
-    radial-gradient(ellipse at 50% 80%, #0d2847 0%, transparent 45%),
-    linear-gradient(180deg, #0a1628 0%, #0d1b2e 100%);
+  background:
+    radial-gradient(ellipse at 30% 20%, #134a8a 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, #0d2847 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, #0d2847 0%, #0a1628 70%),
+    #0a1628;
+  animation: loginBgPulse 15s ease infinite;
 }
 
+.login-grid-pattern {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* ============================================
+   GLASSMORPHISM — matches CHS exactly
+   ============================================ */
 .glass-card {
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-card-strong {
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* ============================================
+   KEYFRAME ANIMATIONS — from CHS
+   ============================================ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(33, 150, 243, 0.15); }
+  50% { box-shadow: 0 0 40px rgba(33, 150, 243, 0.3); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes particleFloat {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-100vh) translateX(20px); opacity: 0; }
+}
+
+@keyframes loginBgPulse {
+  0%, 100% { filter: brightness(1) hue-rotate(0deg); }
+  50% { filter: brightness(1.05) hue-rotate(5deg); }
 }
 
 @keyframes pulse-dot {
@@ -107,6 +238,247 @@
   50% { opacity: 0.5; }
 }
 
+/* ============================================
+   ANIMATION CLASSES — from CHS
+   ============================================ */
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.4s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.4s ease-out forwards;
+  opacity: 0;
+}
+
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+.stagger-7 { animation-delay: 0.35s; }
+.stagger-8 { animation-delay: 0.4s; }
+
+.gradient-animate {
+  background-size: 200% 200%;
+  animation: gradientShift 8s ease infinite;
+}
+
 .status-dot-pulse {
   animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* ============================================
+   APP CARD HOVER — from CHS
+   ============================================ */
+.app-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.app-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.app-card-icon {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.app-card:hover .app-card-icon {
+  transform: scale(1.08);
+}
+
+/* ============================================
+   TEXT GRADIENT — from CHS
+   ============================================ */
+.text-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.8) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================
+   DOT PATTERN — from CHS
+   ============================================ */
+.dot-pattern {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* ============================================
+   LOGIN FORM CLASSES — from CHS
+   ============================================ */
+.chs-login-input {
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 14px 16px;
+  transition: all 0.25s ease;
+  width: 100%;
+}
+
+.chs-login-input:focus {
+  border-color: #1976D2;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.4);
+  background: rgba(255, 255, 255, 0.09);
+  outline: none;
+}
+
+.chs-login-input::placeholder {
+  color: rgba(139, 163, 196, 0.5);
+}
+
+.chs-login-input-icon {
+  padding-left: 44px;
+}
+
+.chs-login-input-pw {
+  padding-right: 44px;
+}
+
+.chs-login-btn {
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: linear-gradient(135deg, #1565C0, #1976D2);
+  border: 1px solid rgba(21, 101, 192, 0.6);
+  border-radius: 10px;
+  padding: 15px;
+  min-height: 48px;
+  width: 100%;
+  cursor: pointer;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.chs-login-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(21, 101, 192, 0.35);
+}
+
+.chs-login-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.chs-login-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chs-login-label {
+  font-family: Inter, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #8ba3c4;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.chs-eye-toggle {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.4);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  padding: 4px;
+}
+
+.chs-eye-toggle:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ============================================
+   ELEVATION SYSTEM — from CHS
+   ============================================ */
+@layer utilities {
+  input[type="search"]::-webkit-search-cancel-button {
+    @apply hidden;
+  }
+
+  [contenteditable][data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: hsl(var(--muted-foreground));
+    pointer-events: none;
+  }
+
+  .no-default-hover-elevate {}
+  .no-default-active-elevate {}
+
+  .toggle-elevate::before,
+  .toggle-elevate-2::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    border-radius: inherit;
+    z-index: -1;
+  }
+
+  .toggle-elevate.toggle-elevated::before {
+    background-color: var(--elevate-2);
+  }
+
+  .border.toggle-elevate::before {
+    inset: -1px;
+  }
+
+  .hover-elevate:not(.no-default-hover-elevate),
+  .active-elevate:not(.no-default-active-elevate),
+  .hover-elevate-2:not(.no-default-hover-elevate),
+  .active-elevate-2:not(.no-default-active-elevate) {
+    position: relative;
+    z-index: 0;
+  }
+
+  .hover-elevate:not(.no-default-hover-elevate)::after,
+  .active-elevate:not(.no-default-active-elevate)::after,
+  .hover-elevate-2:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:not(.no-default-active-elevate)::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    border-radius: inherit;
+    z-index: 999;
+  }
+
+  .hover-elevate:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-1);
+  }
+
+  .hover-elevate-2:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-2);
+  }
+
+  .border.hover-elevate:not(.no-default-hover-elevate)::after,
+  .border.active-elevate:not(.no-default-active-elevate)::after,
+  .border.hover-elevate-2:not(.no-default-hover-elevate)::after,
+  .border.active-elevate-2:not(.no-default-active-elevate)::after {
+    inset: -1px;
+  }
 }

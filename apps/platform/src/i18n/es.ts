@@ -303,7 +303,7 @@ export const es = {
     darkMode: "Modo oscuro",
   },
   agent: {
-    title: "Agente Aleph",
+    title: "Agente CHS",
     subtitle: "Asistente inteligente",
     newConversation: "Nueva conversación",
     close: "Cerrar",

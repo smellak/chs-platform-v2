@@ -26,7 +26,7 @@ export default async function DashboardLayout({
   }
 
   // Fetch organization name from DB
-  let orgName = "Aleph Platform";
+  let orgName = "Centro Hogar Sánchez";
   try {
     const db = getDb();
     const [org] = await db.select({ name: schema.organizations.name }).from(schema.organizations).limit(1);

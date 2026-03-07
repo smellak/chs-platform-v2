@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function GET(): Promise<NextResponse> {
   return NextResponse.json({
-    platform: "Aleph",
+    platform: "CHS",
     version: "0.1.0",
     headers: {
       "X-Aleph-User-Id": "UUID del usuario",

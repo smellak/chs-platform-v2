@@ -13,11 +13,11 @@ export function AgentButton({ onClick, hasActiveConversation }: AgentButtonProps
     <Button
       onClick={onClick}
       size="icon"
-      aria-label="Agente Aleph"
+      aria-label="Agente CHS"
       data-testid="agent-button"
       className="fixed bottom-6 right-6 z-[900] h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-200"
       style={{
-        background: "linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)",
+        background: "linear-gradient(135deg, #1565C0 0%, #0D47A1 100%)",
         border: "1px solid rgba(255,255,255,0.15)",
       }}
     >

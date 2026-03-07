@@ -305,7 +305,7 @@ export const en: TranslationKeys = {
     darkMode: "Dark mode",
   },
   agent: {
-    title: "Aleph Agent",
+    title: "CHS Agent",
     subtitle: "Intelligent assistant",
     newConversation: "New conversation",
     close: "Close",

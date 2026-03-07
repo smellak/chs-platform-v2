@@ -192,12 +192,12 @@ export function AgentPanel({ open, onClose, userName, userInitials, isSuperAdmin
               <div className="flex items-center gap-2">
                 <div
                   className="h-8 w-8 rounded-lg flex items-center justify-center"
-                  style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)" }}
+                  style={{ background: "linear-gradient(135deg, #1565C0, #0D47A1)" }}
                 >
                   <Sparkles className="h-4 w-4 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-semibold">Agente Aleph</h2>
+                  <h2 className="text-sm font-semibold">Agente CHS</h2>
                   <p className="text-[10px] text-muted-foreground">Asistente inteligente</p>
                 </div>
               </div>
@@ -246,7 +246,7 @@ export function AgentPanel({ open, onClose, userName, userInitials, isSuperAdmin
                     <div className="text-center mb-6">
                       <div
                         className="h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3"
-                        style={{ background: "linear-gradient(135deg, #4F46E5, #7C3AED)" }}
+                        style={{ background: "linear-gradient(135deg, #1565C0, #0D47A1)" }}
                       >
                         <Sparkles className="h-6 w-6 text-white" />
                       </div>

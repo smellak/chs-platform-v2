@@ -1,15 +1,20 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Open_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/lib/theme-provider";
 
 const inter = Inter({
-  variable: "--font-inter",
+  variable: "--font-heading",
+  subsets: ["latin"],
+});
+
+const openSans = Open_Sans({
+  variable: "--font-sans",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Aleph Platform",
+  title: "CHS Platform",
   description: "Plataforma de gestión de aplicaciones internas con IA",
   icons: { icon: "/favicon.svg" },
 };
@@ -21,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${inter.variable} antialiased`}>
+      <body className={`${openSans.variable} ${inter.variable} antialiased`}>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
