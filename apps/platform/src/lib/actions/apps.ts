@@ -1,0 +1,183 @@
+"use server";
+
+import { z } from "zod";
+import { eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
+import { getDb, schema } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
+
+const appSchema = z.object({
+  name: z.string().min(1),
+  slug: z.string().min(1),
+  description: z.string().optional(),
+  icon: z.string().optional(),
+  color: z.string().optional(),
+  category: z.string().optional(),
+  version: z.string().optional(),
+  isActive: z.boolean().optional(),
+  isMaintenance: z.boolean().optional(),
+});
+
+const instanceSchema = z.object({
+  internalUrl: z.string().optional(),
+  externalDomain: z.string().optional(),
+  healthEndpoint: z.string().optional(),
+  publicPaths: z.string().optional(),
+});
+
+interface ActionResult {
+  success: boolean;
+  error?: string;
+}
+
+export async function createApp(formData: FormData): Promise<ActionResult> {
+  const currentUser = await getCurrentUser();
+  if (!currentUser?.isSuperAdmin) return { success: false, error: "No autorizado" };
+
+  const parsed = appSchema.safeParse({
+    name: formData.get("name"),
+    slug: formData.get("slug"),
+    description: formData.get("description") || undefined,
+    icon: formData.get("icon") || undefined,
+    color: formData.get("color") || undefined,
+    category: formData.get("category") || undefined,
+    version: formData.get("version") || "1.0",
+    isActive: formData.get("isActive") !== "false",
+    isMaintenance: formData.get("isMaintenance") === "true",
+  });
+
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
+
+  const db = getDb();
+  const orgs = await db.select().from(schema.organizations).limit(1);
+  const orgId = orgs[0]?.id;
+  if (!orgId) return { success: false, error: "Organización no encontrada" };
+
+  try {
+    const [app] = await db.insert(schema.apps).values({ ...parsed.data, orgId }).returning();
+    if (!app) return { success: false, error: "Error creando app" };
+
+    // Create instance if URL provided
+    const internalUrl = formData.get("internalUrl") as string | null;
+    if (internalUrl) {
+      const publicPathsRaw = (formData.get("publicPaths") as string | null) ?? "";
+      const publicPaths = publicPathsRaw.split("\n").map((p) => p.trim()).filter(Boolean);
+
+      await db.insert(schema.appInstances).values({
+        appId: app.id,
+        internalUrl,
+        externalDomain: (formData.get("externalDomain") as string | null) ?? undefined,
+        healthEndpoint: (formData.get("healthEndpoint") as string | null) ?? "/api/health",
+        publicPaths,
+      });
+    }
+
+    // Handle access policies
+    const accessEntries = formData.getAll("access");
+    for (const entry of accessEntries) {
+      const [deptId, level] = String(entry).split(":");
+      if (deptId && level) {
+        await db.insert(schema.appAccessPolicies).values({
+          appId: app.id,
+          departmentId: deptId,
+          accessLevel: level,
+        });
+      }
+    }
+
+    await db.insert(schema.activityLogs).values({
+      orgId, userId: currentUser.id, action: "app.create",
+      entityType: "app", entityId: app.id, details: { name: app.name },
+    });
+
+    revalidatePath("/admin/apps");
+    return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Error";
+    return { success: false, error: msg.includes("unique") ? "El slug ya existe" : msg };
+  }
+}
+
+export async function updateApp(formData: FormData): Promise<ActionResult> {
+  const currentUser = await getCurrentUser();
+  if (!currentUser?.isSuperAdmin) return { success: false, error: "No autorizado" };
+
+  const id = formData.get("id") as string;
+  if (!id) return { success: false, error: "ID requerido" };
+
+  const parsed = appSchema.safeParse({
+    name: formData.get("name"),
+    slug: formData.get("slug"),
+    description: formData.get("description") || undefined,
+    icon: formData.get("icon") || undefined,
+    color: formData.get("color") || undefined,
+    category: formData.get("category") || undefined,
+    version: formData.get("version") || undefined,
+    isActive: formData.get("isActive") !== "false",
+    isMaintenance: formData.get("isMaintenance") === "true",
+  });
+
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
+
+  const db = getDb();
+
+  try {
+    await db.update(schema.apps).set({ ...parsed.data, updatedAt: new Date() }).where(eq(schema.apps.id, id));
+
+    // Update instance
+    const internalUrl = formData.get("internalUrl") as string | null;
+    if (internalUrl) {
+      const publicPathsRaw = (formData.get("publicPaths") as string | null) ?? "";
+      const publicPaths = publicPathsRaw.split("\n").map((p) => p.trim()).filter(Boolean);
+
+      const existing = await db.select().from(schema.appInstances).where(eq(schema.appInstances.appId, id)).limit(1);
+      if (existing[0]) {
+        await db.update(schema.appInstances).set({
+          internalUrl,
+          externalDomain: (formData.get("externalDomain") as string | null) ?? undefined,
+          healthEndpoint: (formData.get("healthEndpoint") as string | null) ?? "/api/health",
+          publicPaths,
+        }).where(eq(schema.appInstances.appId, id));
+      } else {
+        await db.insert(schema.appInstances).values({
+          appId: id, internalUrl,
+          externalDomain: (formData.get("externalDomain") as string | null) ?? undefined,
+          healthEndpoint: (formData.get("healthEndpoint") as string | null) ?? "/api/health",
+          publicPaths,
+        });
+      }
+    }
+
+    // Rebuild access policies
+    const accessEntries = formData.getAll("access");
+    if (accessEntries.length > 0) {
+      await db.delete(schema.appAccessPolicies).where(eq(schema.appAccessPolicies.appId, id));
+      for (const entry of accessEntries) {
+        const [deptId, level] = String(entry).split(":");
+        if (deptId && level) {
+          await db.insert(schema.appAccessPolicies).values({
+            appId: id, departmentId: deptId, accessLevel: level,
+          });
+        }
+      }
+    }
+
+    // Check if app was put in maintenance and notify
+    if (parsed.data.isMaintenance) {
+      const orgs = await db.select().from(schema.organizations).limit(1);
+      if (orgs[0]) {
+        await db.insert(schema.notifications).values({
+          orgId: orgs[0].id,
+          title: "App en mantenimiento",
+          message: `${parsed.data.name} ha sido puesta en mantenimiento`,
+          type: "warning",
+        });
+      }
+    }
+
+    revalidatePath("/admin/apps");
+    return { success: true };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Error" };
+  }
+}

@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import type { AuthUser } from "@/lib/types";
+import { NotificationBell } from "@/components/notification-bell";
 
 interface NavbarProps {
   user: AuthUser;
@@ -44,13 +45,6 @@ export function Navbar({ user }: NavbarProps) {
 
   function getInitials(): string {
     return `${user.firstName[0] ?? ""}${user.lastName[0] ?? ""}`.toUpperCase();
-  }
-
-  function getGreeting(): string {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Buenos días";
-    if (hour < 20) return "Buenas tardes";
-    return "Buenas noches";
   }
 
   return (
@@ -98,7 +92,27 @@ export function Navbar({ user }: NavbarProps) {
           </div>
 
           {/* Right side */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            {/* Cmd+K hint */}
+            <button
+              onClick={() =>
+                document.dispatchEvent(
+                  new KeyboardEvent("keydown", {
+                    key: "k",
+                    metaKey: true,
+                  }),
+                )
+              }
+              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-blue-200/60 hover:bg-white/10 transition-colors"
+            >
+              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-[10px] font-mono">
+                ⌘K
+              </kbd>
+            </button>
+
+            {/* Notifications */}
+            <NotificationBell />
+
             {/* Theme toggle */}
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -215,9 +229,6 @@ export function Navbar({ user }: NavbarProps) {
               </button>
             );
           })}
-          <div className="text-xs text-blue-200/50 px-4 py-2">
-            {getGreeting()}, {user.firstName}
-          </div>
         </div>
       )}
     </nav>

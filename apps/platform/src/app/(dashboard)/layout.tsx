@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { Navbar } from "@/components/navbar";
+import { Toaster } from "@/components/ui/toaster";
+import { CommandPalette } from "@/components/command-palette";
 
 export default async function DashboardLayout({
   children,
@@ -17,6 +19,8 @@ export default async function DashboardLayout({
     <div className="min-h-screen bg-background">
       <Navbar user={user} />
       <main>{children}</main>
+      <Toaster />
+      <CommandPalette isSuperAdmin={user.isSuperAdmin} />
     </div>
   );
 }
