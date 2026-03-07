@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Trash2, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +50,37 @@ interface AppAccess {
   departmentName: string;
 }
 
+interface CapabilityParameter {
+  name: string;
+  type: string;
+  required: boolean;
+  description: string;
+  enumValues: string;
+}
+
+interface Capability {
+  name: string;
+  description: string;
+  parameters: CapabilityParameter[];
+}
+
+interface AppAgent {
+  name: string;
+  description: string;
+  endpoint: string;
+  capabilities: Array<{
+    name: string;
+    description: string;
+    parameters: Array<{
+      name: string;
+      type: string;
+      required: boolean;
+      description: string;
+      enumValues?: string[];
+    }>;
+  }>;
+}
+
 interface AppRow {
   id: string;
   name: string;
@@ -63,6 +94,7 @@ interface AppRow {
   isMaintenance: boolean;
   instance: AppInstance | null;
   access: AppAccess[];
+  agent: AppAgent | null;
 }
 
 interface AppsClientProps {
@@ -81,6 +113,11 @@ export function AppsClient({ apps, departments }: AppsClientProps) {
   const [accessMap, setAccessMap] = useState<Record<string, string>>({});
   const [yamlPreview, setYamlPreview] = useState<string | null>(null);
   const [connectivityResult, setConnectivityResult] = useState<string | null>(null);
+  const [agentEnabled, setAgentEnabled] = useState(false);
+  const [agentName, setAgentName] = useState("");
+  const [agentDescription, setAgentDescription] = useState("");
+  const [agentEndpoint, setAgentEndpoint] = useState("");
+  const [capabilities, setCapabilities] = useState<Capability[]>([]);
 
   const filtered = apps.filter(
     (a) =>
@@ -93,6 +130,11 @@ export function AppsClient({ apps, departments }: AppsClientProps) {
     setName("");
     setSlug("");
     setAccessMap({});
+    setAgentEnabled(false);
+    setAgentName("");
+    setAgentDescription("");
+    setAgentEndpoint("");
+    setCapabilities([]);
     setDialogOpen(true);
   }
 
@@ -105,6 +147,31 @@ export function AppsClient({ apps, departments }: AppsClientProps) {
       am[a.departmentId] = a.accessLevel;
     }
     setAccessMap(am);
+    if (app.agent) {
+      setAgentEnabled(true);
+      setAgentName(app.agent.name);
+      setAgentDescription(app.agent.description);
+      setAgentEndpoint(app.agent.endpoint);
+      setCapabilities(
+        app.agent.capabilities.map((cap) => ({
+          name: cap.name,
+          description: cap.description,
+          parameters: cap.parameters.map((p) => ({
+            name: p.name,
+            type: p.type,
+            required: p.required,
+            description: p.description,
+            enumValues: p.enumValues ? p.enumValues.join(", ") : "",
+          })),
+        })),
+      );
+    } else {
+      setAgentEnabled(false);
+      setAgentName("");
+      setAgentDescription("");
+      setAgentEndpoint("");
+      setCapabilities([]);
+    }
     setDialogOpen(true);
   }
 
@@ -124,10 +191,117 @@ export function AppsClient({ apps, departments }: AppsClientProps) {
     setAccessMap((prev) => ({ ...prev, [deptId]: level }));
   }
 
+  function addCapability() {
+    setCapabilities((prev) => [
+      ...prev,
+      { name: "", description: "", parameters: [] },
+    ]);
+  }
+
+  function removeCapability(index: number) {
+    setCapabilities((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function updateCapability(
+    index: number,
+    field: keyof Omit<Capability, "parameters">,
+    value: string,
+  ) {
+    setCapabilities((prev) =>
+      prev.map((cap, i) => (i === index ? { ...cap, [field]: value } : cap)),
+    );
+  }
+
+  function addParameter(capIndex: number) {
+    setCapabilities((prev) =>
+      prev.map((cap, i) =>
+        i === capIndex
+          ? {
+              ...cap,
+              parameters: [
+                ...cap.parameters,
+                {
+                  name: "",
+                  type: "string",
+                  required: false,
+                  description: "",
+                  enumValues: "",
+                },
+              ],
+            }
+          : cap,
+      ),
+    );
+  }
+
+  function removeParameter(capIndex: number, paramIndex: number) {
+    setCapabilities((prev) =>
+      prev.map((cap, i) =>
+        i === capIndex
+          ? {
+              ...cap,
+              parameters: cap.parameters.filter((_, j) => j !== paramIndex),
+            }
+          : cap,
+      ),
+    );
+  }
+
+  function updateParameter(
+    capIndex: number,
+    paramIndex: number,
+    field: keyof CapabilityParameter,
+    value: string | boolean,
+  ) {
+    setCapabilities((prev) =>
+      prev.map((cap, i) =>
+        i === capIndex
+          ? {
+              ...cap,
+              parameters: cap.parameters.map((p, j) =>
+                j === paramIndex ? { ...p, [field]: value } : p,
+              ),
+            }
+          : cap,
+      ),
+    );
+  }
+
   async function handleSubmit(formData: FormData) {
     // Add access entries
     for (const [deptId, level] of Object.entries(accessMap)) {
       formData.append("access", `${deptId}:${level}`);
+    }
+
+    // Add agent data
+    formData.append("agentEnabled", agentEnabled ? "true" : "false");
+    if (agentEnabled) {
+      formData.append("agentName", agentName);
+      formData.append("agentDescription", agentDescription);
+      formData.append("agentEndpoint", agentEndpoint);
+      formData.append(
+        "agentCapabilities",
+        JSON.stringify(
+          capabilities.map((cap) => ({
+            name: cap.name,
+            description: cap.description,
+            parameters: cap.parameters.map((p) => ({
+              name: p.name,
+              type: p.type,
+              required: p.required,
+              description: p.description,
+              ...(p.type === "enum" && p.enumValues
+                ? {
+                    enumValues: p.enumValues
+                      .split(",")
+                      .map((v) => v.trim())
+                      .filter(Boolean),
+                  }
+                : {}),
+            })),
+          })),
+        ),
+      );
     }
 
     const result = editing
@@ -523,12 +697,267 @@ export function AppsClient({ apps, departments }: AppsClientProps) {
               </TabsContent>
 
               <TabsContent value="agent" className="space-y-4">
-                <div className="rounded-lg border border-border p-6 text-center">
-                  <p className="text-muted-foreground text-sm">
-                    La configuración de agentes IA se activará en una versión
-                    futura.
-                  </p>
+                <div className="flex items-center justify-between rounded-lg border border-border p-4">
+                  <div>
+                    <Label htmlFor="agentEnabled" className="text-sm font-medium">
+                      Habilitar Agente IA
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Activa un agente de inteligencia artificial para esta
+                      aplicación.
+                    </p>
+                  </div>
+                  <Switch
+                    id="agentEnabled"
+                    checked={agentEnabled}
+                    onCheckedChange={setAgentEnabled}
+                  />
                 </div>
+
+                {agentEnabled && (
+                  <div className="space-y-4">
+                    <div className="rounded-lg border border-border p-4 space-y-4">
+                      <h3 className="text-sm font-semibold">
+                        Configuración del Agente
+                      </h3>
+                      <div>
+                        <Label htmlFor="agentName" className="text-sm">
+                          Nombre del agente
+                        </Label>
+                        <Input
+                          id="agentName"
+                          value={agentName}
+                          onChange={(e) => setAgentName(e.target.value)}
+                          placeholder="Agente de Citas"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="agentDescription" className="text-sm">
+                          Descripción
+                        </Label>
+                        <Textarea
+                          id="agentDescription"
+                          value={agentDescription}
+                          onChange={(e) => setAgentDescription(e.target.value)}
+                          placeholder="Gestiona citas y reservas"
+                          rows={3}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="agentEndpoint" className="text-sm">
+                          Endpoint del agente
+                        </Label>
+                        <Input
+                          id="agentEndpoint"
+                          value={agentEndpoint}
+                          onChange={(e) => setAgentEndpoint(e.target.value)}
+                          placeholder="http://citas:3000/api/agent"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg border border-border p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Wrench className="h-4 w-4 text-muted-foreground" />
+                          <h3 className="text-sm font-semibold">
+                            Capacidades
+                          </h3>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={addCapability}
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Agregar capacidad
+                        </Button>
+                      </div>
+
+                      {capabilities.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          No hay capacidades configuradas. Agrega una para
+                          definir lo que el agente puede hacer.
+                        </p>
+                      )}
+
+                      {capabilities.map((cap, capIndex) => (
+                        <div
+                          key={capIndex}
+                          className="rounded-lg border border-border p-4 space-y-3"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 space-y-3">
+                              <div>
+                                <Label className="text-sm">
+                                  Nombre de la capacidad
+                                </Label>
+                                <Input
+                                  value={cap.name}
+                                  onChange={(e) =>
+                                    updateCapability(
+                                      capIndex,
+                                      "name",
+                                      e.target.value,
+                                    )
+                                  }
+                                  placeholder="crearCita"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-sm">Descripción</Label>
+                                <Input
+                                  value={cap.description}
+                                  onChange={(e) =>
+                                    updateCapability(
+                                      capIndex,
+                                      "description",
+                                      e.target.value,
+                                    )
+                                  }
+                                  placeholder="Crea una nueva cita en el sistema"
+                                />
+                              </div>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => removeCapability(capIndex)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label className="text-sm text-muted-foreground">
+                                Parámetros
+                              </Label>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => addParameter(capIndex)}
+                              >
+                                <Plus className="h-3 w-3 mr-1" />
+                                Agregar parámetro
+                              </Button>
+                            </div>
+
+                            {cap.parameters.map((param, paramIndex) => (
+                              <div
+                                key={paramIndex}
+                                className="rounded border border-border p-3 space-y-2 bg-muted/30"
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1 grid grid-cols-2 gap-2">
+                                    <div>
+                                      <Label className="text-sm">Nombre</Label>
+                                      <Input
+                                        value={param.name}
+                                        onChange={(e) =>
+                                          updateParameter(
+                                            capIndex,
+                                            paramIndex,
+                                            "name",
+                                            e.target.value,
+                                          )
+                                        }
+                                        placeholder="fecha"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label className="text-sm">Tipo</Label>
+                                      <select
+                                        value={param.type}
+                                        onChange={(e) =>
+                                          updateParameter(
+                                            capIndex,
+                                            paramIndex,
+                                            "type",
+                                            e.target.value,
+                                          )
+                                        }
+                                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                      >
+                                        <option value="string">string</option>
+                                        <option value="number">number</option>
+                                        <option value="boolean">boolean</option>
+                                        <option value="enum">enum</option>
+                                      </select>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-destructive hover:text-destructive mt-5"
+                                    onClick={() =>
+                                      removeParameter(capIndex, paramIndex)
+                                    }
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                                <div>
+                                  <Label className="text-sm">Descripción</Label>
+                                  <Input
+                                    value={param.description}
+                                    onChange={(e) =>
+                                      updateParameter(
+                                        capIndex,
+                                        paramIndex,
+                                        "description",
+                                        e.target.value,
+                                      )
+                                    }
+                                    placeholder="Fecha de la cita en formato YYYY-MM-DD"
+                                  />
+                                </div>
+                                {param.type === "enum" && (
+                                  <div>
+                                    <Label className="text-sm">
+                                      Valores enum (separados por coma)
+                                    </Label>
+                                    <Input
+                                      value={param.enumValues}
+                                      onChange={(e) =>
+                                        updateParameter(
+                                          capIndex,
+                                          paramIndex,
+                                          "enumValues",
+                                          e.target.value,
+                                        )
+                                      }
+                                      placeholder="opcion1, opcion2, opcion3"
+                                    />
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-2">
+                                  <Checkbox
+                                    checked={param.required}
+                                    onCheckedChange={(checked) =>
+                                      updateParameter(
+                                        capIndex,
+                                        paramIndex,
+                                        "required",
+                                        !!checked,
+                                      )
+                                    }
+                                  />
+                                  <Label className="text-sm">Requerido</Label>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
 

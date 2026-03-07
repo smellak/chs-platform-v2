@@ -85,6 +85,37 @@ export async function createApp(formData: FormData): Promise<ActionResult> {
       }
     }
 
+    // Handle agent registration
+    const agentEnabled = formData.get("agentEnabled") === "true";
+    if (agentEnabled) {
+      const agentName = (formData.get("agentName") as string) ?? "";
+      const agentDescription = (formData.get("agentDescription") as string) ?? "";
+      const agentEndpoint = (formData.get("agentEndpoint") as string) ?? "";
+      const capabilitiesRaw = (formData.get("agentCapabilities") as string) ?? "[]";
+      const rawCapabilities = JSON.parse(capabilitiesRaw) as Array<{
+        name: string;
+        description: string;
+        parameters: Array<{ name: string; type: string; required: boolean; description: string; enumValues?: string[] }>;
+      }>;
+      const capabilities = rawCapabilities.map((cap) => ({
+        name: cap.name,
+        description: cap.description,
+        requiredPermission: "",
+        parameters: Object.fromEntries(
+          cap.parameters.map((p) => [p.name, { type: p.type, required: p.required, description: p.description, enumValues: p.enumValues }]),
+        ) as Record<string, unknown>,
+      }));
+
+      await db.insert(schema.appAgents).values({
+        appId: app.id,
+        name: agentName,
+        description: agentDescription,
+        endpoint: agentEndpoint,
+        capabilities,
+        isActive: true,
+      });
+    }
+
     await db.insert(schema.activityLogs).values({
       orgId, userId: currentUser.id, action: "app.create",
       entityType: "app", entityId: app.id, details: { name: app.name },
@@ -160,6 +191,51 @@ export async function updateApp(formData: FormData): Promise<ActionResult> {
           });
         }
       }
+    }
+
+    // Handle agent registration
+    const agentEnabled = formData.get("agentEnabled") === "true";
+    const existingAgent = await db.select().from(schema.appAgents).where(eq(schema.appAgents.appId, id)).limit(1);
+
+    if (agentEnabled) {
+      const agentName = (formData.get("agentName") as string) ?? "";
+      const agentDescription = (formData.get("agentDescription") as string) ?? "";
+      const agentEndpoint = (formData.get("agentEndpoint") as string) ?? "";
+      const capabilitiesRaw = (formData.get("agentCapabilities") as string) ?? "[]";
+      const rawCapabilities = JSON.parse(capabilitiesRaw) as Array<{
+        name: string;
+        description: string;
+        parameters: Array<{ name: string; type: string; required: boolean; description: string; enumValues?: string[] }>;
+      }>;
+      const capabilities = rawCapabilities.map((cap) => ({
+        name: cap.name,
+        description: cap.description,
+        requiredPermission: "",
+        parameters: Object.fromEntries(
+          cap.parameters.map((p) => [p.name, { type: p.type, required: p.required, description: p.description, enumValues: p.enumValues }]),
+        ) as Record<string, unknown>,
+      }));
+
+      if (existingAgent[0]) {
+        await db.update(schema.appAgents).set({
+          name: agentName,
+          description: agentDescription,
+          endpoint: agentEndpoint,
+          capabilities,
+          isActive: true,
+        }).where(eq(schema.appAgents.appId, id));
+      } else {
+        await db.insert(schema.appAgents).values({
+          appId: id,
+          name: agentName,
+          description: agentDescription,
+          endpoint: agentEndpoint,
+          capabilities,
+          isActive: true,
+        });
+      }
+    } else if (existingAgent[0]) {
+      await db.update(schema.appAgents).set({ isActive: false }).where(eq(schema.appAgents.appId, id));
     }
 
     // Check if app was put in maintenance and notify

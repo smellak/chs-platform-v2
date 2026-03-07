@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
@@ -16,17 +16,41 @@ import {
   User,
   Sun,
   Moon,
+  Sparkles,
+  Search,
 } from "lucide-react";
 import { Command } from "cmdk";
+
+interface SearchResult {
+  type: "user" | "app" | "department";
+  id: string;
+  name: string;
+  detail: string;
+}
 
 interface CommandPaletteProps {
   isSuperAdmin: boolean;
 }
 
+const searchResultRoutes: Record<SearchResult["type"], string> = {
+  user: "/admin/users",
+  app: "/admin/apps",
+  department: "/admin/departments",
+};
+
+const searchResultIcons: Record<SearchResult["type"], typeof Users> = {
+  user: Users,
+  app: AppWindow,
+  department: Building2,
+};
+
 export function CommandPalette({ isSuperAdmin }: CommandPaletteProps) {
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -39,6 +63,42 @@ export function CommandPalette({ isSuperAdmin }: CommandPaletteProps) {
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
+
+  useEffect(() => {
+    if (!open) {
+      setSearchQuery("");
+      setSearchResults([]);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    debounceTimerRef.current = setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery.trim())}`);
+        if (response.ok) {
+          const data: { results: SearchResult[] } = await response.json();
+          setSearchResults(data.results);
+        }
+      } catch {
+        setSearchResults([]);
+      }
+    }, 300);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [searchQuery]);
 
   function navigate(path: string) {
     router.push(path);
@@ -59,11 +119,16 @@ export function CommandPalette({ isSuperAdmin }: CommandPaletteProps) {
         onClick={() => setOpen(false)}
       />
       <div className="fixed top-[20%] left-1/2 -translate-x-1/2 w-full max-w-lg">
-        <Command className="bg-popover text-popover-foreground rounded-xl border border-border shadow-2xl overflow-hidden">
+        <Command
+          className="bg-popover text-popover-foreground rounded-xl border border-border shadow-2xl overflow-hidden"
+          onValueChange={() => {}}
+        >
           <Command.Input
             placeholder="Buscar acciones, apps, páginas..."
             className="w-full px-4 py-3 text-sm bg-transparent border-b border-border outline-none placeholder:text-muted-foreground"
             autoFocus
+            value={searchQuery}
+            onValueChange={setSearchQuery}
           />
           <Command.List className="max-h-72 overflow-y-auto p-2">
             <Command.Empty className="py-6 text-center text-sm text-muted-foreground">
@@ -152,6 +217,16 @@ export function CommandPalette({ isSuperAdmin }: CommandPaletteProps) {
               className="text-xs text-muted-foreground px-2 py-1.5"
             >
               <Command.Item
+                onSelect={() => {
+                  setOpen(false);
+                  document.dispatchEvent(new KeyboardEvent("keydown", { key: "j", ctrlKey: true }));
+                }}
+                className="flex items-center gap-2 px-2 py-2 rounded-lg text-sm cursor-pointer data-[selected=true]:bg-accent"
+              >
+                <Sparkles className="h-4 w-4" />
+                Preguntar al agente (⌘J)
+              </Command.Item>
+              <Command.Item
                 onSelect={toggleTheme}
                 className="flex items-center gap-2 px-2 py-2 rounded-lg text-sm cursor-pointer data-[selected=true]:bg-accent"
               >
@@ -163,6 +238,28 @@ export function CommandPalette({ isSuperAdmin }: CommandPaletteProps) {
                 {theme === "dark" ? "Modo claro" : "Modo oscuro"}
               </Command.Item>
             </Command.Group>
+
+            {searchResults.length > 0 && (
+              <Command.Group
+                heading="Resultados de búsqueda"
+                className="text-xs text-muted-foreground px-2 py-1.5"
+              >
+                {searchResults.map((result) => {
+                  const Icon = searchResultIcons[result.type];
+                  return (
+                    <Command.Item
+                      key={`${result.type}-${result.id}`}
+                      onSelect={() => navigate(searchResultRoutes[result.type])}
+                      className="flex items-center gap-2 px-2 py-2 rounded-lg text-sm cursor-pointer data-[selected=true]:bg-accent"
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{result.name}</span>
+                      <span className="ml-auto text-xs text-muted-foreground">{result.detail}</span>
+                    </Command.Item>
+                  );
+                })}
+              </Command.Group>
+            )}
           </Command.List>
         </Command>
       </div>

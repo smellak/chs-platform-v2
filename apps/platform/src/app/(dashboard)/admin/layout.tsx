@@ -11,6 +11,7 @@ import {
   Cpu,
   Key,
   Webhook,
+  Brain,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ const sidebarItems = [
   { href: "/admin/api-providers", label: "Proveedores API", icon: Cpu },
   { href: "/admin/api-keys", label: "Claves API", icon: Key },
   { href: "/admin/webhooks", label: "Webhooks", icon: Webhook },
+  { href: "/admin/ai-analytics", label: "IA Analytics", icon: Brain },
 ];
 
 export default function AdminLayout({
