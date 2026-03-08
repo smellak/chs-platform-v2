@@ -10,6 +10,7 @@ import { getAppTools } from "@/lib/agent/app-tools";
 import { convertToAISDKTools } from "@/lib/agent/convert-tools";
 import { checkRateLimit } from "@/lib/agent/rate-limit";
 import { resolveModel } from "@/lib/agent/model-resolver";
+import { checkAlertRules } from "@/lib/agent/alert-checker";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("agent-chat");
@@ -200,6 +201,13 @@ export async function POST(request: NextRequest): Promise<Response> {
         provider: resolved.providerName,
         tokens: totalTokens,
         latencyMs,
+      });
+
+      // Check alert rules (async, non-blocking)
+      checkAlertRules(ctx.organization.id).catch((err) => {
+        logger.error("Alert check failed", {
+          error: err instanceof Error ? err.message : String(err),
+        });
       });
     },
   });
