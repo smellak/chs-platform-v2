@@ -1,7 +1,7 @@
 {
   "name": "@chs-platform/sdk",
   "version": "0.1.0",
-  "description": "SDK for integrating apps with Aleph Platform",
+  "description": "SDK for integrating apps with CHS Platform",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {

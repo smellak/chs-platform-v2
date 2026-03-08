@@ -35,7 +35,7 @@ export class CHSAgent {
     return async (req, res) => {
       const user = parseCHSHeaders(req.headers);
       if (!user) {
-        res.status(401).json({ error: "Aleph headers missing" });
+        res.status(401).json({ error: "CHS headers missing" });
         return;
       }
 
@@ -87,7 +87,7 @@ export class CHSAgent {
 
     const user = parseCHSHeaders(headerObj);
     if (!user) {
-      return Response.json({ error: "Aleph headers missing" }, { status: 401 });
+      return Response.json({ error: "CHS headers missing" }, { status: 401 });
     }
 
     const body = (await request.json()) as {

@@ -73,11 +73,11 @@ http:
       const pathsRule = publicPaths
         .map((p) => `PathPrefix(\`${p}\`)`)
         .join(" || ");
-      yaml += `    aleph-${slug}-public:
+      yaml += `    chs-${slug}-public:
       rule: "Host(\`${externalDomain}\`) && (${pathsRule})"
       entryPoints:
         - https
-      service: aleph-${slug}-service
+      service: chs-${slug}-service
       priority: 200
       tls:
         certResolver: letsencrypt
@@ -86,27 +86,27 @@ http:
     }
 
     // Protected router (uses forward auth)
-    yaml += `    aleph-${slug}-protected:
+    yaml += `    chs-${slug}-protected:
       rule: "Host(\`${externalDomain}\`)"
       entryPoints:
         - https
-      service: aleph-${slug}-service
+      service: chs-${slug}-service
       middlewares:
         - chs-forward-auth@file
       priority: 100
       tls:
         certResolver: letsencrypt
 
-    aleph-${slug}-http:
+    chs-${slug}-http:
       rule: "Host(\`${externalDomain}\`)"
       entryPoints:
         - http
       middlewares:
         - redirect-to-https@file
-      service: aleph-${slug}-service
+      service: chs-${slug}-service
 
   services:
-    aleph-${slug}-service:
+    chs-${slug}-service:
       loadBalancer:
         servers:
           - url: "${internalUrl}"
