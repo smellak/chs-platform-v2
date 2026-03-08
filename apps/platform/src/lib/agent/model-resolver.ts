@@ -1,8 +1,8 @@
 import { eq, and, asc } from "drizzle-orm";
-import { anthropic } from "@ai-sdk/anthropic";
-import { openai } from "@ai-sdk/openai";
-import { google } from "@ai-sdk/google";
-import type { LanguageModelV1 } from "ai";
+import { anthropic, createAnthropic } from "@ai-sdk/anthropic";
+import { openai, createOpenAI } from "@ai-sdk/openai";
+import { google, createGoogleGenerativeAI } from "@ai-sdk/google";
+import type { LanguageModelV3 } from "@ai-sdk/provider";
 import { getDb, schema } from "@/lib/db";
 import { decryptApiKey } from "@aleph/auth/crypto";
 import { createLogger } from "@/lib/logger";
@@ -12,7 +12,7 @@ const logger = createLogger("model-resolver");
 type ProviderType = "anthropic" | "openai" | "google" | "xai";
 
 export interface ResolvedModel {
-  model: LanguageModelV1;
+  model: LanguageModelV3;
   modelId: string;
   displayName: string;
   providerId: string;
@@ -29,31 +29,39 @@ function createProviderModel(
   modelId: string,
   apiKey?: string,
   baseUrl?: string,
-): LanguageModelV1 {
+): LanguageModelV3 {
   switch (providerType) {
     case "anthropic": {
-      const opts = apiKey ? anthropic.languageModel(modelId, { headers: { "x-api-key": apiKey } }) : anthropic(modelId);
-      return opts;
+      if (apiKey) {
+        const custom = createAnthropic({ apiKey });
+        return custom(modelId);
+      }
+      return anthropic(modelId);
     }
     case "openai": {
-      if (apiKey) {
-        const customOpenai = openai.languageModel(modelId, { structuredOutputs: true });
-        // For custom API keys, set via env override before call
-        if (apiKey) process.env["OPENAI_API_KEY"] = apiKey;
-        if (baseUrl) process.env["OPENAI_BASE_URL"] = baseUrl;
-        return customOpenai;
+      if (apiKey || baseUrl) {
+        const custom = createOpenAI({
+          apiKey: apiKey ?? process.env["OPENAI_API_KEY"] ?? "",
+          baseURL: baseUrl,
+        });
+        return custom(modelId);
       }
       return openai(modelId);
     }
     case "google": {
-      if (apiKey) process.env["GOOGLE_GENERATIVE_AI_API_KEY"] = apiKey;
+      if (apiKey) {
+        const custom = createGoogleGenerativeAI({ apiKey });
+        return custom(modelId);
+      }
       return google(modelId);
     }
     case "xai": {
       // xAI uses OpenAI-compatible API
-      if (apiKey) process.env["OPENAI_API_KEY"] = apiKey;
-      process.env["OPENAI_BASE_URL"] = baseUrl ?? "https://api.x.ai/v1";
-      return openai(modelId);
+      const custom = createOpenAI({
+        apiKey: apiKey ?? process.env["OPENAI_API_KEY"] ?? "",
+        baseURL: baseUrl ?? "https://api.x.ai/v1",
+      });
+      return custom(modelId);
     }
     default:
       throw new Error(`Unknown provider type: ${providerType}`);
