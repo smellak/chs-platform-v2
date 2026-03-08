@@ -15,8 +15,16 @@ export default async function ApiProvidersPage() {
     .orderBy(schema.apiProviders.name);
 
   const providersData = providers.map((p) => ({
-    ...p,
-    createdAt: p.createdAt.toISOString(),
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    providerType: p.providerType,
+    model: p.model,
+    baseUrl: p.baseUrl,
+    hasApiKey: Boolean(p.apiKeyEncrypted),
+    costPer1kInput: p.costPer1kInput,
+    costPer1kOutput: p.costPer1kOutput,
+    isActive: p.isActive,
   }));
 
   return <ApiProvidersClient providers={providersData} />;

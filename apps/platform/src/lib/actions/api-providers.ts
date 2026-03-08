@@ -5,11 +5,17 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getDb, schema } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
+import { encryptApiKey } from "@aleph/auth/crypto";
+import { createLogger } from "@/lib/logger";
+
+const logger = createLogger("actions:api-providers");
 
 const providerSchema = z.object({
   name: z.string().min(1),
   slug: z.string().min(1),
+  providerType: z.enum(["anthropic", "openai", "google", "xai"]).default("anthropic"),
   model: z.string().optional(),
+  baseUrl: z.string().optional(),
   costPer1kInput: z.number().min(0).optional(),
   costPer1kOutput: z.number().min(0).optional(),
   isActive: z.boolean().optional(),
@@ -30,7 +36,9 @@ export async function createApiProvider(
   const parsed = providerSchema.safeParse({
     name: formData.get("name"),
     slug: formData.get("slug"),
+    providerType: formData.get("providerType") || "anthropic",
     model: formData.get("model") || undefined,
+    baseUrl: formData.get("baseUrl") || undefined,
     costPer1kInput: formData.get("costPer1kInput")
       ? Number(formData.get("costPer1kInput"))
       : undefined,
@@ -51,10 +59,35 @@ export async function createApiProvider(
   const orgId = orgs[0]?.id;
   if (!orgId) return { success: false, error: "Organización no encontrada" };
 
+  // Encrypt API key if provided
+  const rawApiKey = formData.get("apiKey") as string | null;
+  let apiKeyEncrypted: string | undefined;
+  if (rawApiKey && rawApiKey.trim().length > 0) {
+    try {
+      apiKeyEncrypted = encryptApiKey(rawApiKey.trim());
+    } catch (err) {
+      logger.error("Failed to encrypt API key", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      return { success: false, error: "Error al cifrar la API key. Verifique ENCRYPTION_KEY." };
+    }
+  }
+
   try {
-    await db
-      .insert(schema.apiProviders)
-      .values({ ...parsed.data, orgId });
+    await db.insert(schema.apiProviders).values({
+      ...parsed.data,
+      orgId,
+      apiKeyEncrypted,
+    });
+
+    await db.insert(schema.activityLogs).values({
+      orgId,
+      userId: currentUser.id,
+      action: "api-provider.create",
+      entityType: "api_provider",
+      details: { name: parsed.data.name, providerType: parsed.data.providerType },
+    });
+
     revalidatePath("/admin/api-providers");
     return { success: true };
   } catch (err: unknown) {
@@ -79,7 +112,9 @@ export async function updateApiProvider(
   const parsed = providerSchema.safeParse({
     name: formData.get("name"),
     slug: formData.get("slug"),
+    providerType: formData.get("providerType") || "anthropic",
     model: formData.get("model") || undefined,
+    baseUrl: formData.get("baseUrl") || undefined,
     costPer1kInput: formData.get("costPer1kInput")
       ? Number(formData.get("costPer1kInput"))
       : undefined,
@@ -95,12 +130,32 @@ export async function updateApiProvider(
       error: parsed.error.issues[0]?.message ?? "Datos inválidos",
     };
 
+  // Encrypt API key if provided (empty = don't change)
+  const rawApiKey = formData.get("apiKey") as string | null;
+  let apiKeyEncrypted: string | undefined;
+  if (rawApiKey && rawApiKey.trim().length > 0) {
+    try {
+      apiKeyEncrypted = encryptApiKey(rawApiKey.trim());
+    } catch (err) {
+      logger.error("Failed to encrypt API key", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      return { success: false, error: "Error al cifrar la API key. Verifique ENCRYPTION_KEY." };
+    }
+  }
+
   const db = getDb();
   try {
+    const updateData: Record<string, unknown> = { ...parsed.data };
+    if (apiKeyEncrypted) {
+      updateData.apiKeyEncrypted = apiKeyEncrypted;
+    }
+
     await db
       .update(schema.apiProviders)
-      .set(parsed.data)
+      .set(updateData)
       .where(eq(schema.apiProviders.id, id));
+
     revalidatePath("/admin/api-providers");
     return { success: true };
   } catch (err: unknown) {

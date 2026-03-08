@@ -271,11 +271,12 @@ async function seed(): Promise<void> {
   });
 
   // ─── API Providers ──────────────────────────────────────────────────────────
-  await db.insert(schema.apiProviders).values([
+  const providersInserted = await db.insert(schema.apiProviders).values([
     {
       orgId,
       name: "Anthropic",
       slug: "anthropic",
+      providerType: "anthropic",
       model: "claude-sonnet-4-20250514",
       isActive: true,
     },
@@ -283,6 +284,7 @@ async function seed(): Promise<void> {
       orgId,
       name: "OpenAI",
       slug: "openai",
+      providerType: "openai",
       model: "gpt-4o",
       isActive: true,
     },
@@ -290,10 +292,66 @@ async function seed(): Promise<void> {
       orgId,
       name: "Google AI",
       slug: "google-ai",
+      providerType: "google",
       model: "gemini-2.0-flash",
       isActive: true,
     },
-  ]);
+  ]).returning();
+
+  const providerMap = new Map(providersInserted.map((p) => [p.slug, p]));
+  const anthropicProvider = providerMap.get("anthropic");
+  const openaiProvider = providerMap.get("openai");
+  const googleProvider = providerMap.get("google-ai");
+
+  // ─── AI Models ────────────────────────────────────────────────────────────
+  if (anthropicProvider && openaiProvider && googleProvider) {
+    await db.insert(schema.aiModels).values([
+      {
+        providerId: anthropicProvider.id,
+        orgId,
+        modelId: "claude-sonnet-4-20250514",
+        displayName: "Claude Sonnet 4",
+        costPer1kInput: 0.003,
+        costPer1kOutput: 0.015,
+        maxTokens: 8192,
+        isActive: true,
+        isDefault: true,
+      },
+      {
+        providerId: anthropicProvider.id,
+        orgId,
+        modelId: "claude-haiku-3-5-20241022",
+        displayName: "Claude Haiku 3.5",
+        costPer1kInput: 0.0008,
+        costPer1kOutput: 0.004,
+        maxTokens: 8192,
+        isActive: true,
+        isDefault: false,
+      },
+      {
+        providerId: openaiProvider.id,
+        orgId,
+        modelId: "gpt-4o",
+        displayName: "GPT-4o",
+        costPer1kInput: 0.0025,
+        costPer1kOutput: 0.01,
+        maxTokens: 4096,
+        isActive: true,
+        isDefault: false,
+      },
+      {
+        providerId: googleProvider.id,
+        orgId,
+        modelId: "gemini-2.0-flash",
+        displayName: "Gemini 2.0 Flash",
+        costPer1kInput: 0.0001,
+        costPer1kOutput: 0.0004,
+        maxTokens: 8192,
+        isActive: true,
+        isDefault: false,
+      },
+    ]);
+  }
 
   process.stdout.write("Seed completed successfully.\n");
   await pool.end();

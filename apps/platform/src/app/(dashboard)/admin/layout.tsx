@@ -12,6 +12,9 @@ import {
   Key,
   Webhook,
   Brain,
+  Sparkles,
+  MessagesSquare,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +28,9 @@ const sidebarItems = [
   { href: "/admin/api-keys", label: "Claves API", icon: Key },
   { href: "/admin/webhooks", label: "Webhooks", icon: Webhook },
   { href: "/admin/ai-analytics", label: "IA Analytics", icon: Brain },
+  { href: "/admin/ai-models", label: "Modelos IA", icon: Sparkles },
+  { href: "/admin/ai-conversations", label: "Conversaciones", icon: MessagesSquare },
+  { href: "/admin/ai-permissions", label: "Permisos IA", icon: ShieldCheck },
 ];
 
 export default function AdminLayout({
