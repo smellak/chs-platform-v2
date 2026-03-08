@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getDb, schema } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
-import { encryptApiKey } from "@aleph/auth/crypto";
+import { encryptApiKey } from "@chs-platform/auth/crypto";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("actions:api-providers");

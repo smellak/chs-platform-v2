@@ -118,7 +118,7 @@ test.describe("Fase 0: Foundation", () => {
       { timeout: 10000 },
     );
     const bodyText = await page.textContent("body");
-    expect(bodyText?.toUpperCase()).toContain("ALEPH");
+    expect(bodyText?.toUpperCase()).toContain("CHS");
     expect(bodyText).toContain("Admin");
   });
 

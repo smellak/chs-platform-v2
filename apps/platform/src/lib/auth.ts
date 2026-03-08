@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { verifyAccessToken } from "@aleph/auth";
+import { verifyAccessToken } from "@chs-platform/auth";
 import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import type { AuthUser } from "@/lib/types";

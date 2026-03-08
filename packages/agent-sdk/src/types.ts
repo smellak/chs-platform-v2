@@ -10,7 +10,7 @@ export interface AgentCapability {
   }>;
 }
 
-export interface AlephUser {
+export interface CHSUser {
   id: string;
   name: string;
   email: string;
@@ -23,7 +23,7 @@ export interface AlephUser {
 export interface AgentRequest {
   capability: string;
   parameters: Record<string, unknown>;
-  user: AlephUser;
+  user: CHSUser;
   conversationContext?: Array<{ role: string; content: string }>;
 }
 

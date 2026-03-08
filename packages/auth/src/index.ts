@@ -4,7 +4,7 @@ import { randomBytes } from "crypto";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export interface AlephTokenPayload {
+export interface CHSTokenPayload {
   userId: string;
   orgId: string;
   iat: number;
@@ -57,7 +57,7 @@ export function generateAccessToken(payload: JwtPayload): string {
   });
 }
 
-export function verifyAccessToken(token: string): AlephTokenPayload | null {
+export function verifyAccessToken(token: string): CHSTokenPayload | null {
   try {
     const decoded = jwt.verify(token, getJwtSecret(), {
       algorithms: ["HS256"],
@@ -68,7 +68,7 @@ export function verifyAccessToken(token: string): AlephTokenPayload | null {
       "userId" in decoded &&
       "orgId" in decoded
     ) {
-      return decoded as AlephTokenPayload;
+      return decoded as CHSTokenPayload;
     }
     return null;
   } catch {

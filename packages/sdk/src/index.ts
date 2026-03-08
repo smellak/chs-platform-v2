@@ -1,3 +1,3 @@
-export type { AlephUser, AlephHeaders } from "./types";
-export { parseAlephHeaders } from "./parse-headers";
-export { getAlephLoginUrl } from "./client";
+export type { CHSUser, CHSHeaders } from "./types";
+export { parseCHSHeaders } from "./parse-headers";
+export { getCHSLoginUrl } from "./client";

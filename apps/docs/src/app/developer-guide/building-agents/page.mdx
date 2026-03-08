@@ -1,11 +1,11 @@
 # Building Agents
 
-This guide walks through building a complete application agent that integrates with the Aleph Platform's agent orchestration system.
+This guide walks through building a complete application agent that integrates with CHS Platform's agent orchestration system.
 
 ## Prerequisites
 
-- An application registered in the Aleph Platform
-- The `@aleph-platform/agent-sdk` package installed
+- An application registered in CHS Platform
+- The `@chs-platform/agent-sdk` package installed
 - An endpoint on your application to handle agent requests
 
 ## Step 1: Design Your Capabilities
@@ -81,10 +81,10 @@ const capabilities = [
 The handler receives validated requests and returns responses:
 
 ```typescript
-import { AlephAgent, AgentRequest, AgentResponse } from "@aleph-platform/agent-sdk";
+import { CHSAgent, AgentRequest, AgentResponse } from "@chs-platform/agent-sdk";
 import { db } from "./database";
 
-const agent = new AlephAgent({
+const agent = new CHSAgent({
   name: "Elias",
   description: "Warehouse appointment management agent",
   capabilities,
@@ -167,7 +167,7 @@ export async function POST(request: Request) {
 
 ## Step 4: Register in the Platform
 
-Once your agent endpoint is running, register it in the Aleph Platform:
+Once your agent endpoint is running, register it in CHS Platform:
 
 1. Navigate to **Admin > Apps**
 2. Select your application (or create a new one)

@@ -28,7 +28,7 @@ Aleph Platform es el portal central donde una empresa gestiona todas sus aplicac
 - **Agente IA orquestador** — Un agente central que delega a agentes de cada app según los permisos del usuario.
 - **Permisos granulares** — Departamentos, roles, y niveles de acceso (full/readonly) para cada app.
 - **Auto-configuración de Traefik** — ForwardAuth generado automáticamente desde la UI de admin.
-- **SDKs para desarrolladores** — Integra tu app con `@aleph-platform/sdk` en pocas líneas de código.
+- **SDKs para desarrolladores** — Integra tu app con `@chs-platform/sdk` en pocas líneas de código.
 
 ## Quick Start
 
@@ -131,28 +131,28 @@ aleph-platform/
 ## Integrar tu app
 
 ```bash
-npm install @aleph-platform/sdk
+npm install @chs-platform/sdk
 ```
 
 **Express:**
 ```typescript
-import { alephMiddleware, requireAleph } from "@aleph-platform/sdk/express";
+import { chsMiddleware, requireAleph } from "@chs-platform/sdk/express";
 
-app.use(alephMiddleware());     // Parsea headers X-CHS-*
-app.use(requireAleph());        // Rechaza requests sin autenticación
+app.use(chsMiddleware());     // Parsea headers X-CHS-*
+app.use(requireCHS());        // Rechaza requests sin autenticación
 
 app.get("/api/data", (req, res) => {
-  const user = req.aleph;       // { id, name, email, role, ... }
+  const user = req.chs;       // { id, name, email, role, ... }
   res.json({ message: `Hola ${user.name}` });
 });
 ```
 
 **Next.js:**
 ```typescript
-import { getAlephUser } from "@aleph-platform/sdk/next";
+import { getCHSUser } from "@chs-platform/sdk/next";
 
 export async function GET(request: Request) {
-  const user = getAlephUser(request);
+  const user = getCHSUser(request);
   if (!user) return Response.json({ error: "No auth" }, { status: 401 });
   return Response.json({ user });
 }
@@ -161,9 +161,9 @@ export async function GET(request: Request) {
 ## Crear un agente IA
 
 ```typescript
-import { AlephAgent } from "@aleph-platform/agent-sdk";
+import { CHSAgent } from "@chs-platform/agent-sdk";
 
-const agent = new AlephAgent({
+const agent = new CHSAgent({
   name: "Mi Agente",
   description: "Agente de ejemplo",
   capabilities: [{

@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { eq, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { hashPassword } from "@aleph/auth";
+import { hashPassword } from "@chs-platform/auth";
 import { getDb, schema } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 

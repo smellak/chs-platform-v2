@@ -1,6 +1,6 @@
-import type { AlephUser } from "./types";
+import type { CHSUser } from "./types";
 
-export function parseAlephHeaders(headers: Record<string, string | string[] | undefined>): AlephUser | null {
+export function parseCHSHeaders(headers: Record<string, string | string[] | undefined>): CHSUser | null {
   const get = (name: string): string | undefined => {
     const val = headers[name] ?? headers[name.toLowerCase()];
     return typeof val === "string" ? val : Array.isArray(val) ? val[0] : undefined;

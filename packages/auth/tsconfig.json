@@ -1,5 +1,5 @@
 {
-  "extends": "@aleph/config/tsconfig.base.json",
+  "extends": "@chs-platform/config/tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src"

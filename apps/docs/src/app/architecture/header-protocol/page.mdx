@@ -1,6 +1,6 @@
 # Header Protocol
 
-The Aleph header protocol is the mechanism by which the platform communicates user identity and permissions to downstream applications. When a user accesses a registered app through the platform, the platform validates the user's session and injects a set of `x-chs-*` HTTP headers into the forwarded request.
+The CHS header protocol is the mechanism by which the platform communicates user identity and permissions to downstream applications. When a user accesses a registered app through the platform, the platform validates the user's session and injects a set of `x-chs-*` HTTP headers into the forwarded request.
 
 ## Header Specification
 
@@ -19,12 +19,12 @@ The Aleph header protocol is the mechanism by which the platform communicates us
 
 ## Parsing Headers
 
-The `@aleph-platform/sdk` provides the `parseAlephHeaders` function that converts raw headers into a typed `AlephUser` object:
+The `@chs-platform/sdk` provides the `parseCHSHeaders` function that converts raw headers into a typed `CHSUser` object:
 
 ```typescript
-import { parseAlephHeaders } from "@aleph-platform/sdk";
+import { parseCHSHeaders } from "@chs-platform/sdk";
 
-const user = parseAlephHeaders(request.headers);
+const user = parseCHSHeaders(request.headers);
 
 if (user) {
   console.log(user.id);          // "a1b2c3d4-..."
@@ -40,12 +40,12 @@ if (user) {
 }
 ```
 
-## AlephUser Interface
+## CHSUser Interface
 
-The SDK exports the `AlephUser` type that represents a parsed user identity:
+The SDK exports the `CHSUser` type that represents a parsed user identity:
 
 ```typescript
-interface AlephUser {
+interface CHSUser {
   id: string;
   name: string;
   email: string;
@@ -59,12 +59,12 @@ interface AlephUser {
 }
 ```
 
-## AlephHeaders Interface
+## CHSHeaders Interface
 
 The raw header names are also typed:
 
 ```typescript
-interface AlephHeaders {
+interface CHSHeaders {
   "x-chs-user-id": string;
   "x-chs-user-name": string;
   "x-chs-user-email": string;
@@ -80,7 +80,7 @@ interface AlephHeaders {
 
 ## Header Parsing Behavior
 
-The `parseAlephHeaders` function handles several edge cases:
+The `parseCHSHeaders` function handles several edge cases:
 
 - **Case insensitivity**: Headers are matched in both original case and lowercase
 - **Array values**: If a header value is an array (as in some Node.js frameworks), the first element is used
@@ -105,16 +105,16 @@ The header protocol relies on a trust boundary between the platform and downstre
 ### Express Application
 
 ```typescript
-import { alephMiddleware, requireAleph } from "@aleph-platform/sdk/express";
+import { chsMiddleware, requireAleph } from "@chs-platform/sdk/express";
 
 const app = express();
 
 // Parse headers on all routes
-app.use(alephMiddleware());
+app.use(chsMiddleware());
 
 // Require authentication on specific routes
-app.get("/api/data", requireAleph(), (req, res) => {
-  const user = req.aleph; // AlephUser
+app.get("/api/data", requireCHS(), (req, res) => {
+  const user = req.chs; // CHSUser
   res.json({ message: `Hello ${user.name}` });
 });
 ```
@@ -122,10 +122,10 @@ app.get("/api/data", requireAleph(), (req, res) => {
 ### Next.js Application
 
 ```typescript
-import { getAlephUser } from "@aleph-platform/sdk/next";
+import { getCHSUser } from "@chs-platform/sdk/next";
 
 export async function GET(request: Request) {
-  const user = getAlephUser(request);
+  const user = getCHSUser(request);
 
   if (!user) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -138,7 +138,7 @@ export async function GET(request: Request) {
 ### Manual Parsing
 
 ```typescript
-import { parseAlephHeaders } from "@aleph-platform/sdk";
+import { parseCHSHeaders } from "@chs-platform/sdk";
 
 // Works with any header-like object
 const headers = {
@@ -154,5 +154,5 @@ const headers = {
   "x-chs-permissions": '{"apps.read":true}',
 };
 
-const user = parseAlephHeaders(headers);
+const user = parseCHSHeaders(headers);
 ```

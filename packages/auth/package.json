@@ -1,5 +1,5 @@
 {
-  "name": "@aleph/auth",
+  "name": "@chs-platform/auth",
   "private": true,
   "type": "module",
   "exports": {

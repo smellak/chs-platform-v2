@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { eq, and } from "drizzle-orm";
-import { extractTokenFromHeaders, verifyAccessToken } from "@aleph/auth";
+import { extractTokenFromHeaders, verifyAccessToken } from "@chs-platform/auth";
 import { getDb, schema } from "@/lib/db";
 
 function errorResponse(status: number, error: string, errorCode: string): NextResponse {

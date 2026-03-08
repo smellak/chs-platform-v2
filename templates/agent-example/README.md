@@ -65,7 +65,7 @@ When Aleph forwards a request to your agent it includes the following headers so
 | `X-CHS-Org-Id`       | Organization identifier (optional)            | `org_xyz`             |
 | `X-CHS-Dept`         | Department the user belongs to (optional)     | `Engineering`         |
 
-The agent SDK parses these headers automatically and provides them as a typed `AlephUser` object inside the `AgentRequest`.
+The agent SDK parses these headers automatically and provides them as a typed `CHSUser` object inside the `AgentRequest`.
 
 ## Request Body Format
 
@@ -150,7 +150,7 @@ docker build -t my-aleph-agent .
 docker run -p 4000:4000 my-aleph-agent
 ```
 
-Note: The Dockerfile assumes the `@aleph-platform/agent-sdk` package is available at `../../packages/agent-sdk` relative to the build context. When building with Docker, you may need to adjust the context or use a published version of the SDK.
+Note: The Dockerfile assumes the `@chs-platform/agent-sdk` package is available at `../../packages/agent-sdk` relative to the build context. When building with Docker, you may need to adjust the context or use a published version of the SDK.
 
 ## License
 

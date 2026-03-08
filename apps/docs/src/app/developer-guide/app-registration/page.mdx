@@ -41,25 +41,25 @@ Define which departments can access your app:
 Install the SDK in your application:
 
 ```bash
-npm install @aleph-platform/sdk
+npm install @chs-platform/sdk
 ```
 
 Then integrate it based on your framework:
 
 **Express:**
 ```typescript
-import { alephMiddleware, requireAleph } from "@aleph-platform/sdk/express";
+import { chsMiddleware, requireAleph } from "@chs-platform/sdk/express";
 
-app.use(alephMiddleware());
-app.use("/api", requireAleph());
+app.use(chsMiddleware());
+app.use("/api", requireCHS());
 ```
 
 **Next.js:**
 ```typescript
-import { getAlephUser } from "@aleph-platform/sdk/next";
+import { getCHSUser } from "@chs-platform/sdk/next";
 
 export async function GET(request: Request) {
-  const user = getAlephUser(request);
+  const user = getCHSUser(request);
   // ...
 }
 ```
@@ -94,7 +94,7 @@ If your app provides AI-powered capabilities, register an agent:
 
 1. Install the Agent SDK:
    ```bash
-   npm install @aleph-platform/agent-sdk
+   npm install @chs-platform/agent-sdk
    ```
 
 2. Implement the agent (see [Building Agents](/developer-guide/building-agents))

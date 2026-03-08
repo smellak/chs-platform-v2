@@ -1,20 +1,20 @@
 # Monorepo Structure
 
-Aleph Platform is organized as a Turborepo monorepo with npm workspaces. The project is split into `apps/` (deployable applications) and `packages/` (shared libraries).
+CHS Platform is organized as a Turborepo monorepo with npm workspaces. The project is split into `apps/` (deployable applications) and `packages/` (shared libraries).
 
 ## Directory Layout
 
 ```
-aleph-platform/
+chs-platform-v2/
 ├── apps/
 │   ├── platform/          # Main Next.js application
 │   └── docs/              # Documentation site (Nextra)
 ├── packages/
-│   ├── sdk/               # @aleph-platform/sdk
-│   ├── agent-sdk/         # @aleph-platform/agent-sdk
-│   ├── db/                # @aleph/db
-│   ├── auth/              # @aleph/auth
-│   ├── config/            # @aleph/config
+│   ├── sdk/               # @chs-platform/sdk
+│   ├── agent-sdk/         # @chs-platform/agent-sdk
+│   ├── db/                # @chs-platform/db
+│   ├── auth/              # @chs-platform/auth
+│   ├── config/            # @chs-platform/config
 │   └── ui/                # @aleph/ui
 ├── docker/
 │   ├── Dockerfile
@@ -29,7 +29,7 @@ aleph-platform/
 
 ### `apps/platform`
 
-The main Aleph Platform application. A Next.js 15 app using the App Router with:
+The main CHS Platform application. A Next.js 15 app using the App Router with:
 
 - **Authentication pages** (`/login`)
 - **Admin dashboard** (`/admin/*`) for managing users, departments, roles, apps, API providers, API keys, webhooks, and audit logs
@@ -64,37 +64,37 @@ This documentation site, built with Nextra and Next.js.
 
 ## Packages
 
-### `@aleph-platform/sdk`
+### `@chs-platform/sdk`
 
-The integration SDK for connecting external applications with Aleph Platform. It provides three entry points:
+The integration SDK for connecting external applications with CHS Platform. It provides three entry points:
 
-- **`@aleph-platform/sdk`** -- Core exports: `parseAlephHeaders`, `getAlephLoginUrl`, `AlephUser`, `AlephHeaders`
-- **`@aleph-platform/sdk/express`** -- Express middleware: `alephMiddleware()`, `requireAleph()`, `requireAlephPermission()`, `requireAlephAccessLevel()`
-- **`@aleph-platform/sdk/next`** -- Next.js helper: `getAlephUser()`
+- **`@chs-platform/sdk`** -- Core exports: `parseCHSHeaders`, `getCHSLoginUrl`, `CHSUser`, `CHSHeaders`
+- **`@chs-platform/sdk/express`** -- Express middleware: `chsMiddleware()`, `requireCHS()`, `requireCHSPermission()`, `requireCHSAccessLevel()`
+- **`@chs-platform/sdk/next`** -- Next.js helper: `getCHSUser()`
 
 ```
 packages/sdk/
 ├── src/
 │   ├── index.ts              # Core exports
-│   ├── types.ts              # AlephUser, AlephHeaders interfaces
+│   ├── types.ts              # CHSUser, CHSHeaders interfaces
 │   ├── parse-headers.ts      # Header parsing logic
-│   ├── client.ts             # getAlephLoginUrl helper
+│   ├── client.ts             # getCHSLoginUrl helper
 │   └── middleware/
 │       ├── express.ts        # Express middleware functions
-│       └── next.ts           # Next.js getAlephUser helper
+│       └── next.ts           # Next.js getCHSUser helper
 ├── package.json
 └── tsconfig.json
 ```
 
-### `@aleph-platform/agent-sdk`
+### `@chs-platform/agent-sdk`
 
 The Agent SDK for building application agents that integrate with the platform's agent orchestration system.
 
 ```
 packages/agent-sdk/
 ├── src/
-│   ├── index.ts              # Exports AlephAgent, types, validators
-│   ├── agent.ts              # AlephAgent class
+│   ├── index.ts              # Exports CHSAgent, types, validators
+│   ├── agent.ts              # CHSAgent class
 │   ├── types.ts              # AgentCapability, AgentConfig, etc.
 │   ├── parse-headers.ts      # Header parsing for agents
 │   └── validation.ts         # Capability and parameter validation
@@ -102,7 +102,7 @@ packages/agent-sdk/
 └── tsconfig.json
 ```
 
-### `@aleph/db`
+### `@chs-platform/db`
 
 Database package using Drizzle ORM with PostgreSQL. Contains the schema definition, migration runner, and seed script.
 
@@ -120,7 +120,7 @@ packages/db/
 └── tsconfig.json
 ```
 
-### `@aleph/auth`
+### `@chs-platform/auth`
 
 Authentication utilities shared between the platform and any server that needs to verify tokens.
 
@@ -129,7 +129,7 @@ Authentication utilities shared between the platform and any server that needs t
 - Refresh token generation (cryptographic random bytes)
 - Cookie configuration helpers
 
-### `@aleph/config`
+### `@chs-platform/config`
 
 Shared configuration constants used across packages.
 

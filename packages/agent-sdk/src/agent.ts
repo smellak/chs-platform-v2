@@ -1,8 +1,8 @@
-import type { AgentConfig, AgentCapability, AgentRequest, AgentResponse, AlephUser } from "./types";
-import { parseAlephHeaders } from "./parse-headers";
+import type { AgentConfig, AgentCapability, AgentRequest, AgentResponse, CHSUser } from "./types";
+import { parseCHSHeaders } from "./parse-headers";
 import { validateCapabilities, validateParameters } from "./validation";
 
-export class AlephAgent {
+export class CHSAgent {
   private config: AgentConfig;
 
   constructor(config: AgentConfig) {
@@ -23,7 +23,7 @@ export class AlephAgent {
     return this.config.capabilities;
   }
 
-  private hasPermission(user: AlephUser, capability: AgentCapability): boolean {
+  private hasPermission(user: CHSUser, capability: AgentCapability): boolean {
     if (user.role === "super-admin") return true;
     if (capability.requiredPermission === "read") return true;
     if (capability.requiredPermission === "write" && user.accessLevel === "full") return true;
@@ -33,7 +33,7 @@ export class AlephAgent {
 
   middleware(): (req: { headers: Record<string, string | string[] | undefined>; body: Record<string, unknown> }, res: { status: (code: number) => { json: (data: unknown) => void } }) => Promise<void> {
     return async (req, res) => {
-      const user = parseAlephHeaders(req.headers);
+      const user = parseCHSHeaders(req.headers);
       if (!user) {
         res.status(401).json({ error: "Aleph headers missing" });
         return;
@@ -85,7 +85,7 @@ export class AlephAgent {
       headerObj[key] = value;
     });
 
-    const user = parseAlephHeaders(headerObj);
+    const user = parseCHSHeaders(headerObj);
     if (!user) {
       return Response.json({ error: "Aleph headers missing" }, { status: 401 });
     }

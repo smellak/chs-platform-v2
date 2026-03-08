@@ -1,5 +1,5 @@
 {
-  "name": "@aleph-platform/agent-sdk",
+  "name": "@chs-platform/agent-sdk",
   "version": "0.1.0",
   "private": true,
   "main": "./dist/index.js",

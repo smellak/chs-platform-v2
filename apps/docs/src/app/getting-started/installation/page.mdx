@@ -1,12 +1,12 @@
 # Installation
 
-This guide covers installing Aleph Platform for local development. For production deployments using Docker, see [Docker Setup](/getting-started/docker-setup).
+This guide covers installing CHS Platform for local development. For production deployments using Docker, see [Docker Setup](/getting-started/docker-setup).
 
 ## Clone the Repository
 
 ```bash
-git clone https://github.com/smellak/aleph-platform.git
-cd aleph-platform
+git clone https://github.com/smellak/chs-platform-v2.git
+cd chs-platform-v2
 ```
 
 ## Install Dependencies
@@ -84,10 +84,10 @@ npm run build
 
 This uses Turborepo to build all packages in the correct dependency order:
 
-1. `@aleph/db` -- Database schema
-2. `@aleph/auth` -- Auth utilities
-3. `@aleph-platform/sdk` -- SDK
-4. `@aleph-platform/agent-sdk` -- Agent SDK
+1. `@chs-platform/db` -- Database schema
+2. `@chs-platform/auth` -- Auth utilities
+3. `@chs-platform/sdk` -- SDK
+4. `@chs-platform/agent-sdk` -- Agent SDK
 5. `apps/platform` -- Main application
 
 ## Start the Development Server

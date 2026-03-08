@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
-import { extractTokenFromHeaders, verifyAccessToken } from "@aleph/auth";
+import { extractTokenFromHeaders, verifyAccessToken } from "@chs-platform/auth";
 import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 

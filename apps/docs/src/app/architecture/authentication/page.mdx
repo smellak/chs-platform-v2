@@ -1,6 +1,6 @@
 # Authentication
 
-Aleph Platform implements a JWT-based authentication system with HttpOnly cookies. The `@aleph/auth` package provides the core cryptographic functions used by the platform.
+CHS Platform implements a JWT-based authentication system with HttpOnly cookies. The `@chs-platform/auth` package provides the core cryptographic functions used by the platform.
 
 ## Authentication Flow
 
@@ -30,7 +30,7 @@ Aleph Platform implements a JWT-based authentication system with HttpOnly cookie
 The access token is a JWT signed with HS256. It contains a minimal payload:
 
 ```typescript
-interface AlephTokenPayload {
+interface CHSTokenPayload {
   userId: string;   // UUID of the authenticated user
   orgId: string;    // UUID of the user's organization
   iat: number;      // Issued at timestamp
@@ -123,7 +123,7 @@ function extractTokenFromHeaders(headers: Headers): string | null {
 
 ## Auth Package API
 
-The `@aleph/auth` package exports the following:
+The `@chs-platform/auth` package exports the following:
 
 ```typescript
 // Password functions
@@ -132,7 +132,7 @@ verifyPassword(plain: string, hash: string): Promise<boolean>
 
 // JWT functions
 generateAccessToken(payload: { userId: string; orgId: string }): string
-verifyAccessToken(token: string): AlephTokenPayload | null
+verifyAccessToken(token: string): CHSTokenPayload | null
 
 // Refresh token
 generateRefreshToken(): string
@@ -145,6 +145,6 @@ getRefreshTokenCookieConfig(): CookieConfig
 extractTokenFromHeaders(headers: Headers): string | null
 
 // Types
-interface AlephTokenPayload { userId: string; orgId: string; iat: number; exp: number }
+interface CHSTokenPayload { userId: string; orgId: string; iat: number; exp: number }
 interface CookieConfig { name: string; httpOnly: boolean; secure: boolean; sameSite: string; path: string; maxAge: number; domain?: string }
 ```

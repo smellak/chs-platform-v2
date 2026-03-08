@@ -1,6 +1,6 @@
 # Docker Setup
 
-The recommended way to run Aleph Platform in production is with Docker Compose. The provided configuration sets up both the platform and PostgreSQL with a single command.
+The recommended way to run CHS Platform in production is with Docker Compose. The provided configuration sets up both the platform and PostgreSQL with a single command.
 
 ## Quick Start
 
@@ -11,7 +11,7 @@ docker compose up -d
 
 This starts two services:
 
-1. **platform** -- The Aleph Platform Next.js application on port 3000
+1. **platform** -- The CHS Platform Next.js application on port 3000
 2. **db** -- PostgreSQL 16 (Alpine) on port 5432
 
 The platform container automatically runs database migrations and seeds the database on first startup via its entrypoint script.

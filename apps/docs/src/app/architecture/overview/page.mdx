@@ -1,6 +1,6 @@
 # Architecture Overview
 
-Aleph Platform follows a monorepo architecture built with Turborepo. It consists of a central Next.js application that serves as the authentication gateway, admin dashboard, and agent orchestrator, alongside shared packages that external applications use to integrate with the platform.
+CHS Platform follows a monorepo architecture built with Turborepo. It consists of a central Next.js application that serves as the authentication gateway, admin dashboard, and agent orchestrator, alongside shared packages that external applications use to integrate with the platform.
 
 ## High-Level Architecture
 
@@ -11,7 +11,7 @@ Aleph Platform follows a monorepo architecture built with Turborepo. It consists
                              |
                              v
                     +-------------------+
-                    | Aleph Platform    |
+                    | CHS Platform      |
                     | (Next.js 15)      |
                     | - Auth            |
                     | - Admin Dashboard |
@@ -44,7 +44,7 @@ The platform acts as the central authentication and authorization layer. When a 
 
 ### Header-Based Identity Propagation
 
-Rather than requiring each application to implement its own authentication, Aleph Platform forwards user identity via HTTP headers. Applications use the `@aleph-platform/sdk` to parse these headers and enforce permissions. See [Header Protocol](/architecture/header-protocol) for the full specification.
+Rather than requiring each application to implement its own authentication, CHS Platform forwards user identity via HTTP headers. Applications use the `@chs-platform/sdk` to parse these headers and enforce permissions. See [Header Protocol](/architecture/header-protocol) for the full specification.
 
 ### Agent Orchestration
 

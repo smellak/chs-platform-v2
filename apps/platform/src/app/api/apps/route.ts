@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { extractTokenFromHeaders, verifyAccessToken } from "@aleph/auth";
+import { extractTokenFromHeaders, verifyAccessToken } from "@chs-platform/auth";
 import { getDb, schema } from "@/lib/db";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {

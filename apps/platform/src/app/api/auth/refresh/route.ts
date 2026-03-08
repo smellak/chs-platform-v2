@@ -6,7 +6,7 @@ import {
   generateRefreshToken,
   getAccessTokenCookieConfig,
   getRefreshTokenCookieConfig,
-} from "@aleph/auth";
+} from "@chs-platform/auth";
 import { getDb, schema } from "@/lib/db";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {

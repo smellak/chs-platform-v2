@@ -1,5 +1,5 @@
 {
-  "name": "aleph-agent-example",
+  "name": "chs-agent-example",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -8,7 +8,7 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@aleph-platform/agent-sdk": "file:../../packages/agent-sdk",
+    "@chs-platform/agent-sdk": "file:../../packages/agent-sdk",
     "express": "^4.21.0"
   },
   "devDependencies": {

@@ -1,5 +1,5 @@
 {
-  "name": "@aleph-platform/sdk",
+  "name": "@chs-platform/sdk",
   "version": "0.1.0",
   "description": "SDK for integrating apps with Aleph Platform",
   "main": "dist/index.js",

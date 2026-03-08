@@ -1,10 +1,10 @@
 import express, { type Request, type Response } from "express";
 import {
-  AlephAgent,
+  CHSAgent,
   type AgentRequest,
   type AgentResponse,
   type AgentCapability,
-} from "@aleph-platform/agent-sdk";
+} from "@chs-platform/agent-sdk";
 
 // ---------------------------------------------------------------------------
 // Capability definitions
@@ -87,7 +87,7 @@ const records: Record[] = [
   {
     id: "rec-001",
     titulo: "Bienvenida",
-    contenido: "Bienvenidos a la plataforma Aleph",
+    contenido: "Bienvenidos a la plataforma CHS",
     publicado: true,
     creadoPor: "system",
     creadoEn: "2025-01-01T00:00:00Z",
@@ -95,7 +95,7 @@ const records: Record[] = [
   {
     id: "rec-002",
     titulo: "Getting Started Guide",
-    contenido: "Learn how to configure your Aleph instance",
+    contenido: "Learn how to configure your CHS Platform instance",
     publicado: true,
     creadoPor: "system",
     creadoEn: "2025-01-02T00:00:00Z",
@@ -117,12 +117,12 @@ const records: Record[] = [
 function buildGreeting(nombre: string, idioma: string): string {
   switch (idioma) {
     case "es":
-      return `Hola, ${nombre}! Bienvenido/a a Aleph Platform.`;
+      return `Hola, ${nombre}! Bienvenido/a a CHS Platform.`;
     case "fr":
-      return `Bonjour, ${nombre}! Bienvenue sur Aleph Platform.`;
+      return `Bonjour, ${nombre}! Bienvenue sur CHS Platform.`;
     case "en":
     default:
-      return `Hello, ${nombre}! Welcome to Aleph Platform.`;
+      return `Hello, ${nombre}! Welcome to CHS Platform.`;
   }
 }
 
@@ -188,7 +188,7 @@ async function handleRequest(request: AgentRequest): Promise<AgentResponse> {
 // Express server
 // ---------------------------------------------------------------------------
 
-const agent = new AlephAgent({
+const agent = new CHSAgent({
   name: "example-agent",
   description:
     "A demonstration agent with greeting, search, and record-creation capabilities",
@@ -208,7 +208,7 @@ app.get("/health", (_req: Request, res: Response) => {
   });
 });
 
-// Agent manifest (used by Aleph to discover capabilities)
+// Agent manifest (used by CHS Platform to discover capabilities)
 app.get("/manifest", (_req: Request, res: Response) => {
   res.json({
     name: agent.name,
@@ -217,7 +217,7 @@ app.get("/manifest", (_req: Request, res: Response) => {
   });
 });
 
-// Main agent endpoint — Aleph sends requests here
+// Main agent endpoint — CHS Platform sends requests here
 app.post("/agent", agent.middleware() as express.RequestHandler);
 
 const PORT = parseInt(process.env.PORT ?? "4000", 10);

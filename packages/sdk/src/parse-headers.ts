@@ -1,8 +1,8 @@
-import type { AlephUser } from "./types";
+import type { CHSUser } from "./types";
 
-export function parseAlephHeaders(
+export function parseCHSHeaders(
   headers: Record<string, string | string[] | undefined>,
-): AlephUser | null {
+): CHSUser | null {
   const get = (name: string): string | undefined => {
     const val = headers[name] ?? headers[name.toLowerCase()];
     return Array.isArray(val) ? val[0] : val;
@@ -19,8 +19,8 @@ export function parseAlephHeaders(
     orgName: get("x-chs-org-name") ?? "",
     dept: get("x-chs-dept") ?? "",
     deptId: get("x-chs-dept-id") ?? "",
-    role: (get("x-chs-role") as AlephUser["role"]) ?? "viewer",
-    accessLevel: (get("x-chs-access-level") as AlephUser["accessLevel"]) ?? "readonly",
+    role: (get("x-chs-role") as CHSUser["role"]) ?? "viewer",
+    accessLevel: (get("x-chs-access-level") as CHSUser["accessLevel"]) ?? "readonly",
     permissions: parsePermissions(get("x-chs-permissions")),
   };
 }

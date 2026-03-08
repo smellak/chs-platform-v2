@@ -1,22 +1,22 @@
 # Next.js Integration
 
-The `@aleph-platform/sdk/next` entry point provides helpers for Next.js applications using the App Router.
+The `@chs-platform/sdk/next` entry point provides helpers for Next.js applications using the App Router.
 
 ## Installation
 
 ```bash
-npm install @aleph-platform/sdk
+npm install @chs-platform/sdk
 ```
 
-## `getAlephUser(request)`
+## `getCHSUser(request)`
 
-Extracts the Aleph user from a Next.js `Request` object by reading the `x-chs-*` headers. This function is designed for use in Next.js App Router route handlers and Server Components.
+Extracts the CHS user from a Next.js `Request` object by reading the `x-chs-*` headers. This function is designed for use in Next.js App Router route handlers and Server Components.
 
 ```typescript
-import { getAlephUser } from "@aleph-platform/sdk/next";
+import { getCHSUser } from "@chs-platform/sdk/next";
 
 export async function GET(request: Request) {
-  const user = getAlephUser(request);
+  const user = getCHSUser(request);
 
   if (!user) {
     return Response.json(
@@ -36,19 +36,19 @@ export async function GET(request: Request) {
 **Parameters:**
 - `request` -- A Web API `Request` object (or any object with a `headers` property that has a `forEach` method)
 
-**Returns:** `AlephUser | null`
+**Returns:** `CHSUser | null`
 
 ### How It Works
 
-The function converts the Next.js `Headers` object into a plain `Record<string, string>` and then calls `parseAlephHeaders`:
+The function converts the Next.js `Headers` object into a plain `Record<string, string>` and then calls `parseCHSHeaders`:
 
 ```typescript
-function getAlephUser(request: NextRequestLike): AlephUser | null {
+function getCHSUser(request: NextRequestLike): CHSUser | null {
   const headers: Record<string, string> = {};
   request.headers.forEach((value, key) => {
     headers[key] = value;
   });
-  return parseAlephHeaders(headers);
+  return parseCHSHeaders(headers);
 }
 ```
 
@@ -58,10 +58,10 @@ function getAlephUser(request: NextRequestLike): AlephUser | null {
 
 ```typescript
 // app/api/items/route.ts
-import { getAlephUser } from "@aleph-platform/sdk/next";
+import { getCHSUser } from "@chs-platform/sdk/next";
 
 export async function GET(request: Request) {
-  const user = getAlephUser(request);
+  const user = getCHSUser(request);
 
   if (!user) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -73,7 +73,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const user = getAlephUser(request);
+  const user = getCHSUser(request);
 
   if (!user) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -94,10 +94,10 @@ export async function POST(request: Request) {
 
 ```typescript
 // app/api/admin/route.ts
-import { getAlephUser } from "@aleph-platform/sdk/next";
+import { getCHSUser } from "@chs-platform/sdk/next";
 
 export async function GET(request: Request) {
-  const user = getAlephUser(request);
+  const user = getCHSUser(request);
 
   if (!user) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -114,12 +114,12 @@ export async function GET(request: Request) {
 
 ### Using with `headers()` in Server Components
 
-If you need user information in a Server Component (not a route handler), you can read the headers directly using the `parseAlephHeaders` function from the core SDK:
+If you need user information in a Server Component (not a route handler), you can read the headers directly using the `parseCHSHeaders` function from the core SDK:
 
 ```typescript
 // app/dashboard/page.tsx
 import { headers } from "next/headers";
-import { parseAlephHeaders } from "@aleph-platform/sdk";
+import { parseCHSHeaders } from "@chs-platform/sdk";
 
 export default async function DashboardPage() {
   const headersList = await headers();
@@ -128,7 +128,7 @@ export default async function DashboardPage() {
     headerObj[key] = value;
   });
 
-  const user = parseAlephHeaders(headerObj);
+  const user = parseCHSHeaders(headerObj);
 
   if (!user) {
     return <div>Please log in</div>;
@@ -146,17 +146,17 @@ export default async function DashboardPage() {
 
 ## Redirect to Login
 
-Use `getAlephLoginUrl` to redirect unauthenticated users to the platform login page:
+Use `getCHSLoginUrl` to redirect unauthenticated users to the platform login page:
 
 ```typescript
-import { getAlephLoginUrl } from "@aleph-platform/sdk";
+import { getCHSLoginUrl } from "@chs-platform/sdk";
 import { redirect } from "next/navigation";
 
 export async function GET(request: Request) {
-  const user = getAlephUser(request);
+  const user = getCHSUser(request);
 
   if (!user) {
-    const loginUrl = getAlephLoginUrl(
+    const loginUrl = getCHSLoginUrl(
       "https://platform.example.com",
       request.url
     );
@@ -175,7 +175,7 @@ For Next.js middleware (running at the edge), you can parse headers in `middlewa
 // middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { parseAlephHeaders } from "@aleph-platform/sdk";
+import { parseCHSHeaders } from "@chs-platform/sdk";
 
 export function middleware(request: NextRequest) {
   const headers: Record<string, string> = {};
@@ -183,7 +183,7 @@ export function middleware(request: NextRequest) {
     headers[key] = value;
   });
 
-  const user = parseAlephHeaders(headers);
+  const user = parseCHSHeaders(headers);
 
   if (!user && request.nextUrl.pathname.startsWith("/api/protected")) {
     return NextResponse.json(

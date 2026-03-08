@@ -1,5 +1,5 @@
 {
-  "name": "@aleph/config",
+  "name": "@chs-platform/config",
   "private": true,
   "files": [
     "tsconfig.base.json"

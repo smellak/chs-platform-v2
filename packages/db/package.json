@@ -1,5 +1,5 @@
 {
-  "name": "@aleph/db",
+  "name": "@chs-platform/db",
   "private": true,
   "type": "module",
   "exports": {

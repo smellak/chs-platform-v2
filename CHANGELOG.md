@@ -30,7 +30,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 - Platform tools: listar usuarios, apps, departamentos, buscar datos
 - App tools: delegación a agentes de apps registradas
 - Rate limiting por usuario (mensajes/hora + tokens/día)
-- SDK de agente (@aleph-platform/agent-sdk) con AlephAgent class
+- SDK de agente (@chs-platform/agent-sdk) con CHSAgent class
 - API de búsqueda global (usuarios, apps, departamentos)
 - Página de AI Analytics en admin
 - Registro de agentes IA por app (admin > apps > Agente IA tab)
@@ -47,7 +47,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 - API providers CRUD (admin)
 - API keys CRUD con hashing seguro
 - Webhooks CRUD con firma HMAC
-- SDK (@aleph-platform/sdk) con middleware Express y Next.js
+- SDK (@chs-platform/sdk) con middleware Express y Next.js
 - Verify-access endpoint con headers X-CHS-*
 - Seed data con organización, departamentos, roles y apps por defecto
 - 20 tests Playwright para Fase 2

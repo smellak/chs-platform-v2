@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { eq, gte, desc, and } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
-import { extractTokenFromHeaders, verifyAccessToken } from "@aleph/auth";
+import { extractTokenFromHeaders, verifyAccessToken } from "@chs-platform/auth";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("ai-export");

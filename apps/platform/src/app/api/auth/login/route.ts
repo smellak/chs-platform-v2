@@ -8,7 +8,7 @@ import {
   generateRefreshToken,
   getAccessTokenCookieConfig,
   getRefreshTokenCookieConfig,
-} from "@aleph/auth";
+} from "@chs-platform/auth";
 import { getDb, schema } from "@/lib/db";
 
 const loginSchema = z.object({

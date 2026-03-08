@@ -20,8 +20,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN addgroup --system --gid 1001 aleph && \
-    adduser --system --uid 1001 aleph
+RUN addgroup --system --gid 1001 chs && \
+    adduser --system --uid 1001 chs
 
 # Copy Next.js standalone output
 COPY --from=builder /app/apps/platform/.next/standalone ./
@@ -39,7 +39,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY docker/entrypoint.sh ./entrypoint.sh
 RUN chmod +x entrypoint.sh
 
-USER aleph
+USER chs
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"

@@ -1,12 +1,12 @@
-import { parseAlephHeaders } from "../parse-headers";
-import type { AlephUser } from "../types";
+import { parseCHSHeaders } from "../parse-headers";
+import type { CHSUser } from "../types";
 
-export type { AlephUser };
-export { parseAlephHeaders };
+export type { CHSUser };
+export { parseCHSHeaders };
 
 interface RequestLike {
   headers: Record<string, string | string[] | undefined>;
-  aleph?: AlephUser;
+  chs?: CHSUser;
 }
 
 interface ResponseLike {
@@ -16,33 +16,33 @@ interface ResponseLike {
 
 type NextFunction = () => void;
 
-export function alephMiddleware() {
+export function chsMiddleware() {
   return (req: RequestLike, _res: ResponseLike, next: NextFunction): void => {
-    const user = parseAlephHeaders(req.headers);
+    const user = parseCHSHeaders(req.headers);
     if (user) {
-      req.aleph = user;
+      req.chs = user;
     }
     next();
   };
 }
 
-export function requireAleph() {
+export function requireCHS() {
   return (req: RequestLike, res: ResponseLike, next: NextFunction): void => {
-    if (!req.aleph) {
-      res.status(401).json({ error: "Aleph authentication required" });
+    if (!req.chs) {
+      res.status(401).json({ error: "CHS authentication required" });
       return;
     }
     next();
   };
 }
 
-export function requireAlephPermission(permission: string) {
+export function requireCHSPermission(permission: string) {
   return (req: RequestLike, res: ResponseLike, next: NextFunction): void => {
-    if (!req.aleph) {
-      res.status(401).json({ error: "Aleph authentication required" });
+    if (!req.chs) {
+      res.status(401).json({ error: "CHS authentication required" });
       return;
     }
-    if (!req.aleph.permissions[permission] && req.aleph.role !== "super-admin") {
+    if (!req.chs.permissions[permission] && req.chs.role !== "super-admin") {
       res.status(403).json({ error: `Permission '${permission}' required` });
       return;
     }
@@ -50,13 +50,13 @@ export function requireAlephPermission(permission: string) {
   };
 }
 
-export function requireAlephAccessLevel(level: "full" | "readonly") {
+export function requireCHSAccessLevel(level: "full" | "readonly") {
   return (req: RequestLike, res: ResponseLike, next: NextFunction): void => {
-    if (!req.aleph) {
-      res.status(401).json({ error: "Aleph authentication required" });
+    if (!req.chs) {
+      res.status(401).json({ error: "CHS authentication required" });
       return;
     }
-    if (level === "full" && req.aleph.accessLevel !== "full") {
+    if (level === "full" && req.chs.accessLevel !== "full") {
       res.status(403).json({ error: "Full access required" });
       return;
     }

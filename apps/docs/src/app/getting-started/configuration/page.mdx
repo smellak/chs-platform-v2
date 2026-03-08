@@ -1,6 +1,6 @@
 # Configuration
 
-Aleph Platform is configured through environment variables. This page documents every variable and its purpose.
+CHS Platform is configured through environment variables. This page documents every variable and its purpose.
 
 ## Required Variables
 
@@ -76,7 +76,7 @@ Cookie behavior varies based on `NODE_ENV` and `DOMAIN`:
 | `sameSite` (access) | `lax` | `lax` | `lax` |
 | `sameSite` (refresh) | `strict` | `strict` | `strict` |
 
-When `DOMAIN` is set (and is not `localhost`), the access token cookie includes a `domain` attribute to allow cookie sharing across subdomains. This is important for the Aleph header protocol where the platform authenticates users and forwards their identity to registered applications.
+When `DOMAIN` is set (and is not `localhost`), the access token cookie includes a `domain` attribute to allow cookie sharing across subdomains. This is important for the CHS header protocol where the platform authenticates users and forwards their identity to registered applications.
 
 ## Example .env File
 

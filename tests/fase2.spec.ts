@@ -107,7 +107,7 @@ test.describe("Fase 2: Integration Engine", () => {
     const res = await request.get(`${BASE}/api/auth/sso-info`);
     expect(res.status()).toBe(200);
     const data = await res.json();
-    expect(data.platform).toBe("Aleph");
+    expect(data.platform).toBe("CHS");
     expect(data.headers).toBeDefined();
     expect(data.headers["X-CHS-User-Id"]).toBeDefined();
     expect(data.headers["X-CHS-Role"]).toBeDefined();
@@ -284,7 +284,7 @@ test.describe("Fase 2: Integration Engine", () => {
   test("T18: SDK package builds correctly", async ({}) => {
     const { execSync } = require("child_process");
     const result = execSync(
-      "cd /home/aleph/aleph-platform/packages/sdk && npm run build 2>&1",
+      "cd /home/aleph/chs-platform-v2/packages/sdk && npm run build 2>&1",
     ).toString();
     expect(result).not.toContain("error TS");
   });

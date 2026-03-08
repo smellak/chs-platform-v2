@@ -1,5 +1,5 @@
 {
-  "name": "aleph-platform",
+  "name": "chs-platform-v2",
   "private": true,
   "workspaces": [
     "apps/*",
@@ -11,15 +11,16 @@
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
     "test": "turbo run test",
-    "db:generate": "turbo run db:generate --filter=@aleph/db",
-    "db:migrate": "turbo run db:migrate --filter=@aleph/db",
-    "db:seed": "turbo run db:seed --filter=@aleph/db"
+    "db:generate": "turbo run db:generate --filter=@chs-platform/db",
+    "db:migrate": "turbo run db:migrate --filter=@chs-platform/db",
+    "db:seed": "turbo run db:seed --filter=@chs-platform/db"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "turbo": "^2",
     "typescript": "^5.7"
   },
+  "packageManager": "npm@10.8.2",
   "engines": {
     "node": ">=20"
   }

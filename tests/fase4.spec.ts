@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { execSync } from "child_process";
 
 const BASE = process.env["TEST_BASE_URL"] ?? "http://localhost:3002";
-const REPO = process.env["HOME"] + "/aleph-platform";
+const REPO = process.env["HOME"] + "/chs-platform-v2";
 
 async function loginAsAdmin(page: Page) {
   await page.goto(`${BASE}/login`);
@@ -40,12 +40,12 @@ test.describe("Fase 4: Production Readiness", () => {
   });
 
   test("T03: CLI generates .env with random secrets", async () => {
-    execSync("rm -rf /tmp/aleph-test-cli-pw", { encoding: "utf-8" });
+    execSync("rm -rf /tmp/chs-test-cli-pw", { encoding: "utf-8" });
     execSync(
-      "node apps/cli/dist/index.js /tmp/aleph-test-cli-pw --non-interactive 2>&1",
+      "node apps/cli/dist/index.js /tmp/chs-test-cli-pw --non-interactive 2>&1",
       { cwd: REPO, encoding: "utf-8" },
     );
-    const env = execSync("cat /tmp/aleph-test-cli-pw/.env", {
+    const env = execSync("cat /tmp/chs-test-cli-pw/.env", {
       encoding: "utf-8",
     });
     expect(env).toContain("JWT_SECRET=");
@@ -76,11 +76,11 @@ test.describe("Fase 4: Production Readiness", () => {
     expect(result.trim()).toContain("favicon.svg");
   });
 
-  test("T06: Login page shows Aleph branding", async ({ page }) => {
+  test("T06: Login page shows CHS branding", async ({ page }) => {
     await page.goto(`${BASE}/login`);
     await page.waitForLoadState("networkidle");
-    // Should have the Aleph logo image
-    const logo = page.locator('img[alt="Aleph Platform"]');
+    // Should have the CHS logo image
+    const logo = page.locator('img[alt="CHS Platform"]');
     await expect(logo).toBeVisible({ timeout: 10000 });
   });
 
@@ -190,7 +190,7 @@ test.describe("Fase 4: Production Readiness", () => {
       cwd: REPO,
       encoding: "utf-8",
     });
-    expect(result.trim()).toContain("aleph");
+    expect(result.trim()).toContain("chs");
   });
 
   test("T19: .dockerignore exists", async () => {
@@ -208,7 +208,7 @@ test.describe("Fase 4: Production Readiness", () => {
     // The org name from the seed should appear in the navbar subtitle
     const body = await page.textContent("body");
     expect(body).toBeDefined();
-    // Should show the org name (from DB) or Aleph branding
+    // Should show the org name (from DB) or CHS branding
     expect(body!.length).toBeGreaterThan(0);
   });
 

@@ -1,9 +1,9 @@
 {
-  "name": "create-aleph",
+  "name": "create-chs",
   "version": "0.1.0",
   "private": true,
   "bin": {
-    "create-aleph": "./dist/index.js"
+    "create-chs": "./dist/index.js"
   },
   "scripts": {
     "build": "tsup src/index.ts --format cjs --dts",

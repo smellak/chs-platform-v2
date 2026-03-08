@@ -1,19 +1,19 @@
 # Agent SDK
 
-The `@aleph-platform/agent-sdk` package provides the `AlephAgent` class for building application agents that integrate with the platform's agent orchestration system. When a user sends a message to the platform's AI agent, it can route the request to your application's agent based on the capabilities you define.
+The `@chs-platform/agent-sdk` package provides the `CHSAgent` class for building application agents that integrate with the platform's agent orchestration system. When a user sends a message to the platform's AI agent, it can route the request to your application's agent based on the capabilities you define.
 
 ## Installation
 
 ```bash
-npm install @aleph-platform/agent-sdk
+npm install @chs-platform/agent-sdk
 ```
 
 ## Quick Start
 
 ```typescript
-import { AlephAgent } from "@aleph-platform/agent-sdk";
+import { CHSAgent } from "@chs-platform/agent-sdk";
 
-const agent = new AlephAgent({
+const agent = new CHSAgent({
   name: "Inventory Agent",
   description: "Manages product inventory",
   capabilities: [
@@ -67,12 +67,12 @@ const agent = new AlephAgent({
 });
 ```
 
-## AlephAgent Class
+## CHSAgent Class
 
 ### Constructor
 
 ```typescript
-new AlephAgent(config: AgentConfig)
+new CHSAgent(config: AgentConfig)
 ```
 
 The constructor validates the capabilities configuration and throws an error if the configuration is invalid.
@@ -108,7 +108,7 @@ The middleware:
 7. Returns the result as JSON
 
 **Error responses:**
-- `401` -- Missing Aleph headers
+- `401` -- Missing CHS headers
 - `400` -- Missing or unknown capability, invalid parameters
 - `403` -- Insufficient permissions
 - `500` -- Handler error
@@ -163,7 +163,7 @@ The object passed to your handler function:
 interface AgentRequest {
   capability: string;              // Which capability was requested
   parameters: Record<string, unknown>;  // Validated parameters
-  user: AlephUser;                 // The authenticated user
+  user: CHSUser;                 // The authenticated user
   conversationContext?: Array<{    // Previous conversation messages
     role: string;
     content: string;
@@ -183,12 +183,12 @@ interface AgentResponse {
 }
 ```
 
-### `AlephUser` (Agent SDK)
+### `CHSUser` (Agent SDK)
 
 The user type in the Agent SDK is slightly different from the main SDK:
 
 ```typescript
-interface AlephUser {
+interface CHSUser {
   id: string;
   name: string;
   email: string;
@@ -205,7 +205,7 @@ The SDK validates both configuration and runtime parameters.
 
 ### Configuration Validation
 
-When you create an `AlephAgent`, it validates:
+When you create an `CHSAgent`, it validates:
 - At least one capability must be defined
 - Capability names must be unique
 - Each capability must have a name and description

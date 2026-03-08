@@ -38,13 +38,13 @@ test.describe("Fase 1: Core Platform UI", () => {
 
   // ─── Navigation ───────────────────────────────────────────────────────────
 
-  test("T3: Navbar shows ALEPH brand, Dashboard, Monitor, Admin links", async ({
+  test("T3: Navbar shows CHS brand, Dashboard, Monitor, Admin links", async ({
     page,
   }) => {
     await loginAsAdmin(page);
     await expect(page.locator("nav")).toBeVisible({ timeout: 10000 });
     const nav = page.locator("nav");
-    await expect(nav).toContainText("ALEPH");
+    await expect(nav).toContainText("CHS");
     await expect(nav).toContainText("Dashboard");
     await expect(nav).toContainText("Monitor");
     await expect(nav).toContainText("Admin");

@@ -1,11 +1,11 @@
 # SDK Overview
 
-The `@aleph-platform/sdk` package enables external applications to integrate with the Aleph Platform. It provides header parsing, authentication middleware, and helper functions for both Express and Next.js applications.
+The `@chs-platform/sdk` package enables external applications to integrate with CHS Platform. It provides header parsing, authentication middleware, and helper functions for both Express and Next.js applications.
 
 ## Installation
 
 ```bash
-npm install @aleph-platform/sdk
+npm install @chs-platform/sdk
 ```
 
 ## Package Entry Points
@@ -14,20 +14,20 @@ The SDK provides three entry points:
 
 | Import | Description |
 |--------|-------------|
-| `@aleph-platform/sdk` | Core exports: `parseAlephHeaders`, `getAlephLoginUrl`, types |
-| `@aleph-platform/sdk/express` | Express middleware functions |
-| `@aleph-platform/sdk/next` | Next.js helper functions |
+| `@chs-platform/sdk` | Core exports: `parseCHSHeaders`, `getCHSLoginUrl`, types |
+| `@chs-platform/sdk/express` | Express middleware functions |
+| `@chs-platform/sdk/next` | Next.js helper functions |
 
 ## Core Exports
 
-### `parseAlephHeaders(headers)`
+### `parseCHSHeaders(headers)`
 
-Parses raw HTTP headers into an `AlephUser` object. Returns `null` if the `x-chs-user-id` header is missing.
+Parses raw HTTP headers into an `CHSUser` object. Returns `null` if the `x-chs-user-id` header is missing.
 
 ```typescript
-import { parseAlephHeaders } from "@aleph-platform/sdk";
+import { parseCHSHeaders } from "@chs-platform/sdk";
 
-const user = parseAlephHeaders(request.headers);
+const user = parseCHSHeaders(request.headers);
 
 if (user) {
   console.log(user.id);          // UUID
@@ -46,31 +46,31 @@ if (user) {
 **Parameters:**
 - `headers: Record<string, string | string[] | undefined>` -- A headers object (supports Express `req.headers`, Next.js headers, or plain objects)
 
-**Returns:** `AlephUser | null`
+**Returns:** `CHSUser | null`
 
-### `getAlephLoginUrl(platformUrl, redirectUrl?)`
+### `getCHSLoginUrl(platformUrl, redirectUrl?)`
 
-Generates a URL that redirects the user to the Aleph Platform login page with a redirect parameter.
+Generates a URL that redirects the user to the CHS Platform login page with a redirect parameter.
 
 ```typescript
-import { getAlephLoginUrl } from "@aleph-platform/sdk";
+import { getCHSLoginUrl } from "@chs-platform/sdk";
 
-const loginUrl = getAlephLoginUrl("https://platform.example.com", "https://myapp.example.com/dashboard");
+const loginUrl = getCHSLoginUrl("https://platform.example.com", "https://myapp.example.com/dashboard");
 // Returns: "https://platform.example.com/login?redirect=https%3A%2F%2Fmyapp.example.com%2Fdashboard"
 ```
 
 **Parameters:**
-- `platformUrl: string` -- The base URL of the Aleph Platform
+- `platformUrl: string` -- The base URL of CHS Platform
 - `redirectUrl?: string` -- Where to redirect after login (defaults to `window.location.href` in browser environments)
 
 **Returns:** `string`
 
 ## Types
 
-### `AlephUser`
+### `CHSUser`
 
 ```typescript
-interface AlephUser {
+interface CHSUser {
   id: string;
   name: string;
   email: string;
@@ -84,10 +84,10 @@ interface AlephUser {
 }
 ```
 
-### `AlephHeaders`
+### `CHSHeaders`
 
 ```typescript
-interface AlephHeaders {
+interface CHSHeaders {
   "x-chs-user-id": string;
   "x-chs-user-name": string;
   "x-chs-user-email": string;
@@ -104,7 +104,7 @@ interface AlephHeaders {
 ## Package Structure
 
 ```
-@aleph-platform/sdk/
+@chs-platform/sdk/
 ├── dist/
 │   ├── index.js            # CJS entry
 │   ├── index.mjs           # ESM entry

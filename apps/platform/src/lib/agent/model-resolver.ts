@@ -4,7 +4,7 @@ import { openai, createOpenAI } from "@ai-sdk/openai";
 import { google, createGoogleGenerativeAI } from "@ai-sdk/google";
 import type { LanguageModelV3 } from "@ai-sdk/provider";
 import { getDb, schema } from "@/lib/db";
-import { decryptApiKey } from "@aleph/auth/crypto";
+import { decryptApiKey } from "@chs-platform/auth/crypto";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("model-resolver");

@@ -1,4 +1,4 @@
-export interface AlephUser {
+export interface CHSUser {
   id: string;
   name: string;
   email: string;
@@ -11,7 +11,7 @@ export interface AlephUser {
   permissions: Record<string, boolean>;
 }
 
-export interface AlephHeaders {
+export interface CHSHeaders {
   "x-chs-user-id": string;
   "x-chs-user-name": string;
   "x-chs-user-email": string;

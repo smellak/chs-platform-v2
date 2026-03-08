@@ -1,8 +1,8 @@
-import { parseAlephHeaders } from "../parse-headers";
-import type { AlephUser } from "../types";
+import { parseCHSHeaders } from "../parse-headers";
+import type { CHSUser } from "../types";
 
-export type { AlephUser };
-export { parseAlephHeaders };
+export type { CHSUser };
+export { parseCHSHeaders };
 
 interface NextRequestLike {
   headers: {
@@ -10,10 +10,10 @@ interface NextRequestLike {
   };
 }
 
-export function getAlephUser(request: NextRequestLike): AlephUser | null {
+export function getCHSUser(request: NextRequestLike): CHSUser | null {
   const headers: Record<string, string> = {};
   request.headers.forEach((value, key) => {
     headers[key] = value;
   });
-  return parseAlephHeaders(headers);
+  return parseCHSHeaders(headers);
 }
