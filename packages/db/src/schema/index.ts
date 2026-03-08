@@ -39,6 +39,10 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
   agentConversations: many(agentConversations),
   apiKeys: many(apiKeys),
   webhooks: many(webhooks),
+  aiModels: many(aiModels),
+  aiAlertRules: many(aiAlertRules),
+  aiAlerts: many(aiAlerts),
+  agentPermissions: many(agentPermissions),
 }));
 
 // ─── Departments ─────────────────────────────────────────────────────────────
@@ -348,7 +352,11 @@ export const agentMessages = pgTable("agent_messages", {
   routedToAppId: uuid("routed_to_app_id").references(() => apps.id),
   toolCalls: jsonb("tool_calls").$type<Record<string, unknown>[]>(),
   tokensUsed: integer("tokens_used"),
-  model: varchar("model", { length: 50 }),
+  inputTokens: integer("input_tokens"),
+  outputTokens: integer("output_tokens"),
+  model: varchar("model", { length: 100 }),
+  providerId: uuid("provider_id").references(() => apiProviders.id),
+  modelId: uuid("model_id").references(() => aiModels.id),
   latencyMs: integer("latency_ms"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -377,6 +385,7 @@ export const agentToolCalls = pgTable("agent_tool_calls", {
   parameters: jsonb("parameters").default({}).$type<Record<string, unknown>>(),
   response: jsonb("response").$type<Record<string, unknown>>(),
   status: varchar("status", { length: 20 }).default("pending"),
+  errorMessage: text("error_message"),
   executedAt: timestamp("executed_at", { withTimezone: true }),
   durationMs: integer("duration_ms"),
 });
@@ -484,7 +493,10 @@ export const apiProviders = pgTable("api_providers", {
     .references(() => organizations.id),
   name: varchar("name", { length: 100 }).notNull(),
   slug: varchar("slug", { length: 50 }).notNull(),
+  providerType: varchar("provider_type", { length: 20 }).notNull().default("anthropic"),
   model: varchar("model", { length: 100 }),
+  apiKeyEncrypted: text("api_key_encrypted"),
+  baseUrl: varchar("base_url", { length: 255 }),
   costPer1kInput: real("cost_per_1k_input").default(0),
   costPer1kOutput: real("cost_per_1k_output").default(0),
   isActive: boolean("is_active").default(true).notNull(),
@@ -497,6 +509,69 @@ export const apiProvidersRelations = relations(apiProviders, ({ one, many }) => 
     references: [organizations.id],
   }),
   costLogs: many(apiCostLogs),
+  models: many(aiModels),
+}));
+
+// ─── AI Models ──────────────────────────────────────────────────────────────
+
+export const aiModels = pgTable("ai_models", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  providerId: uuid("provider_id")
+    .notNull()
+    .references(() => apiProviders.id, { onDelete: "cascade" }),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organizations.id),
+  modelId: varchar("model_id", { length: 100 }).notNull(),
+  displayName: varchar("display_name", { length: 100 }).notNull(),
+  costPer1kInput: real("cost_per_1k_input").default(0),
+  costPer1kOutput: real("cost_per_1k_output").default(0),
+  maxTokens: integer("max_tokens").default(4096),
+  isActive: boolean("is_active").default(true).notNull(),
+  isDefault: boolean("is_default").default(false).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const aiModelsRelations = relations(aiModels, ({ one, many }) => ({
+  provider: one(apiProviders, {
+    fields: [aiModels.providerId],
+    references: [apiProviders.id],
+  }),
+  organization: one(organizations, {
+    fields: [aiModels.orgId],
+    references: [organizations.id],
+  }),
+  assignments: many(appModelAssignments),
+}));
+
+// ─── App Model Assignments ──────────────────────────────────────────────────
+
+export const appModelAssignments = pgTable(
+  "app_model_assignments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    appId: uuid("app_id").references(() => apps.id, { onDelete: "cascade" }),
+    modelId: uuid("model_id")
+      .notNull()
+      .references(() => aiModels.id, { onDelete: "cascade" }),
+    priority: integer("priority").default(0).notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("app_model_assignments_app_priority_idx").on(table.appId, table.priority),
+  ],
+);
+
+export const appModelAssignmentsRelations = relations(appModelAssignments, ({ one }) => ({
+  app: one(apps, {
+    fields: [appModelAssignments.appId],
+    references: [apps.id],
+  }),
+  model: one(aiModels, {
+    fields: [appModelAssignments.modelId],
+    references: [aiModels.id],
+  }),
 }));
 
 // ─── API Cost Logs ───────────────────────────────────────────────────────────
@@ -611,6 +686,119 @@ export const webhooksRelations = relations(webhooks, ({ one }) => ({
   }),
   createdByUser: one(users, {
     fields: [webhooks.createdBy],
+    references: [users.id],
+  }),
+}));
+
+// ─── AI Alert Rules ─────────────────────────────────────────────────────────
+
+export const aiAlertRules = pgTable("ai_alert_rules", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organizations.id),
+  name: varchar("name", { length: 100 }).notNull(),
+  metric: varchar("metric", { length: 50 }).notNull(),
+  threshold: real("threshold").notNull(),
+  comparison: varchar("comparison", { length: 10 }).default("gt").notNull(),
+  severity: varchar("severity", { length: 20 }).default("warning").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdBy: uuid("created_by").references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const aiAlertRulesRelations = relations(aiAlertRules, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [aiAlertRules.orgId],
+    references: [organizations.id],
+  }),
+  createdByUser: one(users, {
+    fields: [aiAlertRules.createdBy],
+    references: [users.id],
+  }),
+  alerts: many(aiAlerts),
+}));
+
+// ─── AI Alerts ──────────────────────────────────────────────────────────────
+
+export const aiAlerts = pgTable(
+  "ai_alerts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id),
+    ruleId: uuid("rule_id").references(() => aiAlertRules.id, { onDelete: "set null" }),
+    severity: varchar("severity", { length: 20 }).notNull(),
+    title: varchar("title", { length: 200 }).notNull(),
+    message: text("message").notNull(),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    isResolved: boolean("is_resolved").default(false).notNull(),
+    resolvedBy: uuid("resolved_by").references(() => users.id),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("ai_alerts_org_resolved_idx").on(table.orgId, table.isResolved, table.createdAt),
+  ],
+);
+
+export const aiAlertsRelations = relations(aiAlerts, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [aiAlerts.orgId],
+    references: [organizations.id],
+  }),
+  rule: one(aiAlertRules, {
+    fields: [aiAlerts.ruleId],
+    references: [aiAlertRules.id],
+  }),
+  resolvedByUser: one(users, {
+    fields: [aiAlerts.resolvedBy],
+    references: [users.id],
+  }),
+}));
+
+// ─── Agent Permissions ──────────────────────────────────────────────────────
+
+export const agentPermissions = pgTable(
+  "agent_permissions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id),
+    targetType: varchar("target_type", { length: 20 }).notNull(),
+    targetId: uuid("target_id").notNull(),
+    appId: uuid("app_id").references(() => apps.id, { onDelete: "cascade" }),
+    canAccess: boolean("can_access").default(true).notNull(),
+    blockedTools: jsonb("blocked_tools").default([]).$type<string[]>(),
+    allowedModels: jsonb("allowed_models").default([]).$type<string[]>(),
+    maxTokensPerDay: integer("max_tokens_per_day"),
+    maxMessagesPerHour: integer("max_messages_per_hour"),
+    createdBy: uuid("created_by").references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("agent_perms_org_target_app_idx").on(
+      table.orgId,
+      table.targetType,
+      table.targetId,
+      table.appId,
+    ),
+  ],
+);
+
+export const agentPermissionsRelations = relations(agentPermissions, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [agentPermissions.orgId],
+    references: [organizations.id],
+  }),
+  app: one(apps, {
+    fields: [agentPermissions.appId],
+    references: [apps.id],
+  }),
+  createdByUser: one(users, {
+    fields: [agentPermissions.createdBy],
     references: [users.id],
   }),
 }));

@@ -15,6 +15,13 @@
       "when": 1772858230966,
       "tag": "0001_yielding_lenny_balinger",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772988424941,
+      "tag": "0002_boring_war_machine",
+      "breakpoints": true
     }
   ]
 }
