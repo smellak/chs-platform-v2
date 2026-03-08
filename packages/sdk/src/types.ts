@@ -12,14 +12,14 @@ export interface AlephUser {
 }
 
 export interface AlephHeaders {
-  "x-aleph-user-id": string;
-  "x-aleph-user-name": string;
-  "x-aleph-user-email": string;
-  "x-aleph-org-id": string;
-  "x-aleph-org-name": string;
-  "x-aleph-dept": string;
-  "x-aleph-dept-id": string;
-  "x-aleph-role": string;
-  "x-aleph-access-level": string;
-  "x-aleph-permissions": string;
+  "x-chs-user-id": string;
+  "x-chs-user-name": string;
+  "x-chs-user-email": string;
+  "x-chs-org-id": string;
+  "x-chs-org-name": string;
+  "x-chs-dept": string;
+  "x-chs-dept-id": string;
+  "x-chs-role": string;
+  "x-chs-access-level": string;
+  "x-chs-permissions": string;
 }

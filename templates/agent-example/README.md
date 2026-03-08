@@ -57,13 +57,13 @@ When Aleph forwards a request to your agent it includes the following headers so
 
 | Header                  | Description                                   | Example               |
 |-------------------------|-----------------------------------------------|-----------------------|
-| `X-Aleph-User-Id`      | Unique identifier for the user                | `usr_abc123`          |
-| `X-Aleph-User-Name`    | Display name of the user                      | `Jane Doe`            |
-| `X-Aleph-User-Email`   | Email address of the user                     | `jane@example.com`    |
-| `X-Aleph-Role`         | User role in the platform                     | `super-admin`, `dept-admin`, `user` |
-| `X-Aleph-Access-Level` | Granular access level                         | `full`, `limited`     |
-| `X-Aleph-Org-Id`       | Organization identifier (optional)            | `org_xyz`             |
-| `X-Aleph-Dept`         | Department the user belongs to (optional)     | `Engineering`         |
+| `X-CHS-User-Id`      | Unique identifier for the user                | `usr_abc123`          |
+| `X-CHS-User-Name`    | Display name of the user                      | `Jane Doe`            |
+| `X-CHS-User-Email`   | Email address of the user                     | `jane@example.com`    |
+| `X-CHS-Role`         | User role in the platform                     | `super-admin`, `dept-admin`, `user` |
+| `X-CHS-Access-Level` | Granular access level                         | `full`, `limited`     |
+| `X-CHS-Org-Id`       | Organization identifier (optional)            | `org_xyz`             |
+| `X-CHS-Dept`         | Department the user belongs to (optional)     | `Engineering`         |
 
 The agent SDK parses these headers automatically and provides them as a typed `AlephUser` object inside the `AgentRequest`.
 

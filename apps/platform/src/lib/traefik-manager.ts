@@ -42,16 +42,16 @@ http:
         address: "${alephVerifyUrl}"
         trustForwardHeader: true
         authResponseHeaders:
-          - "X-Aleph-User-Id"
-          - "X-Aleph-User-Name"
-          - "X-Aleph-User-Email"
-          - "X-Aleph-Org-Id"
-          - "X-Aleph-Org-Name"
-          - "X-Aleph-Dept"
-          - "X-Aleph-Dept-Id"
-          - "X-Aleph-Role"
-          - "X-Aleph-Access-Level"
-          - "X-Aleph-Permissions"
+          - "X-CHS-User-Id"
+          - "X-CHS-User-Name"
+          - "X-CHS-User-Email"
+          - "X-CHS-Org-Id"
+          - "X-CHS-Org-Name"
+          - "X-CHS-Dept"
+          - "X-CHS-Dept-Id"
+          - "X-CHS-Role"
+          - "X-CHS-Access-Level"
+          - "X-CHS-Permissions"
 `;
   }
 

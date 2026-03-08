@@ -6,11 +6,11 @@ export function parseAlephHeaders(headers: Record<string, string | string[] | un
     return typeof val === "string" ? val : Array.isArray(val) ? val[0] : undefined;
   };
 
-  const id = get("x-aleph-user-id") ?? get("X-Aleph-User-Id");
-  const name = get("x-aleph-user-name") ?? get("X-Aleph-User-Name");
-  const email = get("x-aleph-user-email") ?? get("X-Aleph-User-Email");
-  const role = get("x-aleph-role") ?? get("X-Aleph-Role");
-  const accessLevel = get("x-aleph-access-level") ?? get("X-Aleph-Access-Level");
+  const id = get("x-chs-user-id") ?? get("X-CHS-User-Id");
+  const name = get("x-chs-user-name") ?? get("X-CHS-User-Name");
+  const email = get("x-chs-user-email") ?? get("X-CHS-User-Email");
+  const role = get("x-chs-role") ?? get("X-CHS-Role");
+  const accessLevel = get("x-chs-access-level") ?? get("X-CHS-Access-Level");
 
   if (!id || !name || !email || !role || !accessLevel) return null;
 
@@ -20,7 +20,7 @@ export function parseAlephHeaders(headers: Record<string, string | string[] | un
     email,
     role,
     accessLevel,
-    orgId: get("x-aleph-org-id") ?? get("X-Aleph-Org-Id"),
-    department: get("x-aleph-dept") ?? get("X-Aleph-Dept"),
+    orgId: get("x-chs-org-id") ?? get("X-CHS-Org-Id"),
+    department: get("x-chs-dept") ?? get("X-CHS-Dept"),
   };
 }

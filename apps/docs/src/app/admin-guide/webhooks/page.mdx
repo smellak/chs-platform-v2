@@ -1,6 +1,6 @@
 # Webhooks
 
-Webhooks allow the Aleph Platform to notify external systems when specific events occur. When an event is triggered, the platform sends an HTTP POST request to the configured URL with event details.
+Webhooks allow CHS Platform to notify external systems when specific events occur. When an event is triggered, the platform sends an HTTP POST request to the configured URL with event details.
 
 ## Accessing Webhook Management
 
@@ -33,7 +33,7 @@ Navigate to **Admin > Webhooks** (`/admin/webhooks`). This page requires admin r
 
 ## Verifying Webhook Signatures
 
-Each webhook request includes a signature header that you can use to verify the request came from Aleph Platform. Use the webhook secret to compute an HMAC-SHA256 signature of the request body and compare it with the signature in the header.
+Each webhook request includes a signature header that you can use to verify the request came from CHS Platform. Use the webhook secret to compute an HMAC-SHA256 signature of the request body and compare it with the signature in the header.
 
 ```typescript
 import crypto from "crypto";

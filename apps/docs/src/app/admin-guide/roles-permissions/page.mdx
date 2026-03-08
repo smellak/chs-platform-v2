@@ -94,12 +94,12 @@ When a user accesses the platform:
 
 1. The platform looks up the user's department and role assignment
 2. The role's `permissions` JSON is loaded
-3. These permissions are serialized as the `x-aleph-permissions` header
-4. The role slug is sent as the `x-aleph-role` header
+3. These permissions are serialized as the `x-chs-permissions` header
+4. The role slug is sent as the `x-chs-role` header
 
 ### Access Level Determination
 
-The `access_level` (sent as `x-aleph-access-level`) is determined by `app_access_policies`:
+The `access_level` (sent as `x-chs-access-level`) is determined by `app_access_policies`:
 
 - An access policy maps `(app, department, optional role)` to an access level (`full` or `readonly`)
 - When a user accesses an app, the platform finds the matching policy for the user's department

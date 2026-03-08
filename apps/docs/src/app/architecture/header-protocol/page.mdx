@@ -1,21 +1,21 @@
 # Header Protocol
 
-The Aleph header protocol is the mechanism by which the platform communicates user identity and permissions to downstream applications. When a user accesses a registered app through the platform, the platform validates the user's session and injects a set of `x-aleph-*` HTTP headers into the forwarded request.
+The Aleph header protocol is the mechanism by which the platform communicates user identity and permissions to downstream applications. When a user accesses a registered app through the platform, the platform validates the user's session and injects a set of `x-chs-*` HTTP headers into the forwarded request.
 
 ## Header Specification
 
 | Header | Type | Description | Example |
 |--------|------|-------------|---------|
-| `x-aleph-user-id` | UUID | Unique user identifier | `a1b2c3d4-...` |
-| `x-aleph-user-name` | String | User's display name | `Carlos Martinez` |
-| `x-aleph-user-email` | String | User's email address | `carlos@centrohogar.es` |
-| `x-aleph-org-id` | UUID | Organization identifier | `e5f6a7b8-...` |
-| `x-aleph-org-name` | String | Organization name | `Centro Hogar Sanchez` |
-| `x-aleph-dept` | String | Department name | `Logistica y Almacen` |
-| `x-aleph-dept-id` | UUID | Department identifier | `c9d0e1f2-...` |
-| `x-aleph-role` | Enum | User's role slug | `super-admin`, `dept-admin`, `user`, `viewer` |
-| `x-aleph-access-level` | Enum | Access level for the current app | `full` or `readonly` |
-| `x-aleph-permissions` | JSON | JSON-encoded permission map | `{"apps.read":true,"apps.manage":true}` |
+| `x-chs-user-id` | UUID | Unique user identifier | `a1b2c3d4-...` |
+| `x-chs-user-name` | String | User's display name | `Carlos Martinez` |
+| `x-chs-user-email` | String | User's email address | `carlos@centrohogar.es` |
+| `x-chs-org-id` | UUID | Organization identifier | `e5f6a7b8-...` |
+| `x-chs-org-name` | String | Organization name | `Centro Hogar Sanchez` |
+| `x-chs-dept` | String | Department name | `Logistica y Almacen` |
+| `x-chs-dept-id` | UUID | Department identifier | `c9d0e1f2-...` |
+| `x-chs-role` | Enum | User's role slug | `super-admin`, `dept-admin`, `user`, `viewer` |
+| `x-chs-access-level` | Enum | Access level for the current app | `full` or `readonly` |
+| `x-chs-permissions` | JSON | JSON-encoded permission map | `{"apps.read":true,"apps.manage":true}` |
 
 ## Parsing Headers
 
@@ -65,16 +65,16 @@ The raw header names are also typed:
 
 ```typescript
 interface AlephHeaders {
-  "x-aleph-user-id": string;
-  "x-aleph-user-name": string;
-  "x-aleph-user-email": string;
-  "x-aleph-org-id": string;
-  "x-aleph-org-name": string;
-  "x-aleph-dept": string;
-  "x-aleph-dept-id": string;
-  "x-aleph-role": string;
-  "x-aleph-access-level": string;
-  "x-aleph-permissions": string;
+  "x-chs-user-id": string;
+  "x-chs-user-name": string;
+  "x-chs-user-email": string;
+  "x-chs-org-id": string;
+  "x-chs-org-name": string;
+  "x-chs-dept": string;
+  "x-chs-dept-id": string;
+  "x-chs-role": string;
+  "x-chs-access-level": string;
+  "x-chs-permissions": string;
 }
 ```
 
@@ -84,19 +84,19 @@ The `parseAlephHeaders` function handles several edge cases:
 
 - **Case insensitivity**: Headers are matched in both original case and lowercase
 - **Array values**: If a header value is an array (as in some Node.js frameworks), the first element is used
-- **Missing `x-aleph-user-id`**: If the user ID header is absent, the function returns `null`, indicating no authenticated user
+- **Missing `x-chs-user-id`**: If the user ID header is absent, the function returns `null`, indicating no authenticated user
 - **Missing optional fields**: Other fields default to empty strings; role defaults to `"viewer"`, accessLevel to `"readonly"`
-- **Permissions parsing**: The `x-aleph-permissions` header is parsed as JSON. If parsing fails, an empty object is returned
+- **Permissions parsing**: The `x-chs-permissions` header is parsed as JSON. If parsing fails, an empty object is returned
 
 ## Security Considerations
 
 The header protocol relies on a trust boundary between the platform and downstream applications:
 
-1. **Headers must come from the platform** -- Applications should only trust `x-aleph-*` headers that come through the platform's reverse proxy or API gateway. Direct requests from clients should not contain these headers.
+1. **Headers must come from the platform** -- Applications should only trust `x-chs-*` headers that come through the platform's reverse proxy or API gateway. Direct requests from clients should not contain these headers.
 
-2. **Header stripping** -- The platform strips any incoming `x-aleph-*` headers from client requests before adding its own, preventing header spoofing.
+2. **Header stripping** -- The platform strips any incoming `x-chs-*` headers from client requests before adding its own, preventing header spoofing.
 
-3. **Internal network** -- In Docker deployments, app instances communicate with the platform over an internal Docker network. External clients cannot set `x-aleph-*` headers on requests to internal services.
+3. **Internal network** -- In Docker deployments, app instances communicate with the platform over an internal Docker network. External clients cannot set `x-chs-*` headers on requests to internal services.
 
 4. **Validation** -- Applications should always validate the headers using the SDK rather than reading them manually. The SDK handles missing headers gracefully by returning `null`.
 
@@ -142,16 +142,16 @@ import { parseAlephHeaders } from "@aleph-platform/sdk";
 
 // Works with any header-like object
 const headers = {
-  "x-aleph-user-id": "abc-123",
-  "x-aleph-user-name": "Test User",
-  "x-aleph-user-email": "test@example.com",
-  "x-aleph-org-id": "org-456",
-  "x-aleph-org-name": "Test Org",
-  "x-aleph-dept": "Engineering",
-  "x-aleph-dept-id": "dept-789",
-  "x-aleph-role": "user",
-  "x-aleph-access-level": "full",
-  "x-aleph-permissions": '{"apps.read":true}',
+  "x-chs-user-id": "abc-123",
+  "x-chs-user-name": "Test User",
+  "x-chs-user-email": "test@example.com",
+  "x-chs-org-id": "org-456",
+  "x-chs-org-name": "Test Org",
+  "x-chs-dept": "Engineering",
+  "x-chs-dept-id": "dept-789",
+  "x-chs-role": "user",
+  "x-chs-access-level": "full",
+  "x-chs-permissions": '{"apps.read":true}',
 };
 
 const user = parseAlephHeaders(headers);

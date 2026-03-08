@@ -248,15 +248,15 @@ You can test your agent directly with curl:
 ```bash
 curl -X POST http://localhost:5000/api/agent \
   -H "Content-Type: application/json" \
-  -H "x-aleph-user-id: test-user-id" \
-  -H "x-aleph-user-name: Test User" \
-  -H "x-aleph-user-email: test@example.com" \
-  -H "x-aleph-role: user" \
-  -H "x-aleph-access-level: full" \
+  -H "x-chs-user-id: test-user-id" \
+  -H "x-chs-user-name: Test User" \
+  -H "x-chs-user-email: test@example.com" \
+  -H "x-chs-role: user" \
+  -H "x-chs-access-level: full" \
   -d '{
     "capability": "consultar_citas",
     "parameters": { "date": "2026-03-15" }
   }'
 ```
 
-All five required headers (`x-aleph-user-id`, `x-aleph-user-name`, `x-aleph-user-email`, `x-aleph-role`, `x-aleph-access-level`) must be present for the agent to process the request. Missing any of them results in a 401 response.
+All five required headers (`x-chs-user-id`, `x-chs-user-name`, `x-chs-user-email`, `x-chs-role`, `x-chs-access-level`) must be present for the agent to process the request. Missing any of them results in a 401 response.

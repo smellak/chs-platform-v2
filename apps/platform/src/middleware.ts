@@ -65,8 +65,8 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   }
 
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-aleph-user-id", payload.userId);
-  requestHeaders.set("x-aleph-org-id", payload.orgId);
+  requestHeaders.set("x-chs-user-id", payload.userId);
+  requestHeaders.set("x-chs-org-id", payload.orgId);
 
   return NextResponse.next({ request: { headers: requestHeaders } });
 }

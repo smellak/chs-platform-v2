@@ -40,7 +40,7 @@ Aleph Platform follows a monorepo architecture built with Turborepo. It consists
 
 ### Platform as Auth Gateway
 
-The platform acts as the central authentication and authorization layer. When a user logs in, the platform issues JWT tokens. When the user accesses a registered application, the platform injects identity headers (`x-aleph-*`) into the request so the downstream app knows who the user is and what they can do.
+The platform acts as the central authentication and authorization layer. When a user logs in, the platform issues JWT tokens. When the user accesses a registered application, the platform injects identity headers (`x-chs-*`) into the request so the downstream app knows who the user is and what they can do.
 
 ### Header-Based Identity Propagation
 
@@ -60,7 +60,7 @@ Everything in the platform is scoped to an organization. Users belong to an orga
 2. **Platform issues JWT** stored in HttpOnly cookies
 3. **User accesses an app** through the platform
 4. **Platform validates the JWT** and resolves the user's full identity (org, department, role, permissions)
-5. **Platform injects `x-aleph-*` headers** into the proxied request
+5. **Platform injects `x-chs-*` headers** into the proxied request
 6. **App reads headers** using the SDK and makes authorization decisions
 
 ## Technology Choices

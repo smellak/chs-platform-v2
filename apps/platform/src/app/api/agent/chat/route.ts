@@ -26,7 +26,7 @@ interface ChatRequestBody {
 }
 
 export async function POST(request: NextRequest): Promise<Response> {
-  const userId = request.headers.get("x-aleph-user-id");
+  const userId = request.headers.get("x-chs-user-id");
   if (!userId) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }

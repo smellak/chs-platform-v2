@@ -48,7 +48,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 - API keys CRUD con hashing seguro
 - Webhooks CRUD con firma HMAC
 - SDK (@aleph-platform/sdk) con middleware Express y Next.js
-- Verify-access endpoint con headers X-Aleph-*
+- Verify-access endpoint con headers X-CHS-*
 - Seed data con organización, departamentos, roles y apps por defecto
 - 20 tests Playwright para Fase 2
 

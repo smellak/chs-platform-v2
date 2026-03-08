@@ -62,7 +62,7 @@
 
 1. Crea el route handler en `apps/platform/src/app/api/`
 2. Valida inputs con Zod
-3. Verifica autenticación via `x-aleph-user-id` header
+3. Verifica autenticación via `x-chs-user-id` header
 4. Documenta en `apps/docs/pages/api-reference/`
 5. Añade test en `tests/`
 

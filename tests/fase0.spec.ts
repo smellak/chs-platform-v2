@@ -139,8 +139,8 @@ test.describe("Fase 0: Foundation", () => {
       headers: { "X-Forwarded-Host": "citas.centrohogarsanchez.es" },
     });
     expect(res.status()).toBe(200);
-    const userId = res.headers()["x-aleph-user-id"];
-    const userName = res.headers()["x-aleph-user-name"];
+    const userId = res.headers()["x-chs-user-id"];
+    const userName = res.headers()["x-chs-user-name"];
     expect(userId).toBeDefined();
     expect(userName).toBeDefined();
   });

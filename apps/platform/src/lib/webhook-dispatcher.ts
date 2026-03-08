@@ -40,8 +40,8 @@ export async function dispatchWebhookEvent(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Aleph-Signature": signature,
-          "X-Aleph-Event": event,
+          "X-CHS-Signature": signature,
+          "X-CHS-Event": event,
         },
         body: payload,
         signal: controller.signal,

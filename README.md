@@ -57,7 +57,7 @@ Abre http://localhost:3000 — Login: **admin / admin123**
      Aleph Platform   ForwardAuth +   ForwardAuth +
      (login, admin)    App 1 backend   App 2 backend
            |              |
-      Set-Cookie:    Headers X-Aleph-*
+      Set-Cookie:    Headers X-CHS-*
       aleph_token    (inyectados por Traefik)
            |
       Agente Central IA
@@ -73,7 +73,7 @@ Abre http://localhost:3000 — Login: **admin / admin123**
 1. Usuario accede a `app1.empresa.com`
 2. Traefik envía request a Aleph `/api/auth/verify-access`
 3. Aleph verifica la cookie JWT y los permisos del usuario para esa app
-4. Si es válido, devuelve headers `X-Aleph-*` que Traefik inyecta en la request a la app
+4. Si es válido, devuelve headers `X-CHS-*` que Traefik inyecta en la request a la app
 5. La app lee los headers para identificar al usuario — sin necesidad de manejar autenticación propia
 
 ## Stack
@@ -138,7 +138,7 @@ npm install @aleph-platform/sdk
 ```typescript
 import { alephMiddleware, requireAleph } from "@aleph-platform/sdk/express";
 
-app.use(alephMiddleware());     // Parsea headers X-Aleph-*
+app.use(alephMiddleware());     // Parsea headers X-CHS-*
 app.use(requireAleph());        // Rechaza requests sin autenticación
 
 app.get("/api/data", (req, res) => {

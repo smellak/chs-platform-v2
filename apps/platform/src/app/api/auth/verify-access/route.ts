@@ -6,7 +6,7 @@ import { getDb, schema } from "@/lib/db";
 
 function errorResponse(status: number, error: string, errorCode: string): NextResponse {
   const res = NextResponse.json({ error }, { status });
-  res.headers.set("X-Aleph-Error", errorCode);
+  res.headers.set("X-CHS-Error", errorCode);
   return res;
 }
 
@@ -293,19 +293,19 @@ interface AccessResponseData {
 function buildAccessResponse(data: AccessResponseData): NextResponse {
   const response = NextResponse.json({ ok: true });
 
-  // Aleph headers (canonical)
-  response.headers.set("X-Aleph-User-Id", data.userId);
-  response.headers.set("X-Aleph-User-Name", data.userName);
-  response.headers.set("X-Aleph-User-Email", data.userEmail);
-  response.headers.set("X-Aleph-Org-Id", data.orgId);
-  response.headers.set("X-Aleph-Org-Name", data.orgName);
-  response.headers.set("X-Aleph-Dept", data.deptName);
-  response.headers.set("X-Aleph-Dept-Id", data.deptId);
-  response.headers.set("X-Aleph-Role", data.role);
-  response.headers.set("X-Aleph-Access-Level", data.accessLevel);
-  response.headers.set("X-Aleph-Permissions", JSON.stringify(data.permissions));
+  // CHS headers (canonical)
+  response.headers.set("X-CHS-User-Id", data.userId);
+  response.headers.set("X-CHS-User-Name", data.userName);
+  response.headers.set("X-CHS-User-Email", data.userEmail);
+  response.headers.set("X-CHS-Org-Id", data.orgId);
+  response.headers.set("X-CHS-Org-Name", data.orgName);
+  response.headers.set("X-CHS-Dept", data.deptName);
+  response.headers.set("X-CHS-Dept-Id", data.deptId);
+  response.headers.set("X-CHS-Role", data.role);
+  response.headers.set("X-CHS-Access-Level", data.accessLevel);
+  response.headers.set("X-CHS-Permissions", JSON.stringify(data.permissions));
 
-  // CHS-compatible headers (backward compat for Elias SSO)
+  // Elias SSO headers (x-chs-user-role, x-chs-user-dept differ from canonical)
   response.headers.set("X-CHS-User-Id", data.userId);
   response.headers.set("X-CHS-User-Name", data.userName);
   response.headers.set("X-CHS-User-Dept", data.deptName);

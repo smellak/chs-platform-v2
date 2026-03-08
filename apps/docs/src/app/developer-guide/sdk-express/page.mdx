@@ -34,7 +34,7 @@ app.get("/api/data", (req, res) => {
 
 After this middleware runs, `req.aleph` will be:
 - An `AlephUser` object if valid Aleph headers are present
-- `undefined` if the `x-aleph-user-id` header is missing
+- `undefined` if the `x-chs-user-id` header is missing
 
 ### `requireAleph()`
 

@@ -6,8 +6,8 @@ import { getDb, schema } from "@/lib/db";
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const refreshTokenValue = request.cookies.get("chs_refresh_token")?.value;
-    const userId = request.headers.get("x-aleph-user-id");
-    const orgId = request.headers.get("x-aleph-org-id");
+    const userId = request.headers.get("x-chs-user-id");
+    const orgId = request.headers.get("x-chs-org-id");
 
     const db = getDb();
 

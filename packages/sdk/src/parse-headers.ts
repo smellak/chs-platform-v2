@@ -8,20 +8,20 @@ export function parseAlephHeaders(
     return Array.isArray(val) ? val[0] : val;
   };
 
-  const id = get("x-aleph-user-id");
+  const id = get("x-chs-user-id");
   if (!id) return null;
 
   return {
     id,
-    name: get("x-aleph-user-name") ?? "",
-    email: get("x-aleph-user-email") ?? "",
-    orgId: get("x-aleph-org-id") ?? "",
-    orgName: get("x-aleph-org-name") ?? "",
-    dept: get("x-aleph-dept") ?? "",
-    deptId: get("x-aleph-dept-id") ?? "",
-    role: (get("x-aleph-role") as AlephUser["role"]) ?? "viewer",
-    accessLevel: (get("x-aleph-access-level") as AlephUser["accessLevel"]) ?? "readonly",
-    permissions: parsePermissions(get("x-aleph-permissions")),
+    name: get("x-chs-user-name") ?? "",
+    email: get("x-chs-user-email") ?? "",
+    orgId: get("x-chs-org-id") ?? "",
+    orgName: get("x-chs-org-name") ?? "",
+    dept: get("x-chs-dept") ?? "",
+    deptId: get("x-chs-dept-id") ?? "",
+    role: (get("x-chs-role") as AlephUser["role"]) ?? "viewer",
+    accessLevel: (get("x-chs-access-level") as AlephUser["accessLevel"]) ?? "readonly",
+    permissions: parsePermissions(get("x-chs-permissions")),
   };
 }
 

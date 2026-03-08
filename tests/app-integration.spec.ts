@@ -278,7 +278,7 @@ test.describe("App Integration — Service Health & Monitor", () => {
     const body = await res.json();
     expect(body.platform).toBe("CHS");
     expect(body.headers).toBeDefined();
-    expect(body.headers["X-Aleph-User-Id"]).toBeDefined();
+    expect(body.headers["X-CHS-User-Id"]).toBeDefined();
   });
 
   test("T16: Login returns valid user with session cookie", async ({

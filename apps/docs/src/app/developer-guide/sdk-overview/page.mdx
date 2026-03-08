@@ -22,7 +22,7 @@ The SDK provides three entry points:
 
 ### `parseAlephHeaders(headers)`
 
-Parses raw HTTP headers into an `AlephUser` object. Returns `null` if the `x-aleph-user-id` header is missing.
+Parses raw HTTP headers into an `AlephUser` object. Returns `null` if the `x-chs-user-id` header is missing.
 
 ```typescript
 import { parseAlephHeaders } from "@aleph-platform/sdk";
@@ -88,16 +88,16 @@ interface AlephUser {
 
 ```typescript
 interface AlephHeaders {
-  "x-aleph-user-id": string;
-  "x-aleph-user-name": string;
-  "x-aleph-user-email": string;
-  "x-aleph-org-id": string;
-  "x-aleph-org-name": string;
-  "x-aleph-dept": string;
-  "x-aleph-dept-id": string;
-  "x-aleph-role": string;
-  "x-aleph-access-level": string;
-  "x-aleph-permissions": string;
+  "x-chs-user-id": string;
+  "x-chs-user-name": string;
+  "x-chs-user-email": string;
+  "x-chs-org-id": string;
+  "x-chs-org-name": string;
+  "x-chs-dept": string;
+  "x-chs-dept-id": string;
+  "x-chs-role": string;
+  "x-chs-access-level": string;
+  "x-chs-permissions": string;
 }
 ```
 

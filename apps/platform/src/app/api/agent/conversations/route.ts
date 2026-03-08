@@ -4,7 +4,7 @@ import { eq, desc } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const userId = request.headers.get("x-aleph-user-id");
+  const userId = request.headers.get("x-chs-user-id");
   if (!userId) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
@@ -28,8 +28,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const userId = request.headers.get("x-aleph-user-id");
-  const orgId = request.headers.get("x-aleph-org-id");
+  const userId = request.headers.get("x-chs-user-id");
+  const orgId = request.headers.get("x-chs-org-id");
   if (!userId || !orgId) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }

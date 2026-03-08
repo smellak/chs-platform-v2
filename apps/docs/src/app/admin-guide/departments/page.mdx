@@ -51,7 +51,7 @@ Departments are central to the access control model:
 1. **Users** are assigned to departments with specific roles via `user_department_roles`
 2. **App access policies** grant access to applications per department via `app_access_policies`
 3. When a user accesses an app, the platform checks if the user's department has an access policy for that app
-4. The `x-aleph-dept` and `x-aleph-dept-id` headers propagate department info to downstream apps
+4. The `x-chs-dept` and `x-chs-dept-id` headers propagate department info to downstream apps
 
 ### Example Access Policy
 
@@ -64,7 +64,7 @@ app_access_policies:
   access_level: "full"
 ```
 
-Users in the Logistica department will then receive `x-aleph-access-level: full` when accessing the Citas app.
+Users in the Logistica department will then receive `x-chs-access-level: full` when accessing the Citas app.
 
 ## Deactivating a Department
 

@@ -21,7 +21,7 @@ test.describe("Fase 2: Integration Engine", () => {
       headers: { "X-Forwarded-Host": "citas.centrohogarsanchez.es" },
     });
     expect(res.status()).toBe(401);
-    const errorHeader = res.headers()["x-aleph-error"];
+    const errorHeader = res.headers()["x-chs-error"];
     expect(errorHeader).toBe("no-token");
   });
 
@@ -35,13 +35,13 @@ test.describe("Fase 2: Integration Engine", () => {
       headers: { "X-Forwarded-Host": "citas.centrohogarsanchez.es" },
     });
     expect(res.status()).toBe(200);
-    expect(res.headers()["x-aleph-user-id"]).toBeDefined();
-    expect(res.headers()["x-aleph-user-name"]).toBeDefined();
-    expect(res.headers()["x-aleph-user-email"]).toBeDefined();
-    expect(res.headers()["x-aleph-org-id"]).toBeDefined();
-    expect(res.headers()["x-aleph-dept"]).toBeDefined();
-    expect(res.headers()["x-aleph-role"]).toBe("super-admin");
-    expect(res.headers()["x-aleph-access-level"]).toBe("full");
+    expect(res.headers()["x-chs-user-id"]).toBeDefined();
+    expect(res.headers()["x-chs-user-name"]).toBeDefined();
+    expect(res.headers()["x-chs-user-email"]).toBeDefined();
+    expect(res.headers()["x-chs-org-id"]).toBeDefined();
+    expect(res.headers()["x-chs-dept"]).toBeDefined();
+    expect(res.headers()["x-chs-role"]).toBe("super-admin");
+    expect(res.headers()["x-chs-access-level"]).toBe("full");
   });
 
   test("T03: verify-access 403 for unregistered domain", async ({
@@ -54,7 +54,7 @@ test.describe("Fase 2: Integration Engine", () => {
       headers: { "X-Forwarded-Host": "unknown.example.com" },
     });
     expect(res.status()).toBe(403);
-    expect(res.headers()["x-aleph-error"]).toBe("app-not-found");
+    expect(res.headers()["x-chs-error"]).toBe("app-not-found");
   });
 
   test("T04: verify-access readonly access level for viewer user", async ({
@@ -67,7 +67,7 @@ test.describe("Fase 2: Integration Engine", () => {
       headers: { "X-Forwarded-Host": "citas.centrohogarsanchez.es" },
     });
     expect(res.status()).toBe(200);
-    expect(res.headers()["x-aleph-access-level"]).toBe("readonly");
+    expect(res.headers()["x-chs-access-level"]).toBe("readonly");
   });
 
   test("T05: verify-access full access for Logistica user", async ({
@@ -80,10 +80,10 @@ test.describe("Fase 2: Integration Engine", () => {
       headers: { "X-Forwarded-Host": "citas.centrohogarsanchez.es" },
     });
     expect(res.status()).toBe(200);
-    expect(res.headers()["x-aleph-access-level"]).toBe("full");
+    expect(res.headers()["x-chs-access-level"]).toBe("full");
   });
 
-  test("T06: verify-access returns X-Aleph-Permissions header", async ({
+  test("T06: verify-access returns X-CHS-Permissions header", async ({
     request,
   }) => {
     await request.post(`${BASE}/api/auth/login`, {
@@ -93,7 +93,7 @@ test.describe("Fase 2: Integration Engine", () => {
       headers: { "X-Forwarded-Host": "citas.centrohogarsanchez.es" },
     });
     expect(res.status()).toBe(200);
-    const perms = res.headers()["x-aleph-permissions"];
+    const perms = res.headers()["x-chs-permissions"];
     expect(perms).toBeDefined();
     const parsed = JSON.parse(perms!);
     expect(parsed["apps.read"]).toBe(true);
@@ -109,8 +109,8 @@ test.describe("Fase 2: Integration Engine", () => {
     const data = await res.json();
     expect(data.platform).toBe("Aleph");
     expect(data.headers).toBeDefined();
-    expect(data.headers["X-Aleph-User-Id"]).toBeDefined();
-    expect(data.headers["X-Aleph-Role"]).toBeDefined();
+    expect(data.headers["X-CHS-User-Id"]).toBeDefined();
+    expect(data.headers["X-CHS-Role"]).toBeDefined();
   });
 
   // === TRAEFIK CONFIG PREVIEW ===

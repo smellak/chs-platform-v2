@@ -191,16 +191,16 @@ A continuación se listan **TODAS** las ocurrencias de "Aleph"/"aleph" en `src/`
 
 | Archivo | Línea | Header |
 |---------|-------|--------|
-| `src/middleware.ts` | 68 | `"x-aleph-user-id"` |
-| `src/middleware.ts` | 69 | `"x-aleph-org-id"` |
-| `src/app/api/search/route.ts` | 14 | `"x-aleph-user-id"` |
-| `src/app/api/agent/chat/route.ts` | 25 | `"x-aleph-user-id"` |
-| `src/app/api/agent/conversations/route.ts` | 7 | `"x-aleph-user-id"` |
-| `src/app/api/agent/conversations/route.ts` | 32 | `"x-aleph-org-id"` |
-| `src/app/api/agent/conversations/[id]/route.ts` | 14 | `"x-aleph-user-id"` |
-| `src/app/api/agent/conversations/[id]/route.ts` | 58 | `"x-aleph-user-id"` |
-| `src/app/api/agent/conversations/[id]/route.ts` | 103 | `"x-aleph-user-id"` |
-| `src/app/api/auth/verify-access/route.ts` | 300-306 | `X-Aleph-*` response headers |
+| `src/middleware.ts` | 68 | `"x-chs-user-id"` |
+| `src/middleware.ts` | 69 | `"x-chs-org-id"` |
+| `src/app/api/search/route.ts` | 14 | `"x-chs-user-id"` |
+| `src/app/api/agent/chat/route.ts` | 25 | `"x-chs-user-id"` |
+| `src/app/api/agent/conversations/route.ts` | 7 | `"x-chs-user-id"` |
+| `src/app/api/agent/conversations/route.ts` | 32 | `"x-chs-org-id"` |
+| `src/app/api/agent/conversations/[id]/route.ts` | 14 | `"x-chs-user-id"` |
+| `src/app/api/agent/conversations/[id]/route.ts` | 58 | `"x-chs-user-id"` |
+| `src/app/api/agent/conversations/[id]/route.ts` | 103 | `"x-chs-user-id"` |
+| `src/app/api/auth/verify-access/route.ts` | 300-306 | `X-CHS-*` response headers |
 
 #### Infraestructura (8 ocurrencias)
 

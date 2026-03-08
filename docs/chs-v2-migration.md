@@ -23,7 +23,7 @@
 - HttpOnly, Secure, SameSite=lax
 
 ## Headers SSO (ForwardAuth → Elias)
-- X-Aleph-User-Id, X-Aleph-User-Name, X-Aleph-Dept, X-Aleph-Role, X-Aleph-Access-Level
+- X-CHS-User-Id, X-CHS-User-Name, X-CHS-Dept, X-CHS-Role, X-CHS-Access-Level
 - X-CHS-User-Id, X-CHS-User-Name, X-CHS-User-Dept, X-CHS-User-Role, X-CHS-Access-Level
 - Elias lee los headers X-CHS-* en /api/auth/sso
 

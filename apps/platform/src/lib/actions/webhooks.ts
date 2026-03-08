@@ -169,7 +169,7 @@ export async function testWebhook(id: string): Promise<ActionResult> {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Aleph-Signature": signature,
+        "X-CHS-Signature": signature,
       },
       body: payload,
       signal: controller.signal,

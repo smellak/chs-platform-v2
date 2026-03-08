@@ -99,7 +99,7 @@ app.post("/api/agent", handler);
 ```
 
 The middleware:
-1. Parses `x-aleph-*` headers to identify the user
+1. Parses `x-chs-*` headers to identify the user
 2. Extracts `capability`, `parameters`, and `conversationContext` from the request body
 3. Validates that the requested capability exists
 4. Checks user permissions against the capability's `requiredPermission`
