@@ -270,13 +270,13 @@ test.describe("Fase 2: Integration Engine", () => {
 
   // === CROSS-DOMAIN COOKIE ===
 
-  test("T17: Login sets aleph_access_token cookie", async ({ request }) => {
+  test("T17: Login sets chs_access_token cookie", async ({ request }) => {
     const res = await request.post(`${BASE}/api/auth/login`, {
       data: { username: "admin", password: "admin123" },
     });
     expect(res.status()).toBe(200);
     const cookies = res.headers()["set-cookie"] ?? "";
-    expect(cookies).toContain("aleph_access_token");
+    expect(cookies).toContain("chs_access_token");
   });
 
   // === SDK ===

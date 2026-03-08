@@ -26,8 +26,8 @@ When you submit the login form, the following occurs:
 1. The client sends a `POST` request to `/api/auth/login` with `username` and `password`
 2. The server verifies the password against the bcrypt hash stored in the database
 3. On success, two cookies are set:
-   - `aleph_access_token` -- A short-lived JWT (15 minutes) containing `userId` and `orgId`
-   - `aleph_refresh_token` -- A long-lived opaque token (7 days) for obtaining new access tokens
+   - `chs_access_token` -- A short-lived JWT (15 minutes) containing `userId` and `orgId`
+   - `chs_refresh_token` -- A long-lived opaque token (7 days) for obtaining new access tokens
 4. The response includes user details (name, email, role, department, permissions)
 5. The client stores the user context and redirects to the dashboard
 

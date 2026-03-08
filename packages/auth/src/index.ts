@@ -86,7 +86,7 @@ export function generateRefreshToken(): string {
 
 export function getAccessTokenCookieConfig(domain?: string): CookieConfig {
   const config: CookieConfig = {
-    name: "aleph_access_token",
+    name: "chs_access_token",
     httpOnly: true,
     secure: process.env["NODE_ENV"] === "production" && process.env["DOMAIN"] !== "localhost",
     sameSite: "lax",
@@ -101,7 +101,7 @@ export function getAccessTokenCookieConfig(domain?: string): CookieConfig {
 
 export function getRefreshTokenCookieConfig(): CookieConfig {
   return {
-    name: "aleph_refresh_token",
+    name: "chs_refresh_token",
     httpOnly: true,
     secure: process.env["NODE_ENV"] === "production" && process.env["DOMAIN"] !== "localhost",
     sameSite: "strict",
@@ -114,13 +114,13 @@ export function getRefreshTokenCookieConfig(): CookieConfig {
 
 export function extractTokenFromHeaders(headers: Headers): string | null {
   // Check cookie first — in ForwardAuth context the Authorization header
-  // may carry a downstream app's JWT (e.g. Elias), not an Aleph token.
+  // may carry a downstream app's JWT (e.g. Elias), not a CHS Platform token.
   const cookieHeader = headers.get("cookie");
   if (cookieHeader) {
     const cookies = cookieHeader.split(";").map((c) => c.trim());
     for (const cookie of cookies) {
-      if (cookie.startsWith("aleph_access_token=")) {
-        return cookie.slice("aleph_access_token=".length);
+      if (cookie.startsWith("chs_access_token=")) {
+        return cookie.slice("chs_access_token=".length);
       }
     }
   }

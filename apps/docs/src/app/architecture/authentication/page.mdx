@@ -16,8 +16,8 @@ Aleph Platform implements a JWT-based authentication system with HttpOnly cookie
    - Refresh token: Random hex string (7d expiry)
 
 4. Server sets HttpOnly cookies
-   - aleph_access_token (path: /, sameSite: lax)
-   - aleph_refresh_token (path: /api/auth, sameSite: strict)
+   - chs_access_token (path: /, sameSite: lax)
+   - chs_refresh_token (path: /api/auth, sameSite: strict)
 
 5. Client receives user data in response body
    { id, name, email, role, department, permissions, ... }
@@ -48,7 +48,7 @@ The refresh token is a cryptographically random 40-byte hex string stored in the
 
 | Property | Access Token | Refresh Token |
 |----------|-------------|---------------|
-| Cookie name | `aleph_access_token` | `aleph_refresh_token` |
+| Cookie name | `chs_access_token` | `chs_refresh_token` |
 | `httpOnly` | `true` | `true` |
 | `secure` | `true` in production (non-localhost) | `true` in production (non-localhost) |
 | `sameSite` | `lax` | `strict` |
@@ -81,7 +81,7 @@ const isValid = await bcrypt.compare(plainPassword, hash);
 The platform accepts access tokens from two sources, checked in this order:
 
 1. **Authorization header**: `Authorization: Bearer <token>`
-2. **Cookie**: `aleph_access_token=<token>`
+2. **Cookie**: `chs_access_token=<token>`
 
 ```typescript
 function extractTokenFromHeaders(headers: Headers): string | null {
@@ -94,7 +94,7 @@ function extractTokenFromHeaders(headers: Headers): string | null {
   // Fall back to cookie
   const cookieHeader = headers.get("cookie");
   if (cookieHeader) {
-    // Parse aleph_access_token from cookie string
+    // Parse chs_access_token from cookie string
   }
 
   return null;

@@ -176,16 +176,16 @@ A continuación se listan **TODAS** las ocurrencias de "Aleph"/"aleph" en `src/`
 |---------|-------|-------|
 | `src/lib/actions/api-keys.ts` | 31 | `aleph_sk_{randomBytes}` — API key prefix |
 | `src/app/api/api-keys/route.ts` | 48 | `aleph_sk_{randomBytes}` — API key generation |
-| `src/lib/auth.ts` | 9 | `"aleph_access_token"` — cookie name |
+| `src/lib/auth.ts` | 9 | `"chs_access_token"` — cookie name |
 
 #### Cookie Names (4 ocurrencias)
 
 | Archivo | Línea | Texto |
 |---------|-------|-------|
-| `src/lib/auth.ts` | 9 | `"aleph_access_token"` |
-| `src/app/api/auth/logout/route.ts` | 31 | `"aleph_access_token"` cookie |
-| `src/app/api/auth/logout/route.ts` | 39 | `"aleph_refresh_token"` cookie |
-| `src/app/api/auth/refresh/route.ts` | 14 | `"aleph_refresh_token"` cookie |
+| `src/lib/auth.ts` | 9 | `"chs_access_token"` |
+| `src/app/api/auth/logout/route.ts` | 31 | `"chs_access_token"` cookie |
+| `src/app/api/auth/logout/route.ts` | 39 | `"chs_refresh_token"` cookie |
+| `src/app/api/auth/refresh/route.ts` | 14 | `"chs_refresh_token"` cookie |
 
 #### HTTP Headers (14 ocurrencias)
 

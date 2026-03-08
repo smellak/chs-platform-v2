@@ -48,7 +48,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     return NextResponse.next();
   }
 
-  const token = request.cookies.get("aleph_access_token")?.value;
+  const token = request.cookies.get("chs_access_token")?.value;
   if (!token) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });

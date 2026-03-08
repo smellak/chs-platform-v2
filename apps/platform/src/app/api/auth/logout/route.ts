@@ -5,7 +5,7 @@ import { getDb, schema } from "@/lib/db";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const refreshTokenValue = request.cookies.get("aleph_refresh_token")?.value;
+    const refreshTokenValue = request.cookies.get("chs_refresh_token")?.value;
     const userId = request.headers.get("x-aleph-user-id");
     const orgId = request.headers.get("x-aleph-org-id");
 
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const response = NextResponse.json({ ok: true });
 
-    response.cookies.set("aleph_access_token", "", {
+    response.cookies.set("chs_access_token", "", {
       httpOnly: true,
       secure: process.env["NODE_ENV"] === "production",
       sameSite: "lax",
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       maxAge: 0,
     });
 
-    response.cookies.set("aleph_refresh_token", "", {
+    response.cookies.set("chs_refresh_token", "", {
       httpOnly: true,
       secure: process.env["NODE_ENV"] === "production",
       sameSite: "strict",

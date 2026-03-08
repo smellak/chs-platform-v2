@@ -43,8 +43,8 @@ Authenticate a user with username and password.
 ```
 
 **Side Effects:**
-- Sets `aleph_access_token` HttpOnly cookie (15 minute expiry)
-- Sets `aleph_refresh_token` HttpOnly cookie (7 day expiry)
+- Sets `chs_access_token` HttpOnly cookie (15 minute expiry)
+- Sets `chs_refresh_token` HttpOnly cookie (7 day expiry)
 - Creates a refresh token record in the database
 - Updates the user's `last_login` timestamp
 
@@ -56,7 +56,7 @@ Authenticate a user with username and password.
 
 Clear authentication cookies and invalidate the refresh token.
 
-**Request:** No body required. The refresh token is read from the `aleph_refresh_token` cookie.
+**Request:** No body required. The refresh token is read from the `chs_refresh_token` cookie.
 
 **Success Response (200):**
 
@@ -67,13 +67,13 @@ Clear authentication cookies and invalidate the refresh token.
 ```
 
 **Side Effects:**
-- Clears `aleph_access_token` cookie
-- Clears `aleph_refresh_token` cookie
+- Clears `chs_access_token` cookie
+- Clears `chs_refresh_token` cookie
 - Deletes the refresh token from the database
 
 ## POST /api/auth/refresh
 
-Obtain a new access token using a valid refresh token. The refresh token is read from the `aleph_refresh_token` cookie.
+Obtain a new access token using a valid refresh token. The refresh token is read from the `chs_refresh_token` cookie.
 
 **Request:** No body required.
 
@@ -92,7 +92,7 @@ Obtain a new access token using a valid refresh token. The refresh token is read
 ```
 
 **Side Effects:**
-- Sets a new `aleph_access_token` cookie
+- Sets a new `chs_access_token` cookie
 - May rotate the refresh token
 
 **Error Responses:**
@@ -102,7 +102,7 @@ Obtain a new access token using a valid refresh token. The refresh token is read
 
 ## GET /api/auth/me
 
-Get the current authenticated user's details. The access token is read from the `aleph_access_token` cookie or the `Authorization: Bearer` header.
+Get the current authenticated user's details. The access token is read from the `chs_access_token` cookie or the `Authorization: Bearer` header.
 
 **Success Response (200):**
 
@@ -197,13 +197,13 @@ Client                          Platform                        Database
   │                               │  Store refresh token          │
   │                               │──────────────────────────────>│
   │                               │                               │
-  │  Set-Cookie: aleph_access_token=...                           │
-  │  Set-Cookie: aleph_refresh_token=...                          │
+  │  Set-Cookie: chs_access_token=...                           │
+  │  Set-Cookie: chs_refresh_token=...                          │
   │  200 { user: {...} }          │                               │
   │<──────────────────────────────│                               │
   │                               │                               │
   │  GET /api/auth/me             │                               │
-  │  Cookie: aleph_access_token=..│                               │
+  │  Cookie: chs_access_token=..│                               │
   │──────────────────────────────>│                               │
   │                               │  Verify JWT                   │
   │                               │  Fetch user details           │

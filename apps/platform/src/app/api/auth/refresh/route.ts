@@ -11,7 +11,7 @@ import { getDb, schema } from "@/lib/db";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const refreshTokenValue = request.cookies.get("aleph_refresh_token")?.value;
+    const refreshTokenValue = request.cookies.get("chs_refresh_token")?.value;
 
     if (!refreshTokenValue) {
       return NextResponse.json({ error: "No refresh token" }, { status: 401 });

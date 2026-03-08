@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Aleph Platform — Documentación",
-  description: "Documentación interna de Aleph Platform",
+  title: "CHS Platform — Documentación",
+  description: "Documentación interna de CHS Platform",
 };
 
 const nav = [
@@ -88,7 +88,7 @@ export default function RootLayout({
             }}
           >
             <a href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1.5rem", textDecoration: "none", color: "#1e293b" }}>
-              <span style={{ fontWeight: 800, fontSize: "1.2em" }}>Aleph Docs</span>
+              <span style={{ fontWeight: 800, fontSize: "1.2em" }}>CHS Docs</span>
             </a>
             {nav.map((section) => (
               <div key={section.title} style={{ marginBottom: "1rem" }}>

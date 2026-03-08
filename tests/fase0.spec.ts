@@ -44,7 +44,7 @@ test.describe("Fase 0: Foundation", () => {
     expect(body.user.isSuperAdmin).toBe(true);
 
     const cookies = res.headers()["set-cookie"];
-    expect(cookies).toContain("aleph_access_token");
+    expect(cookies).toContain("chs_access_token");
   });
 
   test("T6: /api/auth/me with valid cookie returns user with departments", async ({

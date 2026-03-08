@@ -292,9 +292,9 @@ test.describe("App Integration — Service Health & Monitor", () => {
     const body = await res.json();
     expect(body.user).toBeDefined();
     expect(body.user.username).toBe("admin");
-    // Token is set as httpOnly cookie (aleph_access_token), not in body
+    // Token is set as httpOnly cookie (chs_access_token), not in body
     const setCookie = res.headers()["set-cookie"] ?? "";
-    expect(setCookie).toContain("aleph_access_token");
+    expect(setCookie).toContain("chs_access_token");
   });
 
   // === CROSS-SERVICE CONNECTIVITY ===

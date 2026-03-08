@@ -60,8 +60,8 @@ The authentication system uses HS256-signed JWTs with the following fixed parame
 | Algorithm | HS256 |
 | Access token expiry | 15 minutes |
 | Refresh token expiry | 7 days |
-| Access token cookie | `aleph_access_token` (HttpOnly, path `/`) |
-| Refresh token cookie | `aleph_refresh_token` (HttpOnly, path `/api/auth`) |
+| Access token cookie | `chs_access_token` (HttpOnly, path `/`) |
+| Refresh token cookie | `chs_refresh_token` (HttpOnly, path `/api/auth`) |
 
 The `JWT_SECRET` must be identical across all instances of the platform to ensure tokens are valid across restarts and replicas.
 

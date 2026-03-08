@@ -18,7 +18,7 @@
 - chs-v2-elias-auth.yaml → elias.centrohogarsanchez.es con ForwardAuth v2
 
 ## Cookie
-- aleph_access_token (nombre técnico interno)
+- chs_access_token (nombre técnico interno)
 - Domain: .centrohogarsanchez.es
 - HttpOnly, Secure, SameSite=lax
 

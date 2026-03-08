@@ -6,7 +6,7 @@ import type { AuthUser } from "@/lib/types";
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
   const cookieStore = await cookies();
-  const token = cookieStore.get("aleph_access_token")?.value;
+  const token = cookieStore.get("chs_access_token")?.value;
 
   if (!token) return null;
 
