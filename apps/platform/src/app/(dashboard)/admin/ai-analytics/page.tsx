@@ -1,4 +1,4 @@
-import { count, sum, eq, desc, sql, gte } from "drizzle-orm";
+import { count, sum, eq, desc, sql, gte, and } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getDb, schema } from "@/lib/db";
@@ -74,6 +74,56 @@ export default async function AIAnalyticsPage() {
     .orderBy(desc(schema.agentConversations.createdAt))
     .limit(10);
 
+  // Per-model stats
+  const modelStats = await db
+    .select({
+      model: schema.agentMessages.model,
+      messageCount: count(),
+      totalTokens: sum(schema.agentMessages.tokensUsed),
+      avgLatency: sql<number>`round(avg(${schema.agentMessages.latencyMs}))`,
+    })
+    .from(schema.agentMessages)
+    .where(
+      and(
+        eq(schema.agentMessages.role, "assistant"),
+        sql`${schema.agentMessages.model} IS NOT NULL`,
+      ),
+    )
+    .groupBy(schema.agentMessages.model)
+    .orderBy(desc(count()));
+
+  // Per-user stats
+  const userStats = await db
+    .select({
+      userName: sql<string>`concat(${schema.users.firstName}, ' ', ${schema.users.lastName})`,
+      messageCount: count(schema.agentMessages.id),
+      totalTokens: sum(schema.agentMessages.tokensUsed),
+      conversationCount: sql<number>`count(distinct ${schema.agentConversations.id})`,
+    })
+    .from(schema.agentConversations)
+    .innerJoin(schema.users, eq(schema.agentConversations.userId, schema.users.id))
+    .leftJoin(
+      schema.agentMessages,
+      eq(schema.agentConversations.id, schema.agentMessages.conversationId),
+    )
+    .groupBy(schema.users.id, schema.users.firstName, schema.users.lastName)
+    .orderBy(desc(sum(schema.agentMessages.tokensUsed)))
+    .limit(20);
+
+  // Active alerts
+  const alerts = await db
+    .select({
+      id: schema.aiAlerts.id,
+      severity: schema.aiAlerts.severity,
+      title: schema.aiAlerts.title,
+      message: schema.aiAlerts.message,
+      isResolved: schema.aiAlerts.isResolved,
+      createdAt: schema.aiAlerts.createdAt,
+    })
+    .from(schema.aiAlerts)
+    .orderBy(desc(schema.aiAlerts.createdAt))
+    .limit(50);
+
   return (
     <AIAnalyticsClient
       stats={{
@@ -96,6 +146,26 @@ export default async function AIAnalyticsPage() {
         userName: row.userName,
         messageCount: row.messageCount,
         createdAt: row.createdAt.toISOString(),
+      }))}
+      modelStats={modelStats.map((row) => ({
+        model: row.model ?? "unknown",
+        messageCount: row.messageCount,
+        totalTokens: Number(row.totalTokens ?? 0),
+        avgLatency: row.avgLatency ?? 0,
+      }))}
+      userStats={userStats.map((row) => ({
+        userName: row.userName,
+        messageCount: row.messageCount,
+        totalTokens: Number(row.totalTokens ?? 0),
+        conversationCount: Number(row.conversationCount),
+      }))}
+      alerts={alerts.map((a) => ({
+        id: a.id,
+        severity: a.severity,
+        title: a.title,
+        message: a.message,
+        isResolved: a.isResolved,
+        createdAt: a.createdAt.toISOString(),
       }))}
     />
   );
