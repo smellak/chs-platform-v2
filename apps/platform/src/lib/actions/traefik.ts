@@ -47,7 +47,7 @@ export async function previewTraefikConfig(appId: string): Promise<TraefikResult
   if (!instance.externalDomain) return { success: false, error: "Dominio externo no configurado" };
 
   const manager = new TraefikManager();
-  const alephVerifyUrl = TraefikManager.resolveAlephVerifyUrl();
+  const chsVerifyUrl = TraefikManager.resolveCHSVerifyUrl();
 
   const yaml = manager.generateYaml({
     appSlug: instance.appSlug,
@@ -55,7 +55,7 @@ export async function previewTraefikConfig(appId: string): Promise<TraefikResult
     externalDomain: instance.externalDomain,
     internalUrl: instance.internalUrl,
     publicPaths: (instance.publicPaths ?? []) as string[],
-    alephVerifyUrl,
+    chsVerifyUrl,
   });
 
   return { success: true, yaml };
@@ -70,7 +70,7 @@ export async function applyTraefikConfig(appId: string): Promise<TraefikResult> 
   if (!instance.externalDomain) return { success: false, error: "Dominio externo no configurado" };
 
   const manager = new TraefikManager();
-  const alephVerifyUrl = TraefikManager.resolveAlephVerifyUrl();
+  const chsVerifyUrl = TraefikManager.resolveCHSVerifyUrl();
 
   try {
     const yaml = await manager.generateConfig({
@@ -79,7 +79,7 @@ export async function applyTraefikConfig(appId: string): Promise<TraefikResult> 
       externalDomain: instance.externalDomain,
       internalUrl: instance.internalUrl,
       publicPaths: (instance.publicPaths ?? []) as string[],
-      alephVerifyUrl,
+      chsVerifyUrl,
     });
 
     // Update instance with config path
@@ -154,7 +154,7 @@ export async function checkAppConnectivity(appId: string): Promise<ConnectivityR
 
     const res = await fetch(url, {
       signal: controller.signal,
-      headers: { "User-Agent": "Aleph-ConnCheck/0.1" },
+      headers: { "User-Agent": "CHS-ConnCheck/0.1" },
     });
 
     clearTimeout(timeout);

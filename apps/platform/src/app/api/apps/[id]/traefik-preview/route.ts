@@ -39,7 +39,7 @@ export async function GET(
   }
 
   const manager = new TraefikManager();
-  const alephVerifyUrl = TraefikManager.resolveAlephVerifyUrl();
+  const chsVerifyUrl = TraefikManager.resolveCHSVerifyUrl();
 
   const yaml = manager.generateYaml({
     appSlug: data.appSlug,
@@ -47,7 +47,7 @@ export async function GET(
     externalDomain: data.externalDomain,
     internalUrl: data.internalUrl,
     publicPaths: (data.publicPaths ?? []) as string[],
-    alephVerifyUrl,
+    chsVerifyUrl,
   });
 
   return NextResponse.json({ yaml });

@@ -156,7 +156,7 @@ test.describe("Fase 2: Integration Engine", () => {
       );
       expect(previewRes.status()).toBe(200);
       const { yaml } = await previewRes.json();
-      expect(yaml).toContain("aleph-forward-auth@file");
+      expect(yaml).toContain("chs-forward-auth@file");
       expect(yaml).toContain("citas.centrohogarsanchez.es");
       expect(yaml).toContain("certResolver");
       expect(yaml).toContain("letsencrypt");
@@ -232,7 +232,7 @@ test.describe("Fase 2: Integration Engine", () => {
       page.locator("text=Esta clave solo se mostrará una vez"),
     ).toBeVisible({ timeout: 10000 });
     const keyText = await page.locator("code").first().textContent();
-    expect(keyText).toContain("aleph_sk_");
+    expect(keyText).toContain("chs_sk_");
   });
 
   // === WEBHOOKS ===

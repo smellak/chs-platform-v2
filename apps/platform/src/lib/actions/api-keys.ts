@@ -28,7 +28,7 @@ export async function createApiKey(formData: FormData): Promise<ActionResult> {
 
   if (!parsed.success) return { success: false, error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
 
-  const rawKey = `aleph_sk_${randomBytes(20).toString("hex")}`;
+  const rawKey = `chs_sk_${randomBytes(20).toString("hex")}`;
   const keyPrefix = rawKey.slice(0, 12);
   const keyHash = bcrypt.hashSync(rawKey, 10);
 

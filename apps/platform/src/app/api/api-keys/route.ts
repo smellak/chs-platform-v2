@@ -45,7 +45,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const rawKey = `aleph_sk_${randomBytes(20).toString("hex")}`;
+  const rawKey = `chs_sk_${randomBytes(20).toString("hex")}`;
   const keyPrefix = rawKey.slice(0, 12);
   const keyHash = bcrypt.hashSync(rawKey, 10);
 

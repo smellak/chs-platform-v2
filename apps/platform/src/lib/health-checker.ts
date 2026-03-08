@@ -21,7 +21,7 @@ async function checkInstance(internalUrl: string, healthEndpoint: string): Promi
 
     const res = await fetch(url, {
       signal: controller.signal,
-      headers: { "User-Agent": "Aleph-HealthChecker/0.1" },
+      headers: { "User-Agent": "CHS-HealthChecker/0.1" },
     });
 
     clearTimeout(timeout);

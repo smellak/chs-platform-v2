@@ -155,7 +155,7 @@ export async function testWebhook(id: string): Promise<ActionResult> {
   const payload = JSON.stringify({
     event: "test",
     timestamp: new Date().toISOString(),
-    data: { message: "Test webhook from Aleph Platform" },
+    data: { message: "Test webhook from CHS Platform" },
   });
 
   try {
