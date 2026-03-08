@@ -19,6 +19,7 @@ services:
       - AI_MAX_TOKENS=${AI_MAX_TOKENS:-4096}
       - AI_RATE_LIMIT_MESSAGES_PER_HOUR=${AI_RATE_LIMIT_MESSAGES_PER_HOUR:-50}
       - AI_RATE_LIMIT_TOKENS_PER_DAY=${AI_RATE_LIMIT_TOKENS_PER_DAY:-100000}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
     depends_on:
       aleph-db:
         condition: service_healthy
