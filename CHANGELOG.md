@@ -1,6 +1,6 @@
 # Changelog
 
-Todas las versiones notables de Aleph Platform se documentan aquí.
+Todas las versiones notables de CHS Platform se documentan aquí.
 
 El formato sigue [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
@@ -8,9 +8,9 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ### Added
 - Documentación completa con Nextra (getting started, architecture, admin, developer, API reference)
-- CLI `create-aleph` para setup rápido de nuevas instalaciones
+- CLI `create-chs` para setup rápido de nuevas instalaciones
 - Template de agente con ejemplo de capabilities
-- Logo SVG y favicon de Aleph
+- Logo SVG y favicon de CHS
 - README profesional con arquitectura y ejemplos
 - CONTRIBUTING.md y CHANGELOG.md
 - Nombre de organización configurable desde variables de entorno

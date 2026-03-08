@@ -1,11 +1,11 @@
-# Aleph Agent Example
+# CHS Agent Example
 
-A ready-to-use template for building custom agents that integrate with the Aleph Platform. This example demonstrates three capabilities: greeting users, searching records, and creating new records.
+A ready-to-use template for building custom agents that integrate with the CHS Platform. This example demonstrates three capabilities: greeting users, searching records, and creating new records.
 
 ## Prerequisites
 
 - Node.js 20+
-- A running Aleph Platform instance (for end-to-end testing)
+- A running CHS Platform instance (for end-to-end testing)
 
 ## Quick Start
 
@@ -35,25 +35,25 @@ agent-example/
   tsconfig.json
 ```
 
-## Registering with Aleph
+## Registering with CHS Platform
 
-1. Start your agent so it is reachable from the Aleph server.
-2. In the Aleph admin panel, navigate to **Settings > Agents**.
+1. Start your agent so it is reachable from the CHS Platform server.
+2. In the CHS Platform admin panel, navigate to **Settings > Agents**.
 3. Add a new agent with the URL pointing to your agent (e.g., `http://localhost:4000`).
-4. Aleph will fetch `GET /manifest` to discover the agent's capabilities.
-5. Once registered, users can invoke the agent's capabilities through the Aleph chat interface.
+4. CHS Platform will fetch `GET /manifest` to discover the agent's capabilities.
+5. Once registered, users can invoke the agent's capabilities through the CHS Platform chat interface.
 
 ## Endpoints
 
 | Method | Path        | Description                                         |
 |--------|-------------|-----------------------------------------------------|
 | GET    | `/health`   | Health check; returns status and capability list    |
-| GET    | `/manifest` | Agent manifest for Aleph capability discovery       |
-| POST   | `/agent`    | Main handler; receives capability invocation from Aleph |
+| GET    | `/manifest` | Agent manifest for CHS Platform capability discovery       |
+| POST   | `/agent`    | Main handler; receives capability invocation from CHS Platform |
 
-## X-Aleph Headers Reference
+## X-CHS Headers Reference
 
-When Aleph forwards a request to your agent it includes the following headers so the agent knows who is making the request:
+When CHS Platform forwards a request to your agent it includes the following headers so the agent knows who is making the request:
 
 | Header                  | Description                                   | Example               |
 |-------------------------|-----------------------------------------------|-----------------------|
@@ -86,7 +86,7 @@ The agent SDK parses these headers automatically and provides them as a typed `C
 
 ```json
 {
-  "text": "Hola, Carlos! Bienvenido/a a Aleph Platform.",
+  "text": "Hola, Carlos! Bienvenido/a a CHS Platform.",
   "data": {
     "nombre": "Carlos",
     "idioma": "es",
@@ -138,16 +138,16 @@ Creates a new record. Requires the user to have `write` permission (access level
    - Define your own `AgentCapability` objects.
    - Implement your logic inside the `handleRequest` function.
 3. Update `package.json` with your agent's name.
-4. Register the agent with your Aleph instance.
+4. Register the agent with your CHS Platform instance.
 
 ## Docker
 
 ```bash
 # Build the image
-docker build -t my-aleph-agent .
+docker build -t my-chs-agent .
 
 # Run
-docker run -p 4000:4000 my-aleph-agent
+docker run -p 4000:4000 my-chs-agent
 ```
 
 Note: The Dockerfile assumes the `@chs-platform/agent-sdk` package is available at `../../packages/agent-sdk` relative to the build context. When building with Docker, you may need to adjust the context or use a published version of the SDK.

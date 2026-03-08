@@ -6,7 +6,7 @@ CHS Platform is configured through environment variables. This page documents ev
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://aleph:secret@localhost:5432/aleph` |
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://chs:secret@localhost:5432/chs` |
 | `JWT_SECRET` | Secret key for signing JWT tokens (min 64 chars in production) | `openssl rand -hex 32` |
 
 ## Application Variables
@@ -40,7 +40,7 @@ postgresql://USER:PASSWORD@HOST:PORT/DATABASE
 ### Local Development
 
 ```bash
-DATABASE_URL=postgresql://aleph:aleph_secret@localhost:5432/aleph
+DATABASE_URL=postgresql://chs:chs_secret@localhost:5432/chs
 ```
 
 ### Docker Compose
@@ -48,7 +48,7 @@ DATABASE_URL=postgresql://aleph:aleph_secret@localhost:5432/aleph
 When using Docker Compose, the database hostname is the service name (`db`):
 
 ```bash
-DATABASE_URL=postgresql://aleph:aleph_secret@db:5432/aleph
+DATABASE_URL=postgresql://chs:chs_secret@db:5432/chs
 ```
 
 ## JWT Configuration
@@ -82,7 +82,7 @@ When `DOMAIN` is set (and is not `localhost`), the access token cookie includes 
 
 ```bash
 # Database
-DATABASE_URL=postgresql://aleph:aleph_secret@localhost:5432/aleph
+DATABASE_URL=postgresql://chs:chs_secret@localhost:5432/chs
 
 # Auth
 JWT_SECRET=a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2

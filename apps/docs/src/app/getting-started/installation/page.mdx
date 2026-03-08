@@ -34,13 +34,13 @@ This installs dependencies for all workspaces:
 
 ```bash
 # Using psql
-createdb aleph
+createdb chs
 
 # Or connect to PostgreSQL and create it
 psql -U postgres
-CREATE DATABASE aleph;
-CREATE USER aleph WITH PASSWORD 'aleph_secret';
-GRANT ALL PRIVILEGES ON DATABASE aleph TO aleph;
+CREATE DATABASE chs;
+CREATE USER chs WITH PASSWORD 'chs_secret';
+GRANT ALL PRIVILEGES ON DATABASE chs TO chs;
 \q
 ```
 
@@ -50,7 +50,7 @@ Create a `.env` file in the `apps/platform` directory:
 
 ```bash
 # apps/platform/.env
-DATABASE_URL=postgresql://aleph:aleph_secret@localhost:5432/aleph
+DATABASE_URL=postgresql://chs:chs_secret@localhost:5432/chs
 JWT_SECRET=your-secret-key-at-least-64-characters-long-for-production-use
 DOMAIN=localhost
 NODE_ENV=development

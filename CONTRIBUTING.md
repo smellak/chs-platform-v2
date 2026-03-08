@@ -1,11 +1,11 @@
-# Contribuir a Aleph Platform
+# Contribuir a CHS Platform
 
 ## Desarrollo local
 
 1. Clonar el repo:
    ```bash
-   git clone https://github.com/smellak/aleph-platform.git
-   cd aleph-platform
+   git clone https://github.com/smellak/chs-platform-v2.git
+   cd chs-platform-v2
    ```
 
 2. Instalar dependencias:

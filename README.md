@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="apps/platform/public/logo.svg" width="200" alt="Aleph Platform" />
+  <img src="apps/platform/public/logo.svg" width="200" alt="CHS Platform" />
 </p>
 
-<h1 align="center">Aleph Platform</h1>
+<h1 align="center">CHS Platform v2</h1>
 
 <p align="center">
   Plataforma de gestión de aplicaciones internas con identidad unificada,<br/>
@@ -18,11 +18,11 @@
 
 ---
 
-## Qué es Aleph
+## Qué es CHS Platform
 
-Aleph Platform es el portal central donde una empresa gestiona todas sus aplicaciones internas. Los usuarios se loguean una vez y acceden a cualquier app sin segundo login. Un agente de IA central orquesta agentes especializados de cada app, respetando los permisos del usuario.
+CHS Platform es el portal central donde una empresa gestiona todas sus aplicaciones internas. Los usuarios se loguean una vez y acceden a cualquier app sin segundo login. Un agente de IA central orquesta agentes especializados de cada app, respetando los permisos del usuario.
 
-**Lo que hace Aleph:**
+**Lo que hace CHS Platform:**
 
 - **SSO automático** — Registra una app, asigna permisos, y el SSO funciona via ForwardAuth de Traefik. Sin tocar YAML.
 - **Agente IA orquestador** — Un agente central que delega a agentes de cada app según los permisos del usuario.
@@ -33,8 +33,8 @@ Aleph Platform es el portal central donde una empresa gestiona todas sus aplicac
 ## Quick Start
 
 ```bash
-git clone https://github.com/smellak/aleph-platform.git
-cd aleph-platform/docker
+git clone https://github.com/smellak/chs-platform-v2.git
+cd chs-platform-v2/docker
 cp .env.example .env
 docker compose up -d
 ```
@@ -52,13 +52,13 @@ Abre http://localhost:3000 — Login: **admin / admin123**
                           |
            +--------------+--------------+
            |              |              |
-   aleph.empresa.com  app1.empresa.com  app2.empresa.com
+   chs.empresa.com  app1.empresa.com  app2.empresa.com
            |              |              |
-     Aleph Platform   ForwardAuth +   ForwardAuth +
+     CHS Platform   ForwardAuth +   ForwardAuth +
      (login, admin)    App 1 backend   App 2 backend
            |              |
       Set-Cookie:    Headers X-CHS-*
-      aleph_token    (inyectados por Traefik)
+      chs_token    (inyectados por Traefik)
            |
       Agente Central IA
            |
@@ -71,8 +71,8 @@ Abre http://localhost:3000 — Login: **admin / admin123**
 **Flujo de autenticación:**
 
 1. Usuario accede a `app1.empresa.com`
-2. Traefik envía request a Aleph `/api/auth/verify-access`
-3. Aleph verifica la cookie JWT y los permisos del usuario para esa app
+2. Traefik envía request a CHS Platform `/api/auth/verify-access`
+3. CHS Platform verifica la cookie JWT y los permisos del usuario para esa app
 4. Si es válido, devuelve headers `X-CHS-*` que Traefik inyecta en la request a la app
 5. La app lee los headers para identificar al usuario — sin necesidad de manejar autenticación propia
 
@@ -93,7 +93,7 @@ Abre http://localhost:3000 — Login: **admin / admin123**
 ## Estructura del proyecto
 
 ```
-aleph-platform/
+chs-platform-v2/
 ├── apps/
 │   ├── platform/       # Next.js — la plataforma principal
 │   ├── docs/           # Documentación (Nextra)
@@ -136,7 +136,7 @@ npm install @chs-platform/sdk
 
 **Express:**
 ```typescript
-import { chsMiddleware, requireAleph } from "@chs-platform/sdk/express";
+import { chsMiddleware, requireCHS } from "@chs-platform/sdk/express";
 
 app.use(chsMiddleware());     // Parsea headers X-CHS-*
 app.use(requireCHS());        // Rechaza requests sin autenticación

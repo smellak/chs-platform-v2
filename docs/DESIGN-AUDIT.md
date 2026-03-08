@@ -1,18 +1,18 @@
-# DESIGN AUDIT: CHS Platform vs Aleph Platform
+# DESIGN AUDIT: CHS Platform vs CHS Platform
 
 **Fecha:** 2026-03-07
 **Autor:** Auditoría automatizada con Playwright + análisis de código fuente
-**Objetivo:** Documentar exhaustivamente las diferencias visuales y de diseño entre CHS Platform (referencia) y Aleph Platform (a corregir)
+**Objetivo:** Documentar exhaustivamente las diferencias visuales y de diseño entre CHS Platform (referencia) y CHS Platform (a corregir)
 
 ---
 
 ## 1. Resumen Ejecutivo
 
-Aleph Platform replica la arquitectura funcional de CHS Platform pero presenta diferencias significativas en la capa visual. Ambas plataformas comparten la misma base tecnológica (Next.js 15, Tailwind CSS, shadcn/ui, Radix UI, next-themes), pero CHS tiene un sistema de diseño más maduro y pulido.
+CHS Platform replica la arquitectura funcional de CHS Platform pero presenta diferencias significativas en la capa visual. Ambas plataformas comparten la misma base tecnológica (Next.js 15, Tailwind CSS, shadcn/ui, Radix UI, next-themes), pero CHS tiene un sistema de diseño más maduro y pulido.
 
 ### Diferencias Críticas Detectadas
 
-| Área | CHS Platform | Aleph Platform | Impacto |
+| Área | CHS Platform | CHS Platform | Impacto |
 |------|-------------|----------------|---------|
 | **Color primario** | `#1976D2` (HSL 210 79% 46%) | `#2563eb` en código, `#0D47A1` en CSS vars | Inconsistencia interna |
 | **Tipografía** | Inter + Open Sans (dual) | Solo Inter | Menor riqueza tipográfica |
@@ -22,7 +22,7 @@ Aleph Platform replica la arquitectura funcional de CHS Platform pero presenta d
 | **Dept. icon gradients** | Gradientes 135° completos por color | Opacidad `color40→color20` | Menos vibrante |
 | **Login** | Custom CSS classes, blur(40px), partículas | Clases Tailwind, blur(12px), 3 dots | Menos premium |
 | **Elevation system** | hover-elevate, active-elevate, toggle-elevate | No existe | Sin sistema de profundidad |
-| **Branding** | "SANCHEZ" + "PORTAL CORPORATIVO" | "ALEPH" + "Portal Corporativo" | Texto y logo diferentes |
+| **Branding** | "SANCHEZ" + "PORTAL CORPORATIVO" | "CHS" + "Portal Corporativo" | Texto y logo diferentes |
 
 ---
 
@@ -142,13 +142,13 @@ Aleph Platform replica la arquitectura funcional de CHS Platform pero presenta d
 
 | Ubicación | CHS | Aleph |
 |-----------|-----|-------|
-| Navbar logo | "SANCHEZ" (img logo.svg) | "ALEPH" (texto + Z icon SVG) |
+| Navbar logo | "SANCHEZ" (img logo.svg) | "CHS" (texto + Z icon SVG) |
 | Navbar subtítulo | "PORTAL CORPORATIVO" | "Portal Corporativo" |
-| Login título | "SANCHEZ" + logo | "Aleph Platform" |
+| Login título | "SANCHEZ" + logo | "CHS Platform" |
 | Login subtítulo | "PORTAL CORPORATIVO" | — |
-| Login footer | — | "Aleph Platform v1.0" |
-| Page title | "CHS Platform" | "Aleph Platform" |
-| Agent nombre | "Agente CHS" | "Agente Aleph" |
+| Login footer | — | "CHS Platform v1.0" |
+| Page title | "CHS Platform" | "CHS Platform" |
+| Agent nombre | "Agente CHS" | "Agente CHS" |
 
 ### 4.2 TODAS las Referencias a "Aleph" en el Código Fuente
 
@@ -158,17 +158,17 @@ A continuación se listan **TODAS** las ocurrencias de "Aleph"/"aleph" en `src/`
 
 | Archivo | Línea | Texto | Categoría |
 |---------|-------|-------|-----------|
-| `src/components/navbar.tsx` | 61 | `"ALEPH"` — texto logo navbar | UI visible |
-| `src/app/(auth)/login/page.tsx` | 62 | `"Aleph Platform"` — alt text logo | UI visible |
-| `src/app/(auth)/login/page.tsx` | 151 | `"Aleph Platform v1.0"` — footer | UI visible |
-| `src/app/layout.tsx` | 12 | `title: "Aleph Platform"` — page title | UI visible |
-| `src/app/(dashboard)/layout.tsx` | 29 | `orgName: "Aleph Platform"` — fallback | UI visible |
-| `src/components/agent/agent-panel.tsx` | 200 | `"Agente Aleph"` — panel heading | UI visible |
-| `src/components/agent/agent-button.tsx` | 16 | `aria-label="Agente Aleph"` — accessibility | UI visible |
-| `src/i18n/es.ts` | 306 | `"Agente Aleph"` — traducción | i18n |
-| `src/i18n/en.ts` | 308 | `"Aleph Agent"` — translation | i18n |
+| `src/components/navbar.tsx` | 61 | `"CHS"` — texto logo navbar | UI visible |
+| `src/app/(auth)/login/page.tsx` | 62 | `"CHS Platform"` — alt text logo | UI visible |
+| `src/app/(auth)/login/page.tsx` | 151 | `"CHS Platform v1.0"` — footer | UI visible |
+| `src/app/layout.tsx` | 12 | `title: "CHS Platform"` — page title | UI visible |
+| `src/app/(dashboard)/layout.tsx` | 29 | `orgName: "CHS Platform"` — fallback | UI visible |
+| `src/components/agent/agent-panel.tsx` | 200 | `"Agente CHS"` — panel heading | UI visible |
+| `src/components/agent/agent-button.tsx` | 16 | `aria-label="Agente CHS"` — accessibility | UI visible |
+| `src/i18n/es.ts` | 306 | `"Agente CHS"` — traducción | i18n |
+| `src/i18n/en.ts` | 308 | `"CHS Agent"` — translation | i18n |
 | `src/app/api/auth/sso-info/route.ts` | 5 | `platform: "Aleph"` — SSO info | API |
-| `src/lib/agent/system-prompt.ts` | 75 | `"Eres el Agente Aleph..."` — AI prompt | Backend |
+| `src/lib/agent/system-prompt.ts` | 75 | `"Eres el Agente CHS..."` — AI prompt | Backend |
 
 #### API Keys & Tokens (3 ocurrencias)
 
@@ -220,7 +220,7 @@ A continuación se listan **TODAS** las ocurrencias de "Aleph"/"aleph" en `src/`
 |---------|-------|-------|
 | `src/lib/traefik-manager.ts` | 157 | `"CHS-ConnCheck/0.1"` |
 | `src/lib/health-checker.ts` | 24 | `"CHS-HealthChecker/0.1"` |
-| `src/lib/actions/webhooks.ts` | 158 | `"Test webhook from Aleph Platform"` |
+| `src/lib/actions/webhooks.ts` | 158 | `"Test webhook from CHS Platform"` |
 
 > **Total: 43 referencias** en el código fuente que contienen "Aleph" o "aleph".
 
@@ -322,7 +322,7 @@ CHS box-shadow:
 | Border bottom | `1px solid rgba(255,255,255,0.1)` | Shadow-based | ⚠️ Diferente enfoque |
 | Padding | `px-5` (20px) | Similar | Verificar |
 | Logo | SVG image `brightness(0) invert(1)` opacity 0.9 | SVG Z icon inline | ❌ Diferente logo |
-| Brand text | "SANCHEZ" (img) | "ALEPH" (text-sm font-bold tracking-wider) | ❌ Texto diferente |
+| Brand text | "SANCHEZ" (img) | "CHS" (text-sm font-bold tracking-wider) | ❌ Texto diferente |
 | Subtitle | "PORTAL CORPORATIVO" | "Portal Corporativo" (text-[10px] text-blue-200/70) | ❌ Case diferente |
 | Divider | `w-px h-6 bg-white/15` | Similar | Verificar |
 | Tab active | `bg-white/20 text-white border-white/10` | `bg-white/15 text-white` | ❌ 20% vs 15% |
@@ -782,13 +782,13 @@ Aleph define variantes `success` y `warning` en el componente Badge que CHS podr
 | 11 | `chs/11-mobile-admin.png` | Admin en viewport móvil |
 | 12 | `chs/12-command-palette.png` | Command palette (Ctrl+K) con secciones |
 
-### 8.2 Aleph Platform Screenshots
+### 8.2 CHS Platform Screenshots
 
 | # | Archivo | Descripción |
 |---|---------|-------------|
 | 01 | `aleph/01-login.png` | Login page con background gradient multi-capa |
 | 02 | `aleph/02-dashboard.png` | Dashboard completo: gradient header, stats barras, dept list |
-| 03 | `aleph/03-navbar.png` | Navbar: gradient azul, "ALEPH" text, Z icon |
+| 03 | `aleph/03-navbar.png` | Navbar: gradient azul, "CHS" text, Z icon |
 | 04 | `aleph/04-header-gradient.png` | Zoom al header gradient con stats |
 | 06 | `aleph/06-app-card.png` | App card individual |
 | 07 | `aleph/07-monitor.png` | Página de monitor completa |

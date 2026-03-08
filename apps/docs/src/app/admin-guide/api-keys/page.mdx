@@ -12,7 +12,7 @@ Navigate to **Admin > API Keys** (`/admin/api-keys`). This page requires admin r
 |-------|-------------|
 | Name | A descriptive name for the key (e.g., "CI Pipeline Key") |
 | Key Hash | The bcrypt hash of the actual key (the plaintext key is only shown once at creation) |
-| Key Prefix | The first characters of the key (e.g., `aleph_k_a1b2`) for identification without exposing the full key |
+| Key Prefix | The first characters of the key (e.g., `chs_k_a1b2`) for identification without exposing the full key |
 | Permissions | A JSON permission map (same format as role permissions) |
 | Expires At | Optional expiration date |
 | Is Active | Whether the key is currently valid |
@@ -35,7 +35,7 @@ Navigate to **Admin > API Keys** (`/admin/api-keys`). This page requires admin r
 Include the API key in the `Authorization` header:
 
 ```bash
-curl -H "Authorization: Bearer aleph_k_a1b2c3d4..." \
+curl -H "Authorization: Bearer chs_k_a1b2c3d4..." \
   https://your-platform.com/api/health
 ```
 

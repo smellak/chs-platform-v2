@@ -41,7 +41,7 @@ After this middleware runs, `req.chs` will be:
 Ensures that a valid CHS user is present on the request. Returns a 401 response if `req.chs` is not set.
 
 ```typescript
-import { chsMiddleware, requireAleph } from "@chs-platform/sdk/express";
+import { chsMiddleware, requireCHS } from "@chs-platform/sdk/express";
 
 app.use(chsMiddleware());
 
@@ -54,7 +54,7 @@ app.get("/api/protected", requireCHS(), (req, res) => {
 
 **Response on failure:**
 ```json
-{ "error": "Aleph authentication required" }
+{ "error": "CHS authentication required" }
 ```
 Status code: `401`
 
@@ -82,7 +82,7 @@ app.post(
 
 **Response on missing user:**
 ```json
-{ "error": "Aleph authentication required" }
+{ "error": "CHS authentication required" }
 ```
 Status code: `401`
 
@@ -139,7 +139,7 @@ Here is a full Express application integrated with CHS Platform:
 import express from "express";
 import {
   chsMiddleware,
-  requireAleph,
+  requireCHS,
   requireCHSPermission,
   requireCHSAccessLevel,
 } from "@chs-platform/sdk/express";
@@ -205,7 +205,7 @@ When using TypeScript, the `req.chs` property is typed as `CHSUser | undefined`.
 
 ```typescript
 app.get("/api/data", requireCHS(), (req, res) => {
-  const user = req.chs!; // Safe assertion after requireAleph
+  const user = req.chs!; // Safe assertion after requireCHS
   res.json({ userId: user.id });
 });
 ```

@@ -4,16 +4,16 @@
 
 ## Estado
 - CHS Platform v1: ELIMINADA (contenedor chs-platform-app removido)
-- CHS Platform v2 (ex-Aleph): ÚNICA plataforma activa
+- CHS Platform v2 (ex-Aleph Platform): ÚNICA plataforma activa
 - Elias: Sin cambios, SSO via v2
 
 ## Contenedores
-- aleph-platform → CHS Platform v2 (Next.js 16, puerto 3000)
-- aleph-db → PostgreSQL 16 de v2
+- chs-platform → CHS Platform v2 (Next.js 16, puerto 3000)
+- chs-db → PostgreSQL 16 de v2
 - cogk4c4s8kgsk4k4s00wskss → Elias (sin cambios)
 
 ## File providers Traefik
-- chs-v2-platform.yaml → platform.centrohogarsanchez.es → aleph-platform:3000
+- chs-v2-platform.yaml → platform.centrohogarsanchez.es → chs-platform:3000
 - chs-v2-citas-auth.yaml → citas.centrohogarsanchez.es con ForwardAuth v2
 - chs-v2-elias-auth.yaml → elias.centrohogarsanchez.es con ForwardAuth v2
 

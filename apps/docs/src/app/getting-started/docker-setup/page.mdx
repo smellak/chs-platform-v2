@@ -29,7 +29,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - DATABASE_URL=postgresql://aleph:aleph_secret@db:5432/aleph
+      - DATABASE_URL=postgresql://chs:chs_secret@db:5432/chs
       - JWT_SECRET=change-me-in-production-use-at-least-64-chars-random-string-here
       - DOMAIN=localhost
       - NODE_ENV=production
@@ -46,13 +46,13 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      - POSTGRES_DB=aleph
-      - POSTGRES_USER=aleph
-      - POSTGRES_PASSWORD=aleph_secret
+      - POSTGRES_DB=chs
+      - POSTGRES_USER=chs
+      - POSTGRES_PASSWORD=chs_secret
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U aleph"]
+      test: ["CMD-SHELL", "pg_isready -U chs"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -94,14 +94,14 @@ openssl rand -hex 32
 
 ### PostgreSQL Password
 
-Change the default PostgreSQL credentials (`aleph` / `aleph_secret`) for production deployments.
+Change the default PostgreSQL credentials (`chs` / `chs_secret`) for production deployments.
 
 ### Data Persistence
 
 The PostgreSQL data is stored in a named Docker volume (`pgdata`). This persists across container restarts. To back up:
 
 ```bash
-docker compose exec db pg_dump -U aleph aleph > backup.sql
+docker compose exec db pg_dump -U chs chs > backup.sql
 ```
 
 ### Health Checks
@@ -128,10 +128,10 @@ docker compose build --no-cache
 docker compose up -d
 
 # Access the database
-docker compose exec db psql -U aleph aleph
+docker compose exec db psql -U chs chs
 
 # Run a database backup
-docker compose exec db pg_dump -U aleph aleph > backup.sql
+docker compose exec db pg_dump -U chs chs > backup.sql
 ```
 
 ## Troubleshooting
@@ -155,7 +155,7 @@ Ensure the `db` service is running and healthy:
 
 ```bash
 docker compose ps
-docker compose exec db pg_isready -U aleph
+docker compose exec db pg_isready -U chs
 ```
 
 ### Migrations fail
