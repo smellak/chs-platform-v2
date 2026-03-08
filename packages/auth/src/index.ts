@@ -113,11 +113,8 @@ export function getRefreshTokenCookieConfig(): CookieConfig {
 // ─── Token Extractors ────────────────────────────────────────────────────────
 
 export function extractTokenFromHeaders(headers: Headers): string | null {
-  const authHeader = headers.get("authorization");
-  if (authHeader?.startsWith("Bearer ")) {
-    return authHeader.slice(7);
-  }
-
+  // Check cookie first — in ForwardAuth context the Authorization header
+  // may carry a downstream app's JWT (e.g. Elias), not an Aleph token.
   const cookieHeader = headers.get("cookie");
   if (cookieHeader) {
     const cookies = cookieHeader.split(";").map((c) => c.trim());
@@ -126,6 +123,11 @@ export function extractTokenFromHeaders(headers: Headers): string | null {
         return cookie.slice("aleph_access_token=".length);
       }
     }
+  }
+
+  const authHeader = headers.get("authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    return authHeader.slice(7);
   }
 
   return null;
