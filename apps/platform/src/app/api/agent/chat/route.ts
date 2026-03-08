@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { streamText, stepCountIs } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
 import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { buildAgentContext } from "@/lib/agent/context";
@@ -10,6 +9,10 @@ import { getPlatformTools } from "@/lib/agent/platform-tools";
 import { getAppTools } from "@/lib/agent/app-tools";
 import { convertToAISDKTools } from "@/lib/agent/convert-tools";
 import { checkRateLimit } from "@/lib/agent/rate-limit";
+import { resolveModel } from "@/lib/agent/model-resolver";
+import { createLogger } from "@/lib/logger";
+
+const logger = createLogger("agent-chat");
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -25,15 +28,6 @@ export async function POST(request: NextRequest): Promise<Response> {
   const userId = request.headers.get("x-aleph-user-id");
   if (!userId) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
-
-  // Check API key
-  const apiKey = process.env["ANTHROPIC_API_KEY"];
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "Servicio de IA no disponible. Contacte al administrador." },
-      { status: 503 },
-    );
   }
 
   // Parse body
@@ -54,6 +48,20 @@ export async function POST(request: NextRequest): Promise<Response> {
   const ctx = await buildAgentContext(userId);
   if (!ctx) {
     return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
+  }
+
+  // Resolve AI model (multi-provider)
+  let resolved;
+  try {
+    resolved = await resolveModel(ctx.organization.id);
+  } catch (err) {
+    logger.error("Failed to resolve AI model", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return NextResponse.json(
+      { error: "Servicio de IA no disponible. Contacte al administrador." },
+      { status: 503 },
+    );
   }
 
   const db = getDb();
@@ -92,15 +100,12 @@ export async function POST(request: NextRequest): Promise<Response> {
   const allTools = [...platformTools, ...appTools];
   const aiTools = convertToAISDKTools(allTools);
 
-  const model = process.env["AI_MODEL"] ?? "claude-sonnet-4-20250514";
-  const maxTokens = Number(process.env["AI_MAX_TOKENS"] ?? "4096");
-
   const startTime = Date.now();
   const finalConvId = convId;
 
-  // Stream with Anthropic via AI SDK
+  // Stream with resolved provider via AI SDK
   const result = streamText({
-    model: anthropic(model),
+    model: resolved.model,
     system: systemPrompt,
     messages: messages.map((m) => ({
       role: m.role,
@@ -108,12 +113,14 @@ export async function POST(request: NextRequest): Promise<Response> {
     })),
     tools: aiTools,
     stopWhen: stepCountIs(10),
-    maxOutputTokens: maxTokens,
+    maxOutputTokens: resolved.maxTokens,
     onFinish: async ({ text, toolCalls, usage }) => {
       const latencyMs = Date.now() - startTime;
       const totalTokens = usage?.totalTokens ?? 0;
+      const inputTokens = usage?.inputTokens ?? 0;
+      const outputTokens = usage?.outputTokens ?? 0;
 
-      // Save assistant message
+      // Save assistant message with enhanced tracing
       const toolCallData = toolCalls?.map((tc) => ({
         toolName: tc.toolName,
         args: tc.input,
@@ -125,7 +132,11 @@ export async function POST(request: NextRequest): Promise<Response> {
         content: text || "",
         toolCalls: toolCallData as Record<string, unknown>[] | undefined,
         tokensUsed: totalTokens,
-        model,
+        inputTokens,
+        outputTokens,
+        model: resolved.modelId,
+        providerId: resolved.providerId || null,
+        modelId: resolved.aiModelId || null,
         latencyMs,
       }).returning({ id: schema.agentMessages.id });
 
@@ -162,44 +173,34 @@ export async function POST(request: NextRequest): Promise<Response> {
           conversationId: finalConvId,
           toolsUsed: toolCalls?.map((t) => t.toolName),
           tokensUsed: totalTokens,
+          model: resolved.modelId,
+          provider: resolved.providerName,
         },
       });
 
       // API cost log
-      if (totalTokens > 0) {
-        // Find or create Anthropic provider
-        const providers = await db.select().from(schema.apiProviders)
-          .where(eq(schema.apiProviders.slug, "anthropic"))
-          .limit(1);
+      if (totalTokens > 0 && resolved.providerId) {
+        const cost =
+          (inputTokens / 1000) * resolved.costPer1kInput +
+          (outputTokens / 1000) * resolved.costPer1kOutput;
 
-        let providerId = providers[0]?.id;
-        if (!providerId) {
-          const newProvider = await db.insert(schema.apiProviders).values({
-            orgId: ctx.organization.id,
-            name: "Anthropic",
-            slug: "anthropic",
-            model,
-            costPer1kInput: 0.003,
-            costPer1kOutput: 0.015,
-          }).returning({ id: schema.apiProviders.id });
-          providerId = newProvider[0]?.id;
-        }
-
-        if (providerId) {
-          const inputTokens = usage?.inputTokens ?? 0;
-          const outputTokens = usage?.outputTokens ?? 0;
-          const cost = (inputTokens / 1000) * 0.003 + (outputTokens / 1000) * 0.015;
-
-          await db.insert(schema.apiCostLogs).values({
-            providerId,
-            orgId: ctx.organization.id,
-            tokens: totalTokens,
-            cost,
-            endpoint: "agent.chat",
-            userId,
-          });
-        }
+        await db.insert(schema.apiCostLogs).values({
+          providerId: resolved.providerId,
+          orgId: ctx.organization.id,
+          tokens: totalTokens,
+          cost,
+          endpoint: "agent.chat",
+          userId,
+        });
       }
+
+      logger.info("Chat completed", {
+        conversationId: finalConvId,
+        model: resolved.modelId,
+        provider: resolved.providerName,
+        tokens: totalTokens,
+        latencyMs,
+      });
     },
   });
 
