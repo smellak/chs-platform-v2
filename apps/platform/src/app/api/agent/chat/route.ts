@@ -39,16 +39,19 @@ export async function POST(request: NextRequest): Promise<Response> {
     return NextResponse.json({ error: "Mensajes requeridos" }, { status: 400 });
   }
 
-  // Rate limit
-  const rateCheck = await checkRateLimit(userId);
-  if (!rateCheck.allowed) {
-    return NextResponse.json({ error: rateCheck.reason }, { status: 429 });
-  }
-
-  // Build context
+  // Build context (includes permission resolution)
   const ctx = await buildAgentContext(userId);
   if (!ctx) {
     return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
+  }
+
+  // Rate limit (with permission-based overrides)
+  const rateCheck = await checkRateLimit(userId, {
+    maxMessagesPerHour: ctx.agentPermissions?.maxMessagesPerHour,
+    maxTokensPerDay: ctx.agentPermissions?.maxTokensPerDay,
+  });
+  if (!rateCheck.allowed) {
+    return NextResponse.json({ error: rateCheck.reason }, { status: 429 });
   }
 
   // Resolve AI model (multi-provider)

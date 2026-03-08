@@ -1,8 +1,13 @@
 import { eq, and, gte, sql } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 
-const MSG_LIMIT = Number(process.env["AI_RATE_LIMIT_MESSAGES_PER_HOUR"] ?? "50");
-const TOKEN_LIMIT = Number(process.env["AI_RATE_LIMIT_TOKENS_PER_DAY"] ?? "100000");
+const DEFAULT_MSG_LIMIT = Number(process.env["AI_RATE_LIMIT_MESSAGES_PER_HOUR"] ?? "50");
+const DEFAULT_TOKEN_LIMIT = Number(process.env["AI_RATE_LIMIT_TOKENS_PER_DAY"] ?? "100000");
+
+interface RateLimitOverrides {
+  maxMessagesPerHour?: number | null;
+  maxTokensPerDay?: number | null;
+}
 
 interface RateLimitResult {
   allowed: boolean;
@@ -11,8 +16,14 @@ interface RateLimitResult {
   tokensUsed?: number;
 }
 
-export async function checkRateLimit(userId: string): Promise<RateLimitResult> {
+export async function checkRateLimit(
+  userId: string,
+  overrides?: RateLimitOverrides,
+): Promise<RateLimitResult> {
   const db = getDb();
+
+  const msgLimit = overrides?.maxMessagesPerHour ?? DEFAULT_MSG_LIMIT;
+  const tokenLimit = overrides?.maxTokensPerDay ?? DEFAULT_TOKEN_LIMIT;
 
   // Check messages in the last hour
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
@@ -33,10 +44,10 @@ export async function checkRateLimit(userId: string): Promise<RateLimitResult> {
 
   const messagesUsed = Number(msgCountResult[0]?.count ?? 0);
 
-  if (messagesUsed >= MSG_LIMIT) {
+  if (messagesUsed >= msgLimit) {
     return {
       allowed: false,
-      reason: `Has alcanzado el límite de ${MSG_LIMIT} mensajes por hora. Inténtalo más tarde.`,
+      reason: `Has alcanzado el límite de ${msgLimit} mensajes por hora. Inténtalo más tarde.`,
       messagesUsed,
     };
   }
@@ -61,10 +72,10 @@ export async function checkRateLimit(userId: string): Promise<RateLimitResult> {
 
   const tokensUsed = Number(tokenResult[0]?.total ?? 0);
 
-  if (tokensUsed >= TOKEN_LIMIT) {
+  if (tokensUsed >= tokenLimit) {
     return {
       allowed: false,
-      reason: `Has alcanzado el límite de ${TOKEN_LIMIT.toLocaleString()} tokens por día. Inténtalo mañana.`,
+      reason: `Has alcanzado el límite de ${tokenLimit.toLocaleString()} tokens por día. Inténtalo mañana.`,
       tokensUsed,
     };
   }

@@ -12,6 +12,12 @@ export interface AgentCapabilityDef {
   parameters?: Record<string, AgentCapabilityParam>;
 }
 
+export interface AgentPermissionOverrides {
+  maxTokensPerDay: number | null;
+  maxMessagesPerHour: number | null;
+  allowedModels: string[] | null;
+}
+
 export interface AgentContext {
   user: {
     id: string;
@@ -43,6 +49,7 @@ export interface AgentContext {
     };
     userAccessLevel: "full" | "readonly";
   }>;
+  agentPermissions?: AgentPermissionOverrides;
 }
 
 export interface PlatformTool {

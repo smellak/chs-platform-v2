@@ -1,6 +1,7 @@
 import { eq, and } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import type { AgentContext, AgentCapabilityDef } from "./types";
+import { resolveAgentPermissions } from "./permission-resolver";
 
 export async function buildAgentContext(userId: string): Promise<AgentContext | null> {
   const db = getDb();
@@ -101,6 +102,20 @@ export async function buildAgentContext(userId: string): Promise<AgentContext | 
     });
   }
 
+  // Apply agent permission rules (filter blocked apps/tools)
+  const agentPerms = await resolveAgentPermissions(userId, user.orgId);
+  const filteredApps = availableApps.filter((app) => !agentPerms.blockedApps.has(app.id));
+
+  // Filter blocked tools from app capabilities
+  for (const app of filteredApps) {
+    if (app.agent && agentPerms.blockedTools.size > 0) {
+      app.agent.capabilities = app.agent.capabilities.filter(
+        (cap) => !agentPerms.blockedTools.has(cap.name) &&
+                 !agentPerms.blockedTools.has(`${app.slug}__${cap.name}`),
+      );
+    }
+  }
+
   return {
     user: {
       id: user.id,
@@ -119,6 +134,11 @@ export async function buildAgentContext(userId: string): Promise<AgentContext | 
       id: org.id,
       name: org.name,
     },
-    availableApps,
+    availableApps: filteredApps,
+    agentPermissions: {
+      maxTokensPerDay: agentPerms.maxTokensPerDay,
+      maxMessagesPerHour: agentPerms.maxMessagesPerHour,
+      allowedModels: agentPerms.allowedModels.size > 0 ? [...agentPerms.allowedModels] : null,
+    },
   };
 }
