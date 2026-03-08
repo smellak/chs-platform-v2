@@ -36,8 +36,8 @@ test.describe("AI Governance — Providers & Models", () => {
     await page.click("button:has-text('Nuevo')");
     await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 5000 });
     // Check new fields exist
-    await expect(page.locator("#providerType")).toBeVisible();
-    await expect(page.locator("#apiKeyEncrypted")).toBeVisible();
+    await expect(page.locator("#provType")).toBeVisible();
+    await expect(page.locator("#provApiKey")).toBeVisible();
   });
 
   test("T03: Admin can view AI models page", async ({ page }) => {
@@ -115,7 +115,7 @@ test.describe("AI Governance — Conversations & Traceability", () => {
       timeout: 15000,
     });
     await page.click('[role="tab"]:has-text("Por Modelo")');
-    await expect(page.locator('[role="tabpanel"]')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("tabpanel", { name: "Por Modelo" })).toBeVisible({ timeout: 5000 });
   });
 
   test("T10: Analytics per-user tab renders", async ({ page }) => {
@@ -125,7 +125,7 @@ test.describe("AI Governance — Conversations & Traceability", () => {
       timeout: 15000,
     });
     await page.click('[role="tab"]:has-text("Por Usuario")');
-    await expect(page.locator('[role="tabpanel"]')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("tabpanel", { name: "Por Usuario" })).toBeVisible({ timeout: 5000 });
   });
 
   test("T11: Analytics alerts tab renders", async ({ page }) => {
@@ -135,7 +135,7 @@ test.describe("AI Governance — Conversations & Traceability", () => {
       timeout: 15000,
     });
     await page.click('[role="tab"]:has-text("Alertas")');
-    await expect(page.locator('[role="tabpanel"]')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("tabpanel", { name: "Alertas" })).toBeVisible({ timeout: 5000 });
   });
 });
 
