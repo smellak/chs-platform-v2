@@ -411,6 +411,31 @@
 }
 
 /* ============================================
+   SKIP INTRO BUTTON — from CHS v1
+   ============================================ */
+.chs-skip-btn {
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 10px 20px;
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.chs-skip-btn:hover {
+  color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* ============================================
    ELEVATION SYSTEM — from CHS
    ============================================ */
 @layer utilities {

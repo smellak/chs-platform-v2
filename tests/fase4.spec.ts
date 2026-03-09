@@ -5,6 +5,8 @@ const BASE = process.env["TEST_BASE_URL"] ?? "https://platform.centrohogarsanche
 const REPO = process.env["HOME"] + "/chs-platform-v2";
 
 async function loginAsAdmin(page: Page) {
+  const domain = new URL(BASE).hostname;
+  await page.context().addCookies([{ name: "chs_intro_seen", value: "1", domain, path: "/" }]);
   await page.goto(`${BASE}/login`, { waitUntil: "networkidle", timeout: 30000 });
   await page.waitForSelector('input[name="username"]', { timeout: 10000 });
   await page.fill('input[name="username"]', "admin");
@@ -78,6 +80,8 @@ test.describe("Fase 4: Production Readiness", () => {
   });
 
   test("T06: Login page shows CHS branding", async ({ page }) => {
+    const domain = new URL(BASE).hostname;
+    await page.context().addCookies([{ name: "chs_intro_seen", value: "1", domain, path: "/" }]);
     await page.goto(`${BASE}/login`);
     await page.waitForLoadState("networkidle");
     // Should have the CHS logo image (alt="Centro Hogar Sánchez")

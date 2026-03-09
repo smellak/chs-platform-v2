@@ -3,6 +3,9 @@ import { test, expect, type Page } from "@playwright/test";
 const BASE = process.env["TEST_BASE_URL"] ?? "https://platform.centrohogarsanchez.es";
 
 async function loginAsAdmin(page: Page) {
+  // Skip intro video by setting the cookie before navigating
+  const domain = new URL(BASE).hostname;
+  await page.context().addCookies([{ name: "chs_intro_seen", value: "1", domain, path: "/" }]);
   await page.goto(`${BASE}/login`, { waitUntil: "networkidle", timeout: 30000 });
   await page.waitForSelector('input[name="username"]', { timeout: 10000 });
   await page.fill('input[name="username"]', "admin");
@@ -293,6 +296,8 @@ test.describe("Fase 1: Core Platform UI", () => {
   test("T25: Non-admin user can access dashboard but not admin", async ({
     page,
   }) => {
+    const domain = new URL(BASE).hostname;
+    await page.context().addCookies([{ name: "chs_intro_seen", value: "1", domain, path: "/" }]);
     await page.goto(`${BASE}/login`, { waitUntil: "networkidle", timeout: 30000 });
     await page.waitForSelector('input[name="username"]', { timeout: 10000 });
     await page.fill('input[name="username"]', "carlos.martinez");

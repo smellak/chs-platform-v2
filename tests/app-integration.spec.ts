@@ -4,6 +4,8 @@ const BASE =
   process.env["TEST_BASE_URL"] ?? "https://platform.centrohogarsanchez.es";
 
 async function loginAsAdmin(page: Page) {
+  const domain = new URL(BASE).hostname;
+  await page.context().addCookies([{ name: "chs_intro_seen", value: "1", domain, path: "/" }]);
   await page.goto(`${BASE}/login`, { waitUntil: "networkidle", timeout: 30000 });
   await page.waitForSelector('input[name="username"]', { timeout: 10000 });
   await page.fill('input[name="username"]', "admin");

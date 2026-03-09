@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, User, Eye, EyeOff, AlertCircle, ArrowRight, Loader2 } from "lucide-react";
 import Image from "next/image";
+import { IntroVideo } from "@/components/intro-video";
 
 // Generate deterministic particle data at module level so it's stable across renders
 const PARTICLES = Array.from({ length: 28 }, (_, i) => ({
@@ -23,6 +24,22 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showIntro, setShowIntro] = useState(false);
+  const [loginReady, setLoginReady] = useState(false);
+
+  useEffect(() => {
+    const hasSeenIntro = document.cookie.includes("chs_intro_seen=1");
+    if (hasSeenIntro) {
+      setLoginReady(true);
+    } else {
+      setShowIntro(true);
+    }
+  }, []);
+
+  const handleIntroComplete = useCallback(() => {
+    setShowIntro(false);
+    setLoginReady(true);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -58,31 +75,33 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="login-bg min-h-screen flex items-center justify-center p-4">
-      {/* Grid pattern overlay */}
-      <div className="fixed inset-0 login-grid-pattern pointer-events-none" />
+    <>
+      {showIntro && <IntroVideo onComplete={handleIntroComplete} />}
+      <div className="login-bg min-h-screen flex items-center justify-center p-4">
+        {/* Grid pattern overlay */}
+        <div className="fixed inset-0 login-grid-pattern pointer-events-none" />
 
-      {/* Animated particles — 28 like CHS */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        {PARTICLES.map((p, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full"
-            style={{
-              left: p.left,
-              bottom: p.bottom,
-              width: p.width,
-              height: p.height,
-              backgroundColor: `rgba(66, 165, 245, ${p.opacity})`,
-              animation: `particleFloat ${p.duration} linear infinite`,
-              animationDelay: p.delay,
-            }}
-          />
-        ))}
-      </div>
+        {/* Animated particles — 28 like CHS */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          {PARTICLES.map((p, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full"
+              style={{
+                left: p.left,
+                bottom: p.bottom,
+                width: p.width,
+                height: p.height,
+                backgroundColor: `rgba(66, 165, 245, ${p.opacity})`,
+                animation: `particleFloat ${p.duration} linear infinite`,
+                animationDelay: p.delay,
+              }}
+            />
+          ))}
+        </div>
 
-      {/* Login card — CHS glass styling */}
-      <div
+        {/* Login card — CHS glass styling */}
+        {loginReady && <div
         className="relative z-10 w-full mx-4 animate-fade-in-up"
         style={{ maxWidth: "420px" }}
       >
@@ -223,7 +242,8 @@ export default function LoginPage() {
             CHS Platform &copy; {new Date().getFullYear()}
           </p>
         </div>
+      </div>}
       </div>
-    </div>
+    </>
   );
 }
