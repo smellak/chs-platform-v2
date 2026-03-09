@@ -61,22 +61,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       isMaintenance: boolean;
     } | undefined;
 
-    if (targetHost) {
-      const instances = await db
-        .select({
-          instanceId: schema.appInstances.id,
-          appId: schema.appInstances.appId,
-          appName: schema.apps.name,
-          appSlug: schema.apps.slug,
-          isActive: schema.apps.isActive,
-          isMaintenance: schema.apps.isMaintenance,
-        })
-        .from(schema.appInstances)
-        .innerJoin(schema.apps, eq(schema.appInstances.appId, schema.apps.id))
-        .where(eq(schema.appInstances.externalDomain, targetHost))
-        .limit(1);
-      appData = instances[0];
-    } else if (targetSlug) {
+    if (targetSlug) {
       const appsFound = await db
         .select({
           instanceId: schema.appInstances.id,
@@ -91,6 +76,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         .where(eq(schema.apps.slug, targetSlug))
         .limit(1);
       appData = appsFound[0];
+    } else if (targetHost) {
+      const instances = await db
+        .select({
+          instanceId: schema.appInstances.id,
+          appId: schema.appInstances.appId,
+          appName: schema.apps.name,
+          appSlug: schema.apps.slug,
+          isActive: schema.apps.isActive,
+          isMaintenance: schema.apps.isMaintenance,
+        })
+        .from(schema.appInstances)
+        .innerJoin(schema.apps, eq(schema.appInstances.appId, schema.apps.id))
+        .where(eq(schema.appInstances.externalDomain, targetHost))
+        .limit(1);
+      appData = instances[0];
     }
 
     if (!appData) {

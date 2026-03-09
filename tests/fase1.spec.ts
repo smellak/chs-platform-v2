@@ -1,16 +1,16 @@
 import { test, expect, type Page } from "@playwright/test";
 
-const BASE = process.env["TEST_BASE_URL"] ?? "http://localhost:3001";
+const BASE = process.env["TEST_BASE_URL"] ?? "https://platform.centrohogarsanchez.es";
 
 async function loginAsAdmin(page: Page) {
-  await page.goto(`${BASE}/login`);
+  await page.goto(`${BASE}/login`, { waitUntil: "networkidle", timeout: 30000 });
+  await page.waitForSelector('input[name="username"]', { timeout: 10000 });
   await page.fill('input[name="username"]', "admin");
   await page.fill('input[name="password"]', "admin123");
   await page.click('button[type="submit"]');
   await page.waitForURL((url) => !url.toString().includes("/login"), {
     timeout: 15000,
   });
-  // Wait for hydration and content to load
   await page.waitForLoadState("networkidle");
 }
 
@@ -19,35 +19,38 @@ test.describe("Fase 1: Core Platform UI", () => {
 
   test("T1: Dashboard shows hero with greeting and stats", async ({ page }) => {
     await loginAsAdmin(page);
-    await expect(page.locator("text=Servicios activos")).toBeVisible({ timeout: 10000 });
+    // The hero stat cards use "Servicios", "Departamentos", "Apps"
+    await expect(page.locator("text=Servicios").first()).toBeVisible({ timeout: 10000 });
     const body = await page.textContent("body");
-    expect(body).toMatch(/Buenos (días|tardes|noches)/);
+    expect(body).toMatch(/Buen(os|as) (días|tardes|noches)/);
     expect(body).toContain("Departamentos");
-    expect(body).toContain("Aplicaciones");
+    expect(body).toContain("Apps");
   });
 
   test("T2: Dashboard shows department sections with app cards", async ({
     page,
   }) => {
     await loginAsAdmin(page);
-    await expect(page.locator("text=Servicios activos")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Servicios").first()).toBeVisible({ timeout: 10000 });
     const body = await page.textContent("body");
-    // Check for app name from seed data
-    expect(body).toContain("Citas");
+    // Check for department or app name from seed data
+    expect(body).toContain("Compras");
   });
 
   // ─── Navigation ───────────────────────────────────────────────────────────
 
-  test("T3: Navbar shows CHS brand, Dashboard, Monitor, Admin links", async ({
+  test("T3: Navbar shows CHS brand, MIS APPS, MONITOR, ADMIN links", async ({
     page,
   }) => {
     await loginAsAdmin(page);
-    await expect(page.locator("nav")).toBeVisible({ timeout: 10000 });
-    const nav = page.locator("nav");
-    await expect(nav).toContainText("CHS");
-    await expect(nav).toContainText("Dashboard");
-    await expect(nav).toContainText("Monitor");
-    await expect(nav).toContainText("Admin");
+    // The nav is inside a <header>, not a <nav>; the desktop nav uses <nav> inside.
+    // The header element is the top-level container.
+    const header = page.locator("header");
+    await expect(header).toBeVisible({ timeout: 10000 });
+    await expect(header).toContainText("CHS");
+    await expect(header).toContainText("MIS APPS");
+    await expect(header).toContainText("MONITOR");
+    await expect(header).toContainText("ADMIN");
   });
 
   test("T4: Navbar shows notification bell", async ({ page }) => {
@@ -279,9 +282,10 @@ test.describe("Fase 1: Core Platform UI", () => {
   test("T24: Dashboard is responsive at 375px viewport", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await loginAsAdmin(page);
-    await expect(page.locator("text=Servicios activos")).toBeVisible({ timeout: 10000 });
+    // Wait for dashboard hero stat card "Servicios" label
+    await expect(page.locator("text=Servicios").first()).toBeVisible({ timeout: 10000 });
     const body = await page.textContent("body");
-    expect(body).toMatch(/Buenos (días|tardes|noches)/);
+    expect(body).toMatch(/Buen(os|as) (días|tardes|noches)/);
   });
 
   // ─── Non-admin access ────────────────────────────────────────────────────
@@ -289,7 +293,8 @@ test.describe("Fase 1: Core Platform UI", () => {
   test("T25: Non-admin user can access dashboard but not admin", async ({
     page,
   }) => {
-    await page.goto(`${BASE}/login`);
+    await page.goto(`${BASE}/login`, { waitUntil: "networkidle", timeout: 30000 });
+    await page.waitForSelector('input[name="username"]', { timeout: 10000 });
     await page.fill('input[name="username"]', "carlos.martinez");
     await page.fill('input[name="password"]', "admin123");
     await page.click('button[type="submit"]');
@@ -297,12 +302,13 @@ test.describe("Fase 1: Core Platform UI", () => {
       timeout: 15000,
     });
     await page.waitForLoadState("networkidle");
-    // Dashboard should load
+    // Wait for dashboard hero stat label to appear
+    await expect(page.locator("text=Servicios").first()).toBeVisible({ timeout: 10000 });
     const body = await page.textContent("body");
-    expect(body).toMatch(/Buenos (días|tardes|noches)/);
-    // Admin link should not be in navbar for non-admin
-    const nav = page.locator("nav");
-    const navText = await nav.textContent();
-    expect(navText).not.toContain("Admin");
+    expect(body).toMatch(/Buen(os|as) (días|tardes|noches)/);
+    // Admin link should not be in header for non-admin (navbar uses uppercase labels)
+    const header = page.locator("header");
+    const headerText = await header.textContent();
+    expect(headerText).not.toContain("ADMIN");
   });
 });

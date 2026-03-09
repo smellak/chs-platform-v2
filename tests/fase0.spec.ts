@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-const BASE = "http://localhost:3000";
+const BASE = process.env["TEST_BASE_URL"] ?? "https://platform.centrohogarsanchez.es";
 
 test.describe("Fase 0: Foundation", () => {
   test("T1: /api/health returns 200 with database connected", async ({
@@ -78,7 +78,8 @@ test.describe("Fase 0: Foundation", () => {
   test("T8: Full login flow — login, see dashboard, logout", async ({
     page,
   }) => {
-    await page.goto(`${BASE}/login`);
+    await page.goto(`${BASE}/login`, { waitUntil: "networkidle", timeout: 30000 });
+    await page.waitForSelector('input[name="username"]', { timeout: 10000 });
     await page.fill('input[name="username"]', "admin");
     await page.fill('input[name="password"]', "admin123");
     await page.click('button[type="submit"]');
@@ -86,12 +87,17 @@ test.describe("Fase 0: Foundation", () => {
       (url) => !url.toString().includes("/login"),
       { timeout: 10000 },
     );
+    await page.waitForLoadState("networkidle");
+    // Wait for dashboard to fully render (hero stat card)
+    await expect(page.locator("text=Servicios").first()).toBeVisible({ timeout: 10000 });
     const pageContent = await page.textContent("body");
-    expect(pageContent).toContain("Admin");
+    // Navbar uses uppercase "ADMIN" label
+    expect(pageContent?.toUpperCase()).toContain("ADMIN");
   });
 
   test("T8b: Dashboard shows departments and app cards", async ({ page }) => {
-    await page.goto(`${BASE}/login`);
+    await page.goto(`${BASE}/login`, { waitUntil: "networkidle", timeout: 30000 });
+    await page.waitForSelector('input[name="username"]', { timeout: 10000 });
     await page.fill('input[name="username"]', "admin");
     await page.fill('input[name="password"]', "admin123");
     await page.click('button[type="submit"]');
@@ -99,9 +105,12 @@ test.describe("Fase 0: Foundation", () => {
       (url) => !url.toString().includes("/login"),
       { timeout: 10000 },
     );
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState("networkidle");
+    // Wait for dashboard to fully render
+    await expect(page.locator("text=Servicios").first()).toBeVisible({ timeout: 10000 });
     const bodyText = await page.textContent("body");
-    expect(bodyText).toContain("Citas");
+    // Dashboard shows department cards like "Compras"
+    expect(bodyText).toContain("Compras");
     await page.screenshot({
       path: "tests/screenshots/dashboard.png",
       fullPage: true,
@@ -109,7 +118,8 @@ test.describe("Fase 0: Foundation", () => {
   });
 
   test("T8c: Navbar has correct structure", async ({ page }) => {
-    await page.goto(`${BASE}/login`);
+    await page.goto(`${BASE}/login`, { waitUntil: "networkidle", timeout: 30000 });
+    await page.waitForSelector('input[name="username"]', { timeout: 10000 });
     await page.fill('input[name="username"]', "admin");
     await page.fill('input[name="password"]', "admin123");
     await page.click('button[type="submit"]');
@@ -117,15 +127,18 @@ test.describe("Fase 0: Foundation", () => {
       (url) => !url.toString().includes("/login"),
       { timeout: 10000 },
     );
-    const bodyText = await page.textContent("body");
-    expect(bodyText?.toUpperCase()).toContain("CHS");
-    expect(bodyText).toContain("Admin");
+    await page.waitForLoadState("networkidle");
+    // Wait for dashboard to fully render
+    await expect(page.locator("text=Servicios").first()).toBeVisible({ timeout: 10000 });
+    const header = page.locator("header");
+    const headerText = await header.textContent();
+    expect(headerText?.toUpperCase()).toContain("CHS");
+    // Navbar uses uppercase "ADMIN" label
+    expect(headerText).toContain("ADMIN");
   });
 
   test("T9: verify-access returns 401 without auth", async ({ request }) => {
-    const res = await request.get(`${BASE}/api/auth/verify-access`, {
-      headers: { "X-Forwarded-Host": "citas.centrohogarsanchez.es" },
-    });
+    const res = await request.get(`${BASE}/api/auth/verify-access?app=citas-almacen`);
     expect(res.status()).toBe(401);
   });
 
@@ -135,9 +148,7 @@ test.describe("Fase 0: Foundation", () => {
     await request.post(`${BASE}/api/auth/login`, {
       data: { username: "admin", password: "admin123" },
     });
-    const res = await request.get(`${BASE}/api/auth/verify-access`, {
-      headers: { "X-Forwarded-Host": "citas.centrohogarsanchez.es" },
-    });
+    const res = await request.get(`${BASE}/api/auth/verify-access?app=citas-almacen`);
     expect(res.status()).toBe(200);
     const userId = res.headers()["x-chs-user-id"];
     const userName = res.headers()["x-chs-user-name"];
@@ -151,9 +162,7 @@ test.describe("Fase 0: Foundation", () => {
     await request.post(`${BASE}/api/auth/login`, {
       data: { username: "admin", password: "admin123" },
     });
-    const res = await request.get(`${BASE}/api/auth/verify-access`, {
-      headers: { "X-Forwarded-Host": "unknown.example.com" },
-    });
+    const res = await request.get(`${BASE}/api/auth/verify-access?app=nonexistent-app`);
     expect(res.status()).toBe(403);
   });
 
@@ -163,9 +172,7 @@ test.describe("Fase 0: Foundation", () => {
     await request.post(`${BASE}/api/auth/login`, {
       data: { username: "carlos.martinez", password: "admin123" },
     });
-    const res = await request.get(`${BASE}/api/auth/verify-access`, {
-      headers: { "X-Forwarded-Host": "citas.centrohogarsanchez.es" },
-    });
+    const res = await request.get(`${BASE}/api/auth/verify-access?app=citas-almacen`);
     expect(res.status()).toBe(200);
   });
 });

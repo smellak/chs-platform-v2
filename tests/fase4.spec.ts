@@ -1,11 +1,12 @@
 import { test, expect, type Page } from "@playwright/test";
 import { execSync } from "child_process";
 
-const BASE = process.env["TEST_BASE_URL"] ?? "http://localhost:3002";
+const BASE = process.env["TEST_BASE_URL"] ?? "https://platform.centrohogarsanchez.es";
 const REPO = process.env["HOME"] + "/chs-platform-v2";
 
 async function loginAsAdmin(page: Page) {
-  await page.goto(`${BASE}/login`);
+  await page.goto(`${BASE}/login`, { waitUntil: "networkidle", timeout: 30000 });
+  await page.waitForSelector('input[name="username"]', { timeout: 10000 });
   await page.fill('input[name="username"]', "admin");
   await page.fill('input[name="password"]', "admin123");
   await page.click('button[type="submit"]');
@@ -79,8 +80,8 @@ test.describe("Fase 4: Production Readiness", () => {
   test("T06: Login page shows CHS branding", async ({ page }) => {
     await page.goto(`${BASE}/login`);
     await page.waitForLoadState("networkidle");
-    // Should have the CHS logo image
-    const logo = page.locator('img[alt="CHS Platform"]');
+    // Should have the CHS logo image (alt="Centro Hogar Sánchez")
+    const logo = page.locator('img[alt="Centro Hogar Sánchez"]');
     await expect(logo).toBeVisible({ timeout: 10000 });
   });
 
@@ -137,7 +138,8 @@ test.describe("Fase 4: Production Readiness", () => {
     expect(parseInt(result.trim())).toBe(0);
   });
 
-  test("T13: Login has rate limiting on failed attempts", async ({ request }) => {
+  test("T13: Login has rate limiting on failed attempts", async ({ page, request }) => {
+    test.setTimeout(90000); // Extended timeout to allow rate limit cooldown
     const results: number[] = [];
     for (let i = 0; i < 7; i++) {
       const res = await request.post(`${BASE}/api/auth/login`, {
@@ -148,6 +150,13 @@ test.describe("Fase 4: Production Readiness", () => {
     // Should get 429 (rate limited) after 5 failed attempts
     const hasRateLimit = results.includes(429);
     expect(hasRateLimit).toBe(true);
+
+    // Wait for the 60-second rate limit window to expire so subsequent tests can login
+    // Then do a successful login to clear the counter.
+    await page.waitForTimeout(61000);
+    await request.post(`${BASE}/api/auth/login`, {
+      data: { username: "admin", password: "admin123" },
+    });
   });
 
   test("T14: Security headers present", async ({ request }) => {

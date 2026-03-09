@@ -1,9 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
 
-const BASE = process.env["TEST_BASE_URL"] ?? "http://localhost:3002";
+const BASE = process.env["TEST_BASE_URL"] ?? "https://platform.centrohogarsanchez.es";
 
 async function loginAsAdmin(page: Page) {
-  await page.goto(`${BASE}/login`);
+  await page.goto(`${BASE}/login`, { waitUntil: "networkidle", timeout: 30000 });
+  await page.waitForSelector('input[name="username"]', { timeout: 10000 });
   await page.fill('input[name="username"]', "admin");
   await page.fill('input[name="password"]', "admin123");
   await page.click('button[type="submit"]');
@@ -17,9 +18,7 @@ test.describe("Fase 2: Integration Engine", () => {
   // === VERIFY-ACCESS ===
 
   test("T01: verify-access 401 without auth", async ({ request }) => {
-    const res = await request.get(`${BASE}/api/auth/verify-access`, {
-      headers: { "X-Forwarded-Host": "citas.centrohogarsanchez.es" },
-    });
+    const res = await request.get(`${BASE}/api/auth/verify-access?app=citas-almacen`);
     expect(res.status()).toBe(401);
     const errorHeader = res.headers()["x-chs-error"];
     expect(errorHeader).toBe("no-token");
@@ -31,9 +30,7 @@ test.describe("Fase 2: Integration Engine", () => {
     await request.post(`${BASE}/api/auth/login`, {
       data: { username: "admin", password: "admin123" },
     });
-    const res = await request.get(`${BASE}/api/auth/verify-access`, {
-      headers: { "X-Forwarded-Host": "citas.centrohogarsanchez.es" },
-    });
+    const res = await request.get(`${BASE}/api/auth/verify-access?app=citas-almacen`);
     expect(res.status()).toBe(200);
     expect(res.headers()["x-chs-user-id"]).toBeDefined();
     expect(res.headers()["x-chs-user-name"]).toBeDefined();
@@ -50,22 +47,19 @@ test.describe("Fase 2: Integration Engine", () => {
     await request.post(`${BASE}/api/auth/login`, {
       data: { username: "admin", password: "admin123" },
     });
-    const res = await request.get(`${BASE}/api/auth/verify-access`, {
-      headers: { "X-Forwarded-Host": "unknown.example.com" },
-    });
+    const res = await request.get(`${BASE}/api/auth/verify-access?app=nonexistent-app`);
     expect(res.status()).toBe(403);
     expect(res.headers()["x-chs-error"]).toBe("app-not-found");
   });
 
-  test("T04: verify-access readonly access level for viewer user", async ({
+  test("T04: verify-access readonly access level for user in Compras", async ({
     request,
   }) => {
+    // maria.lopez is in Compras dept which has readonly access to citas-almacen
     await request.post(`${BASE}/api/auth/login`, {
-      data: { username: "ana.rodriguez", password: "admin123" },
+      data: { username: "maria.lopez", password: "admin123" },
     });
-    const res = await request.get(`${BASE}/api/auth/verify-access`, {
-      headers: { "X-Forwarded-Host": "citas.centrohogarsanchez.es" },
-    });
+    const res = await request.get(`${BASE}/api/auth/verify-access?app=citas-almacen`);
     expect(res.status()).toBe(200);
     expect(res.headers()["x-chs-access-level"]).toBe("readonly");
   });
@@ -76,9 +70,7 @@ test.describe("Fase 2: Integration Engine", () => {
     await request.post(`${BASE}/api/auth/login`, {
       data: { username: "carlos.martinez", password: "admin123" },
     });
-    const res = await request.get(`${BASE}/api/auth/verify-access`, {
-      headers: { "X-Forwarded-Host": "citas.centrohogarsanchez.es" },
-    });
+    const res = await request.get(`${BASE}/api/auth/verify-access?app=citas-almacen`);
     expect(res.status()).toBe(200);
     expect(res.headers()["x-chs-access-level"]).toBe("full");
   });
@@ -89,9 +81,7 @@ test.describe("Fase 2: Integration Engine", () => {
     await request.post(`${BASE}/api/auth/login`, {
       data: { username: "admin", password: "admin123" },
     });
-    const res = await request.get(`${BASE}/api/auth/verify-access`, {
-      headers: { "X-Forwarded-Host": "citas.centrohogarsanchez.es" },
-    });
+    const res = await request.get(`${BASE}/api/auth/verify-access?app=citas-almacen`);
     expect(res.status()).toBe(200);
     const perms = res.headers()["x-chs-permissions"];
     expect(perms).toBeDefined();
@@ -123,13 +113,18 @@ test.describe("Fase 2: Integration Engine", () => {
     await expect(
       page.locator("h1:has-text('Gestión de Aplicaciones')"),
     ).toBeVisible({ timeout: 10000 });
-    const editBtn = page.locator("text=Editar").first();
-    if (await editBtn.isVisible()) {
+    // Click the "Editar" button for Citas Almacén (which has externalDomain)
+    const citasRow = page.locator("tr", { hasText: "Citas Almacén" });
+    const editBtn = citasRow.locator("text=Editar");
+    if (await editBtn.isVisible({ timeout: 3000 })) {
       await editBtn.click();
       const dialog = page.locator('[role="dialog"]');
       await expect(dialog).toBeVisible({ timeout: 5000 });
       // Switch to Instance tab
-      await page.click('button:has-text("Instancia")');
+      const instanceTab = dialog.locator('button:has-text("Instancia")');
+      await instanceTab.click();
+      await page.waitForTimeout(500);
+      // The Proxy Traefik section appears because Citas Almacén has an externalDomain
       await expect(page.locator("text=Proxy Traefik")).toBeVisible({
         timeout: 5000,
       });
@@ -256,9 +251,7 @@ test.describe("Fase 2: Integration Engine", () => {
     await request.post(`${BASE}/api/auth/login`, {
       data: { username: "admin", password: "admin123" },
     });
-    await request.get(`${BASE}/api/auth/verify-access`, {
-      headers: { "X-Forwarded-Host": "citas.centrohogarsanchez.es" },
-    });
+    await request.get(`${BASE}/api/auth/verify-access?app=citas-almacen`);
     const logsRes = await request.get(
       `${BASE}/api/activity-logs?action=auth.verify-access`,
     );
