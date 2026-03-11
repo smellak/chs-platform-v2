@@ -2,6 +2,11 @@ import { test, expect } from "@playwright/test";
 
 const BASE = process.env["TEST_BASE_URL"] ?? "https://platform.centrohogarsanchez.es";
 
+async function skipIntroVideo(page: import("@playwright/test").Page) {
+  const domain = new URL(BASE).hostname;
+  await page.context().addCookies([{ name: "chs_intro_seen", value: "1", domain, path: "/" }]);
+}
+
 test.describe("Fase 0: Foundation", () => {
   test("T1: /api/health returns 200 with database connected", async ({
     request,
@@ -65,6 +70,7 @@ test.describe("Fase 0: Foundation", () => {
   });
 
   test("T7: Login page renders correctly", async ({ page }) => {
+    await skipIntroVideo(page);
     await page.goto(`${BASE}/login`);
     await expect(
       page.locator('input[name="username"]').first(),
@@ -78,6 +84,7 @@ test.describe("Fase 0: Foundation", () => {
   test("T8: Full login flow — login, see dashboard, logout", async ({
     page,
   }) => {
+    await skipIntroVideo(page);
     await page.goto(`${BASE}/login`, { waitUntil: "networkidle", timeout: 30000 });
     await page.waitForSelector('input[name="username"]', { timeout: 10000 });
     await page.fill('input[name="username"]', "admin");
@@ -96,6 +103,7 @@ test.describe("Fase 0: Foundation", () => {
   });
 
   test("T8b: Dashboard shows departments and app cards", async ({ page }) => {
+    await skipIntroVideo(page);
     await page.goto(`${BASE}/login`, { waitUntil: "networkidle", timeout: 30000 });
     await page.waitForSelector('input[name="username"]', { timeout: 10000 });
     await page.fill('input[name="username"]', "admin");
@@ -118,6 +126,7 @@ test.describe("Fase 0: Foundation", () => {
   });
 
   test("T8c: Navbar has correct structure", async ({ page }) => {
+    await skipIntroVideo(page);
     await page.goto(`${BASE}/login`, { waitUntil: "networkidle", timeout: 30000 });
     await page.waitForSelector('input[name="username"]', { timeout: 10000 });
     await page.fill('input[name="username"]', "admin");

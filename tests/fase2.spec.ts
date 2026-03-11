@@ -278,8 +278,10 @@ test.describe("Fase 2: Integration Engine", () => {
 
   test("T18: SDK package builds correctly", async ({}) => {
     const { execSync } = require("child_process");
+    const path = require("path");
+    const sdkDir = path.resolve(__dirname, "..", "packages", "sdk");
     const result = execSync(
-      "cd /home/aleph/chs-platform-v2/packages/sdk && npm run build 2>&1",
+      `cd ${sdkDir} && npm run build 2>&1`,
     ).toString();
     expect(result).not.toContain("error TS");
   });

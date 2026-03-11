@@ -36,7 +36,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       })
       .from(schema.users)
       .where(
-        sql`(${schema.users.firstName} || ' ' || ${schema.users.lastName}) ILIKE ${pattern} OR ${schema.users.email} ILIKE ${pattern}`,
+        sql`(${schema.users.firstName} || ' ' || ${schema.users.lastName}) ILIKE ${pattern} OR ${schema.users.email} ILIKE ${pattern} OR ${schema.users.username} ILIKE ${pattern}`,
       )
       .limit(5),
 
