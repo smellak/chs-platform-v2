@@ -460,7 +460,7 @@ export function AppsClient({ apps, departments }: AppsClientProps) {
                 <TabsTrigger value="agent">Agente IA</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="data" className="space-y-4">
+              <TabsContent value="data" forceMount className="space-y-4 data-[state=inactive]:hidden">
                 <div>
                   <Label htmlFor="appName">Nombre</Label>
                   <Input
@@ -552,7 +552,7 @@ export function AppsClient({ apps, departments }: AppsClientProps) {
                 </div>
               </TabsContent>
 
-              <TabsContent value="instance" className="space-y-4">
+              <TabsContent value="instance" forceMount className="space-y-4 data-[state=inactive]:hidden">
                 <div>
                   <Label htmlFor="internalUrl">URL interna</Label>
                   <Input
@@ -668,7 +668,7 @@ export function AppsClient({ apps, departments }: AppsClientProps) {
                 )}
               </TabsContent>
 
-              <TabsContent value="access" className="space-y-4">
+              <TabsContent value="access" forceMount className="space-y-4 data-[state=inactive]:hidden">
                 <p className="text-sm text-muted-foreground">
                   Selecciona los departamentos que tendrán acceso a esta
                   aplicación.
@@ -717,7 +717,7 @@ export function AppsClient({ apps, departments }: AppsClientProps) {
                 </div>
               </TabsContent>
 
-              <TabsContent value="agent" className="space-y-4">
+              <TabsContent value="agent" forceMount className="space-y-4 data-[state=inactive]:hidden">
                 <div className="flex items-center justify-between rounded-lg border border-border p-4">
                   <div>
                     <Label htmlFor="agentEnabled" className="text-sm font-medium">

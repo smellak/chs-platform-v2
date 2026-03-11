@@ -9,11 +9,11 @@ import { getCurrentUser } from "@/lib/auth";
 const appSchema = z.object({
   name: z.string().min(1),
   slug: z.string().min(1),
-  description: z.string().optional(),
-  icon: z.string().optional(),
-  color: z.string().optional(),
-  category: z.string().optional(),
-  version: z.string().optional(),
+  description: z.string().nullish(),
+  icon: z.string().nullish(),
+  color: z.string().nullish(),
+  category: z.string().nullish(),
+  version: z.string().nullish(),
   isActive: z.boolean().optional(),
   isMaintenance: z.boolean().optional(),
 });
