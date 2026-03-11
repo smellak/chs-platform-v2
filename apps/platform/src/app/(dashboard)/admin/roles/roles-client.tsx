@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Shield } from "lucide-react";
+import { Plus, Shield, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
-import { createRole, updateRole } from "@/lib/actions/roles";
+import { createRole, updateRole, deleteRole } from "@/lib/actions/roles";
 import { slugify } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -77,6 +77,17 @@ export function RolesClient({ roles }: RolesClientProps) {
 
   function togglePerm(key: string) {
     setPerms((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  async function handleDelete(roleId: string) {
+    if (!confirm("¿Seguro que deseas eliminar este rol?")) return;
+    const result = await deleteRole(roleId);
+    if (result.success) {
+      toast({ title: "Rol eliminado" });
+      router.refresh();
+    } else {
+      toast({ title: result.error ?? "Error al eliminar", variant: "destructive" });
+    }
   }
 
   async function handleSubmit(formData: FormData) {
@@ -152,7 +163,7 @@ export function RolesClient({ roles }: RolesClientProps) {
                   <TableCell className="text-center">
                     <Badge variant="secondary">{r.usersCount}</Badge>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right space-x-1">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -160,6 +171,16 @@ export function RolesClient({ roles }: RolesClientProps) {
                     >
                       Editar
                     </Button>
+                    {!r.isSystem && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(r.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))

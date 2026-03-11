@@ -5,6 +5,7 @@ import { Navbar } from "@/components/navbar";
 import { Toaster } from "@/components/ui/toaster";
 import { CommandPalette } from "@/components/command-palette";
 import { AgentWrapper } from "@/components/agent/agent-wrapper";
+import { TokenRefreshProvider } from "@/components/token-refresh-provider";
 import { startHealthChecker } from "@/lib/health-checker";
 
 // Start health checker once on server
@@ -40,15 +41,17 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar user={user} orgName={orgName} />
-      <main>{children}</main>
-      <Toaster />
-      <CommandPalette isSuperAdmin={user.isSuperAdmin} />
-      <AgentWrapper
-        userName={userName}
-        userInitials={userInitials}
-        isSuperAdmin={user.isSuperAdmin}
-      />
+      <TokenRefreshProvider>
+        <Navbar user={user} orgName={orgName} />
+        <main>{children}</main>
+        <Toaster />
+        <CommandPalette isSuperAdmin={user.isSuperAdmin} />
+        <AgentWrapper
+          userName={userName}
+          userInitials={userInitials}
+          isSuperAdmin={user.isSuperAdmin}
+        />
+      </TokenRefreshProvider>
     </div>
   );
 }

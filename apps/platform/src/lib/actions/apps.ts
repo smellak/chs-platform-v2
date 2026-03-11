@@ -72,17 +72,23 @@ export async function createApp(formData: FormData): Promise<ActionResult> {
       });
     }
 
-    // Handle access policies
+    // Handle access policies (de-duplicated batch insert)
     const accessEntries = formData.getAll("access");
+    const uniqueCreateEntries = new Map<string, string>();
     for (const entry of accessEntries) {
       const [deptId, level] = String(entry).split(":");
       if (deptId && level) {
-        await db.insert(schema.appAccessPolicies).values({
+        uniqueCreateEntries.set(deptId, level);
+      }
+    }
+    if (uniqueCreateEntries.size > 0) {
+      await db.insert(schema.appAccessPolicies).values(
+        Array.from(uniqueCreateEntries.entries()).map(([deptId, level]) => ({
           appId: app.id,
           departmentId: deptId,
           accessLevel: level,
-        });
-      }
+        })),
+      );
     }
 
     // Handle agent registration
@@ -179,18 +185,29 @@ export async function updateApp(formData: FormData): Promise<ActionResult> {
       }
     }
 
-    // Rebuild access policies
-    const accessEntries = formData.getAll("access");
-    if (accessEntries.length > 0) {
-      await db.delete(schema.appAccessPolicies).where(eq(schema.appAccessPolicies.appId, id));
+    // Rebuild access policies (only if the access tab was part of this submission)
+    const accessManaged = formData.get("accessManaged") === "true";
+    if (accessManaged) {
+      const accessEntries = formData.getAll("access");
+      const uniqueEntries = new Map<string, string>();
       for (const entry of accessEntries) {
         const [deptId, level] = String(entry).split(":");
         if (deptId && level) {
-          await db.insert(schema.appAccessPolicies).values({
-            appId: id, departmentId: deptId, accessLevel: level,
-          });
+          uniqueEntries.set(deptId, level);
         }
       }
+      await db.transaction(async (tx) => {
+        await tx.delete(schema.appAccessPolicies).where(eq(schema.appAccessPolicies.appId, id));
+        if (uniqueEntries.size > 0) {
+          await tx.insert(schema.appAccessPolicies).values(
+            Array.from(uniqueEntries.entries()).map(([deptId, level]) => ({
+              appId: id,
+              departmentId: deptId,
+              accessLevel: level,
+            })),
+          );
+        }
+      });
     }
 
     // Handle agent registration
@@ -255,5 +272,40 @@ export async function updateApp(formData: FormData): Promise<ActionResult> {
     return { success: true };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : "Error" };
+  }
+}
+
+export async function deleteApp(appId: string): Promise<ActionResult> {
+  const currentUser = await getCurrentUser();
+  if (!currentUser?.isSuperAdmin) return { success: false, error: "No autorizado" };
+
+  const db = getDb();
+
+  try {
+    const apps = await db.select().from(schema.apps).where(eq(schema.apps.id, appId)).limit(1);
+    const app = apps[0];
+    if (!app) return { success: false, error: "Aplicación no encontrada" };
+
+    // CASCADE in schema handles appInstances, appAccessPolicies, appAgents
+    await db.delete(schema.apps).where(eq(schema.apps.id, appId));
+
+    // Log activity
+    const org = await db.select().from(schema.organizations).limit(1);
+    if (org[0]) {
+      await db.insert(schema.activityLogs).values({
+        orgId: org[0].id,
+        userId: currentUser.id,
+        action: "app.delete",
+        entityType: "app",
+        entityId: appId,
+        details: { name: app.name, slug: app.slug },
+      });
+    }
+
+    revalidatePath("/admin/apps");
+    return { success: true };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Error desconocido";
+    return { success: false, error: message };
   }
 }

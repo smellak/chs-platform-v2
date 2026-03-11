@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Cpu, Eye, EyeOff } from "lucide-react";
+import { Plus, Cpu, Eye, EyeOff, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   createApiProvider,
   updateApiProvider,
+  deleteApiProvider,
 } from "@/lib/actions/api-providers";
 import { slugify } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
@@ -86,6 +87,17 @@ export function ApiProvidersClient({ providers }: ApiProvidersClientProps) {
     setProviderType(p.providerType);
     setShowApiKey(false);
     setDialogOpen(true);
+  }
+
+  async function handleDelete(providerId: string) {
+    if (!confirm("¿Seguro que deseas eliminar este proveedor?")) return;
+    const result = await deleteApiProvider(providerId);
+    if (result.success) {
+      toast({ title: "Proveedor eliminado" });
+      router.refresh();
+    } else {
+      toast({ title: result.error ?? "Error al eliminar", variant: "destructive" });
+    }
   }
 
   async function handleSubmit(formData: FormData) {
@@ -169,9 +181,17 @@ export function ApiProvidersClient({ providers }: ApiProvidersClientProps) {
                       {p.isActive ? "Activo" : "Inactivo"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right space-x-1">
                     <Button variant="ghost" size="sm" onClick={() => openEdit(p)}>
                       Editar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => handleDelete(p.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>
                 </TableRow>

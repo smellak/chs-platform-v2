@@ -651,6 +651,9 @@ export const refreshTokens = pgTable("refresh_tokens", {
   token: text("token").notNull().unique(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  lastAccessedAt: timestamp("last_accessed_at", { withTimezone: true }),
+  userAgent: text("user_agent"),
+  ipAddress: varchar("ip_address", { length: 45 }),
 });
 
 export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({

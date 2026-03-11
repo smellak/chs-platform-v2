@@ -15,6 +15,7 @@ import {
   Sparkles,
   MessagesSquare,
   ShieldCheck,
+  MonitorDot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +25,7 @@ const sidebarItems = [
   { href: "/admin/apps", label: "Aplicaciones", icon: AppWindow },
   { href: "/admin/roles", label: "Roles", icon: Shield },
   { href: "/admin/audit", label: "Auditoría", icon: ScrollText },
+  { href: "/admin/sessions", label: "Sesiones", icon: MonitorDot },
   { href: "/admin/api-providers", label: "Proveedores API", icon: Cpu },
   { href: "/admin/api-keys", label: "Claves API", icon: Key },
   { href: "/admin/webhooks", label: "Webhooks", icon: Webhook },

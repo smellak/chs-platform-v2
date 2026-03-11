@@ -26,7 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DynamicIcon } from "@/components/dynamic-icon";
-import { createApp, updateApp } from "@/lib/actions/apps";
+import { createApp, updateApp, deleteApp } from "@/lib/actions/apps";
 import {
   previewTraefikConfig,
   applyTraefikConfig,
@@ -267,7 +267,20 @@ export function AppsClient({ apps, departments }: AppsClientProps) {
     );
   }
 
+  async function handleDelete(appId: string) {
+    if (!confirm("¿Seguro que deseas eliminar esta aplicación?")) return;
+    const result = await deleteApp(appId);
+    if (result.success) {
+      toast({ title: "Aplicación eliminada" });
+      router.refresh();
+    } else {
+      toast({ title: result.error ?? "Error al eliminar", variant: "destructive" });
+    }
+  }
+
   async function handleSubmit(formData: FormData) {
+    // Signal that access policies are being managed in this submission
+    formData.append("accessManaged", "true");
     // Add access entries
     for (const [deptId, level] of Object.entries(accessMap)) {
       formData.append("access", `${deptId}:${level}`);
@@ -409,9 +422,17 @@ export function AppsClient({ apps, departments }: AppsClientProps) {
                         ? app.access.map((a) => a.departmentName).join(", ")
                         : "—"}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right space-x-1">
                       <Button variant="ghost" size="sm" onClick={() => openEdit(app)}>
                         Editar
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(app.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>
                   </TableRow>

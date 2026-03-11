@@ -83,3 +83,38 @@ export async function updateRole(formData: FormData): Promise<ActionResult> {
     return { success: false, error: err instanceof Error ? err.message : "Error" };
   }
 }
+
+export async function deleteRole(roleId: string): Promise<ActionResult> {
+  const currentUser = await getCurrentUser();
+  if (!currentUser?.isSuperAdmin) return { success: false, error: "No autorizado" };
+
+  const db = getDb();
+
+  try {
+    const roles = await db.select().from(schema.roles).where(eq(schema.roles.id, roleId)).limit(1);
+    const role = roles[0];
+    if (!role) return { success: false, error: "Rol no encontrado" };
+
+    if (role.isSystem) {
+      return { success: false, error: "No se puede eliminar un rol del sistema" };
+    }
+
+    // Check if any users are assigned to this role
+    const assignments = await db
+      .select()
+      .from(schema.userDepartmentRoles)
+      .where(eq(schema.userDepartmentRoles.roleId, roleId))
+      .limit(1);
+
+    if (assignments.length > 0) {
+      return { success: false, error: "No se puede eliminar: hay usuarios asignados a este rol" };
+    }
+
+    await db.delete(schema.roles).where(eq(schema.roles.id, roleId));
+
+    revalidatePath("/admin/roles");
+    return { success: true };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Error desconocido" };
+  }
+}

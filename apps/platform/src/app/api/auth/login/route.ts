@@ -112,11 +112,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const refreshTokenValue = generateRefreshToken();
     const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    // Store refresh token
+    // Store refresh token with session metadata
     await db.insert(schema.refreshTokens).values({
       userId: user.id,
       token: refreshTokenValue,
       expiresAt: refreshExpiresAt,
+      lastAccessedAt: new Date(),
+      userAgent: request.headers.get("user-agent"),
+      ipAddress: request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip"),
     });
 
     // Update last login
@@ -203,6 +206,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       sameSite: refreshCookieConfig.sameSite,
       path: refreshCookieConfig.path,
       maxAge: refreshCookieConfig.maxAge,
+    });
+
+    // Signal cookie (non-httpOnly, readable by middleware on all paths)
+    response.cookies.set("chs_session_active", "1", {
+      httpOnly: false,
+      secure: process.env["NODE_ENV"] === "production" && process.env["DOMAIN"] !== "localhost",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60,
+      ...(orgDomain ? { domain: orgDomain } : {}),
     });
 
     return response;

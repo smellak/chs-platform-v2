@@ -8,6 +8,8 @@ const PUBLIC_PATHS = [
   "/login",
   "/api/auth/login",
   "/api/auth/refresh",
+  "/api/auth/refresh-redirect",
+  "/api/auth/token-status",
   "/api/auth/verify-access",
   "/api/auth/sso-info",
   "/api/health",
@@ -49,7 +51,15 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   }
 
   const token = request.cookies.get("chs_access_token")?.value;
+  const sessionActive = request.cookies.get("chs_session_active")?.value;
+
   if (!token) {
+    if (sessionActive === "1" && !pathname.startsWith("/api/")) {
+      // User has a session but access token missing — attempt silent refresh
+      const refreshUrl = new URL("/api/auth/refresh-redirect", request.url);
+      refreshUrl.searchParams.set("returnTo", pathname + request.nextUrl.search);
+      return NextResponse.redirect(refreshUrl);
+    }
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
@@ -58,6 +68,12 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 
   const payload = await verifyToken(token);
   if (!payload) {
+    if (sessionActive === "1" && !pathname.startsWith("/api/")) {
+      // Token expired but session exists — attempt silent refresh
+      const refreshUrl = new URL("/api/auth/refresh-redirect", request.url);
+      refreshUrl.searchParams.set("returnTo", pathname + request.nextUrl.search);
+      return NextResponse.redirect(refreshUrl);
+    }
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Token inválido" }, { status: 401 });
     }

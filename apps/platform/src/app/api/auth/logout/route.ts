@@ -44,6 +44,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       maxAge: 0,
     });
 
+    response.cookies.set("chs_session_active", "", {
+      httpOnly: false,
+      secure: process.env["NODE_ENV"] === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
+
     return response;
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Error interno";

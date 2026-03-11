@@ -165,3 +165,61 @@ export async function updateApiProvider(
     };
   }
 }
+
+export async function deleteApiProvider(
+  providerId: string,
+): Promise<ActionResult> {
+  const currentUser = await getCurrentUser();
+  if (!currentUser?.isSuperAdmin)
+    return { success: false, error: "No autorizado" };
+
+  const db = getDb();
+
+  try {
+    const providers = await db
+      .select()
+      .from(schema.apiProviders)
+      .where(eq(schema.apiProviders.id, providerId))
+      .limit(1);
+    const provider = providers[0];
+    if (!provider) return { success: false, error: "Proveedor no encontrado" };
+
+    // Check if any AI models reference this provider
+    const models = await db
+      .select()
+      .from(schema.aiModels)
+      .where(eq(schema.aiModels.providerId, providerId))
+      .limit(1);
+
+    if (models.length > 0) {
+      return {
+        success: false,
+        error: "No se puede eliminar: tiene modelos asignados",
+      };
+    }
+
+    await db
+      .delete(schema.apiProviders)
+      .where(eq(schema.apiProviders.id, providerId));
+
+    const orgs = await db.select().from(schema.organizations).limit(1);
+    if (orgs[0]) {
+      await db.insert(schema.activityLogs).values({
+        orgId: orgs[0].id,
+        userId: currentUser.id,
+        action: "api-provider.delete",
+        entityType: "api_provider",
+        entityId: providerId,
+        details: { name: provider.name },
+      });
+    }
+
+    revalidatePath("/admin/api-providers");
+    return { success: true };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Error desconocido",
+    };
+  }
+}

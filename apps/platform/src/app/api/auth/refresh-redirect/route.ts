@@ -9,14 +9,15 @@ import {
 } from "@chs-platform/auth";
 import { getDb, schema } from "@/lib/db";
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  const returnTo = request.nextUrl.searchParams.get("returnTo") || "/";
+  const refreshTokenValue = request.cookies.get("chs_refresh_token")?.value;
+
+  if (!refreshTokenValue) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
   try {
-    const refreshTokenValue = request.cookies.get("chs_refresh_token")?.value;
-
-    if (!refreshTokenValue) {
-      return NextResponse.json({ error: "No refresh token" }, { status: 401 });
-    }
-
     const db = getDb();
 
     // Find valid refresh token
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const tokenRecord = tokens[0];
     if (!tokenRecord) {
-      return NextResponse.json({ error: "Refresh token inválido o expirado" }, { status: 401 });
+      return NextResponse.redirect(new URL("/login", request.url));
     }
 
     // Find user
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const user = usersFound[0];
     if (!user || !user.isActive) {
-      return NextResponse.json({ error: "Usuario no encontrado o inactivo" }, { status: 401 });
+      return NextResponse.redirect(new URL("/login", request.url));
     }
 
     // Delete old refresh token (rotation)
@@ -68,19 +69,28 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       expiresAt: refreshExpiresAt,
       lastAccessedAt: new Date(),
       userAgent: request.headers.get("user-agent"),
-      ipAddress: request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip"),
+      ipAddress:
+        request.headers.get("x-forwarded-for") ??
+        request.headers.get("x-real-ip"),
     });
 
-    // Get org domain
+    // Get org domain for cookie
     const orgs = await db
       .select()
       .from(schema.organizations)
       .where(eq(schema.organizations.id, user.orgId))
       .limit(1);
 
-    const orgDomain = orgs[0]?.domain ?? undefined;
+    const envDomain = process.env["DOMAIN"];
+    const isLocalhost =
+      !envDomain || envDomain === "localhost" || envDomain === "";
+    const orgDomain = isLocalhost ? undefined : (orgs[0]?.domain ?? undefined);
 
-    const response = NextResponse.json({ ok: true });
+    // Sanitize returnTo to prevent open redirect
+    const safeReturnTo = returnTo.startsWith("/") ? returnTo : "/";
+    const response = NextResponse.redirect(
+      new URL(safeReturnTo, request.url),
+    );
 
     const accessCookieConfig = getAccessTokenCookieConfig(orgDomain);
     const refreshCookieConfig = getRefreshTokenCookieConfig();
@@ -91,7 +101,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       sameSite: accessCookieConfig.sameSite,
       path: accessCookieConfig.path,
       maxAge: accessCookieConfig.maxAge,
-      ...(accessCookieConfig.domain ? { domain: accessCookieConfig.domain } : {}),
+      ...(accessCookieConfig.domain
+        ? { domain: accessCookieConfig.domain }
+        : {}),
     });
 
     response.cookies.set(refreshCookieConfig.name, newRefreshTokenValue, {
@@ -102,10 +114,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       maxAge: refreshCookieConfig.maxAge,
     });
 
-    // Signal cookie (non-httpOnly, readable by middleware on all paths)
+    // Signal cookie
     response.cookies.set("chs_session_active", "1", {
       httpOnly: false,
-      secure: process.env["NODE_ENV"] === "production" && process.env["DOMAIN"] !== "localhost",
+      secure:
+        process.env["NODE_ENV"] === "production" &&
+        process.env["DOMAIN"] !== "localhost",
       sameSite: "lax",
       path: "/",
       maxAge: 7 * 24 * 60 * 60,
@@ -113,8 +127,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
 
     return response;
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Error interno";
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 }
