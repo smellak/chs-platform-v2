@@ -233,30 +233,33 @@ test.describe("Fase 5: Admin Audit — Apps Delete", () => {
       page.locator("h1:has-text('Gestión de Aplicaciones')"),
     ).toBeVisible({ timeout: 10000 });
 
+    const testName = `E2E App ${Date.now()}`;
     const testSlug = `e2e-app-${Date.now()}`;
     await page.click('button:has-text("Nueva Aplicación")');
     const dialog = page.locator('[role="dialog"]');
     await expect(dialog).toBeVisible({ timeout: 5000 });
 
-    await page.fill('input[name="name"]', "E2E Test App");
+    await page.fill('input[name="name"]', testName);
     await page.fill('input[name="slug"]', testSlug);
 
     await page.click('button:has-text("Crear Aplicación")');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(3000);
 
-    // Verify app appears
-    await expect(page.locator(`text=${testSlug}`).first()).toBeVisible({
+    // Verify app appears (table shows name, not slug)
+    await expect(page.locator(`text=${testName}`).first()).toBeVisible({
       timeout: 10000,
     });
 
     // Delete the app
-    const row = page.locator("tr", { hasText: testSlug });
-    const deleteBtn = row.locator("button.text-destructive").first();
+    const row = page.locator("tr", { hasText: testName });
+    page.on("dialog", (d) => d.accept());
+    const deleteBtn = row.locator("button").filter({
+      has: page.locator('svg'),
+    }).last();
     if (await deleteBtn.isVisible({ timeout: 3000 })) {
-      page.on("dialog", (d) => d.accept());
       await deleteBtn.click();
-      await page.waitForTimeout(2000);
-      await expect(page.locator(`text=${testSlug}`)).not.toBeVisible({
+      await page.waitForTimeout(3000);
+      await expect(page.locator(`text=${testName}`)).not.toBeVisible({
         timeout: 5000,
       });
     }
