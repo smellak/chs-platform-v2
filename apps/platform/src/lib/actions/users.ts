@@ -197,3 +197,44 @@ export async function toggleUserActive(userId: string): Promise<ActionResult> {
   revalidatePath("/admin/users");
   return { success: true };
 }
+
+export async function deleteUser(userId: string): Promise<ActionResult> {
+  const currentUser = await getCurrentUser();
+  if (!currentUser?.isSuperAdmin) {
+    return { success: false, error: "No autorizado" };
+  }
+
+  if (userId === currentUser.id) {
+    return { success: false, error: "No puedes eliminarte a ti mismo" };
+  }
+
+  const db = getDb();
+
+  const users = await db.select().from(schema.users).where(eq(schema.users.id, userId)).limit(1);
+  const user = users[0];
+  if (!user) return { success: false, error: "Usuario no encontrado" };
+
+  // Prevent deleting super admin (Soufiane Mellak)
+  if (user.isSuperAdmin) {
+    return { success: false, error: "No se puede eliminar al Super Admin" };
+  }
+
+  // Soft delete: mark as inactive
+  await db.update(schema.users).set({ isActive: false, updatedAt: new Date() }).where(eq(schema.users.id, userId));
+
+  // Log activity
+  const org = await db.select().from(schema.organizations).limit(1);
+  if (org[0]) {
+    await db.insert(schema.activityLogs).values({
+      orgId: org[0].id,
+      userId: currentUser.id,
+      action: "user.delete",
+      entityType: "user",
+      entityId: userId,
+      details: { username: user.username, name: `${user.firstName} ${user.lastName}` },
+    });
+  }
+
+  revalidatePath("/admin/users");
+  return { success: true };
+}

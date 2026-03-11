@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Search, UserCheck, UserX } from "lucide-react";
+import { Plus, Search, UserCheck, UserX, Trash2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -29,7 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { createUser, updateUser, toggleUserActive } from "@/lib/actions/users";
+import { createUser, updateUser, toggleUserActive, deleteUser } from "@/lib/actions/users";
 import { formatRelativeTime, getInitials } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -64,6 +66,8 @@ export function UsersClient({ users, departments, roles }: UsersClientProps) {
   const [filterDept, setFilterDept] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const filtered = users.filter((u) => {
     const matchesSearch =
@@ -108,6 +112,27 @@ export function UsersClient({ users, departments, roles }: UsersClientProps) {
       router.refresh();
     } else {
       toast({ title: result.error ?? "Error", variant: "destructive" });
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const result = await deleteUser(deleteTarget.id);
+      if (result.success) {
+        toast({
+          title: `Usuario ${deleteTarget.firstName} ${deleteTarget.lastName} eliminado correctamente`,
+        });
+        setDeleteTarget(null);
+        router.refresh();
+      } else {
+        toast({ title: result.error ?? "Error al eliminar", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Error al eliminar usuario", variant: "destructive" });
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -219,6 +244,16 @@ export function UsersClient({ users, departments, roles }: UsersClientProps) {
                           <UserCheck className="h-4 w-4 text-emerald-500" />
                         )}
                       </Button>
+                      {!u.isSuperAdmin && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteTarget(u)}
+                          title="Eliminar usuario"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -228,6 +263,7 @@ export function UsersClient({ users, departments, roles }: UsersClientProps) {
         </Table>
       </div>
 
+      {/* Create/Edit dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -350,6 +386,31 @@ export function UsersClient({ users, departments, roles }: UsersClientProps) {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Eliminar Usuario
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              ¿Estás seguro de que deseas eliminar a{" "}
+              <strong>{deleteTarget?.firstName} {deleteTarget?.lastName}</strong>?
+              Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? "Eliminando..." : "Eliminar"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
