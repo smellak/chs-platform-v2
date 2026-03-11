@@ -121,10 +121,11 @@ test.describe("Fase 5: Admin Audit — API Keys", () => {
       page.locator("h1:has-text('Claves API')"),
     ).toBeVisible({ timeout: 10000 });
 
+    const keyName = `E2E Key ${Date.now()}`;
     await page.click("text=Nueva Clave API");
     const dialog = page.locator('[role="dialog"]');
     await expect(dialog).toBeVisible({ timeout: 5000 });
-    await page.fill('input[name="name"]', `E2E Key ${Date.now()}`);
+    await page.fill('input[name="name"]', keyName);
     await page.click('button:has-text("Crear Clave")');
 
     // Key should be shown
@@ -134,17 +135,19 @@ test.describe("Fase 5: Admin Audit — API Keys", () => {
     const keyText = await page.locator("code").first().textContent();
     expect(keyText).toContain("chs_sk_");
 
-    // Close dialog and find the key, revoke it
-    await page.keyboard.press("Escape");
-    await page.waitForTimeout(1000);
+    // Close the generated key dialog
+    await page.click('button:has-text("Cerrar")');
+    await page.waitForTimeout(2000);
 
-    const revokeBtn = page.locator('button:has-text("Revocar")').first();
+    // Find our newly created key's Revocar button
+    const row = page.locator("tr", { hasText: keyName });
+    const revokeBtn = row.locator('button:has-text("Revocar")');
     if (await revokeBtn.isVisible({ timeout: 3000 })) {
       await revokeBtn.click();
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(2000);
       // Verify revoked badge appears
       await expect(
-        page.locator("text=Revocada").first(),
+        row.locator("text=Revocada"),
       ).toBeVisible({ timeout: 5000 });
     }
   });
@@ -231,7 +234,7 @@ test.describe("Fase 5: Admin Audit — Apps Delete", () => {
     ).toBeVisible({ timeout: 10000 });
 
     const testSlug = `e2e-app-${Date.now()}`;
-    await page.click('button:has-text("Nueva App")');
+    await page.click('button:has-text("Nueva Aplicación")');
     const dialog = page.locator('[role="dialog"]');
     await expect(dialog).toBeVisible({ timeout: 5000 });
 
@@ -403,7 +406,7 @@ test.describe("Fase 5: Admin Audit — Cross-Section", () => {
       { url: "/admin/api-providers", heading: "Proveedores" },
       { url: "/admin/api-keys", heading: "Claves API" },
       { url: "/admin/webhooks", heading: "Webhooks" },
-      { url: "/admin/ai-analytics", heading: "Analytics" },
+      { url: "/admin/ai-analytics", heading: "Analíticas" },
       { url: "/admin/ai-models", heading: "Modelos" },
       { url: "/admin/ai-conversations", heading: "Conversaciones" },
       { url: "/admin/ai-permissions", heading: "Permisos" },
