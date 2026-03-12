@@ -18,6 +18,8 @@ export default async function DepartmentsPage() {
       count: sql<number>`count(*)::int`,
     })
     .from(schema.userDepartmentRoles)
+    .innerJoin(schema.users, eq(schema.userDepartmentRoles.userId, schema.users.id))
+    .where(eq(schema.users.isActive, true))
     .groupBy(schema.userDepartmentRoles.departmentId);
 
   const appCounts = await db

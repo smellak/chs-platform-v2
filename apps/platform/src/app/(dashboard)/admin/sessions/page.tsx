@@ -1,4 +1,4 @@
-import { eq, gt, desc, sql } from "drizzle-orm";
+import { and, eq, gt, desc, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getDb, schema } from "@/lib/db";
@@ -25,7 +25,10 @@ export default async function SessionsPage() {
     })
     .from(schema.refreshTokens)
     .innerJoin(schema.users, eq(schema.refreshTokens.userId, schema.users.id))
-    .where(gt(schema.refreshTokens.expiresAt, new Date()))
+    .where(and(
+      gt(schema.refreshTokens.expiresAt, new Date()),
+      eq(schema.users.isActive, true),
+    ))
     .orderBy(desc(schema.refreshTokens.lastAccessedAt));
 
   const sessionsData = sessions.map((s) => ({

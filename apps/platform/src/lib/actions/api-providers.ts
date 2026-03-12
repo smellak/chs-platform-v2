@@ -74,8 +74,12 @@ export async function createApiProvider(
   }
 
   try {
+    // A provider without an API key cannot be active
+    const isActive = apiKeyEncrypted ? (parsed.data.isActive ?? true) : false;
+
     await db.insert(schema.apiProviders).values({
       ...parsed.data,
+      isActive,
       orgId,
       apiKeyEncrypted,
     });
@@ -149,6 +153,15 @@ export async function updateApiProvider(
     const updateData: Record<string, unknown> = { ...parsed.data };
     if (apiKeyEncrypted) {
       updateData.apiKeyEncrypted = apiKeyEncrypted;
+    }
+
+    // If no new API key provided, check if existing key is set
+    if (!apiKeyEncrypted) {
+      const existing = await db.select({ key: schema.apiProviders.apiKeyEncrypted })
+        .from(schema.apiProviders).where(eq(schema.apiProviders.id, id)).limit(1);
+      if (!existing[0]?.key) {
+        updateData.isActive = false;
+      }
     }
 
     await db

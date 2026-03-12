@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { eq } from "drizzle-orm";
+import { eq, lt } from "drizzle-orm";
 import { z } from "zod";
 import {
   verifyPassword,
@@ -111,6 +111,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const refreshTokenValue = generateRefreshToken();
     const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    // Clean up expired tokens for this user before creating a new one
+    await db.delete(schema.refreshTokens).where(
+      lt(schema.refreshTokens.expiresAt, new Date()),
+    );
 
     // Store refresh token with session metadata
     await db.insert(schema.refreshTokens).values({
