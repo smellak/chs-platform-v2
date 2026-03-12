@@ -277,27 +277,27 @@ async function seed(): Promise<void> {
     isActive: true,
   });
 
-  // ─── API Provider (only Anthropic — the one we actually use) ────────────────
-  const [anthropicProvider] = await db.insert(schema.apiProviders).values({
+  // ─── API Provider (Google AI — primary, Anthropic kept as fallback env var) ─
+  const [googleProvider] = await db.insert(schema.apiProviders).values({
     orgId,
-    name: "Anthropic",
-    slug: "anthropic",
-    providerType: "anthropic",
-    model: "claude-sonnet-4-20250514",
+    name: "Google AI",
+    slug: "google",
+    providerType: "google",
+    model: "gemini-3-flash-preview",
     isActive: true,
-    // apiKeyEncrypted is null — the model resolver falls back to ANTHROPIC_API_KEY env var
+    // apiKeyEncrypted can be set via admin UI; env var GOOGLE_GENERATIVE_AI_API_KEY is used as fallback
   }).returning();
 
-  if (!anthropicProvider) throw new Error("Failed to create Anthropic provider");
+  if (!googleProvider) throw new Error("Failed to create Google AI provider");
 
   // ─── AI Model ─────────────────────────────────────────────────────────────
   await db.insert(schema.aiModels).values({
-    providerId: anthropicProvider.id,
+    providerId: googleProvider.id,
     orgId,
-    modelId: "claude-sonnet-4-20250514",
-    displayName: "Claude Sonnet 4",
-    costPer1kInput: 0.003,
-    costPer1kOutput: 0.015,
+    modelId: "gemini-3-flash-preview",
+    displayName: "Gemini 3 Flash",
+    costPer1kInput: 0.0005,
+    costPer1kOutput: 0.003,
     maxTokens: 8192,
     isActive: true,
     isDefault: true,

@@ -131,14 +131,14 @@ test.describe("Data Integrity — API Providers", () => {
       page.locator("h1:has-text('Proveedores')"),
     ).toBeVisible({ timeout: 10000 });
 
-    // Only Anthropic should exist and be active (uses ANTHROPIC_API_KEY env var)
+    // Google AI should be the active provider
     const rows = page.locator("table tbody tr");
     const rowCount = await rows.count();
     expect(rowCount).toBeGreaterThanOrEqual(1);
 
-    // Anthropic row should be present
-    const anthropicRow = page.locator("tr").filter({ hasText: "Anthropic" });
-    await expect(anthropicRow).toBeVisible();
+    // Google AI row should be present
+    const googleRow = page.locator("tr").filter({ hasText: "Google AI" });
+    await expect(googleRow).toBeVisible();
   });
 });
 

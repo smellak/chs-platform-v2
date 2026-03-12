@@ -220,33 +220,51 @@ export async function resolveModel(
   }
 
   // 3. Fallback to environment variables (backward compatibility)
-  const envModel = process.env["AI_MODEL"] ?? "claude-sonnet-4-20250514";
-  const envApiKey = process.env["ANTHROPIC_API_KEY"];
-  if (!envApiKey) {
-    throw new Error("No AI model configured and ANTHROPIC_API_KEY not set");
+  // Primary: Google (GOOGLE_GENERATIVE_AI_API_KEY), Secondary: Anthropic (ANTHROPIC_API_KEY)
+  const envModel = process.env["AI_MODEL"] ?? "gemini-3-flash-preview";
+  const googleKey = process.env["GOOGLE_GENERATIVE_AI_API_KEY"];
+  const anthropicKey = process.env["ANTHROPIC_API_KEY"];
+
+  if (!googleKey && !anthropicKey) {
+    throw new Error("No AI model configured and no API keys set (GOOGLE_GENERATIVE_AI_API_KEY or ANTHROPIC_API_KEY)");
   }
 
-  logger.info("Falling back to env var model", { modelId: envModel });
+  // Determine provider based on model name or available key
+  const isGoogleModel = envModel.startsWith("gemini");
+  const useGoogle = isGoogleModel && googleKey;
 
-  // Find or create provider record for cost tracking
+  const fallbackProviderSlug = useGoogle ? "google" : "anthropic";
+  const fallbackProviderName = useGoogle ? "Google AI" : "Anthropic";
+  const fallbackProviderType: ProviderType = useGoogle ? "google" : "anthropic";
+
+  logger.info("Falling back to env var model", {
+    modelId: envModel,
+    provider: fallbackProviderName,
+  });
+
+  // Find provider record for cost tracking
   const providers = await db
     .select()
     .from(schema.apiProviders)
-    .where(eq(schema.apiProviders.slug, "anthropic"))
+    .where(eq(schema.apiProviders.slug, fallbackProviderSlug))
     .limit(1);
 
   const providerId = providers[0]?.id ?? "";
 
+  const fallbackModel = useGoogle
+    ? google(envModel)
+    : anthropic(envModel);
+
   return {
-    model: anthropic(envModel),
+    model: fallbackModel,
     modelId: envModel,
     displayName: envModel,
     providerId,
-    providerType: "anthropic",
-    providerName: "Anthropic",
+    providerType: fallbackProviderType,
+    providerName: fallbackProviderName,
     aiModelId: null,
-    costPer1kInput: 0.003,
-    costPer1kOutput: 0.015,
+    costPer1kInput: useGoogle ? 0.0005 : 0.003,
+    costPer1kOutput: useGoogle ? 0.003 : 0.015,
     maxTokens: Number(process.env["AI_MAX_TOKENS"] ?? "4096"),
   };
 }

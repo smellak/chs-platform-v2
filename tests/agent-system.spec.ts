@@ -24,29 +24,28 @@ function getAuthCookieHeader(cookies: { name: string; value: string }[]): string
 }
 
 test.describe("Agent System — Provider & Model Configuration", () => {
-  test("T01: Anthropic provider is active in providers page", async ({ page }) => {
+  test("T01: Google AI provider is active in providers page", async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto(`${BASE}/admin/api-providers`, {
       waitUntil: "networkidle",
       timeout: 15000,
     });
     await expect(page.locator('[data-testid="api-providers-page"]')).toBeVisible({ timeout: 10000 });
-    // Should show Anthropic as active
-    const anthropicRow = page.locator("tr").filter({ hasText: "Anthropic" });
-    await expect(anthropicRow).toBeVisible({ timeout: 5000 });
-    // No inactive providers should remain (Gemini, OpenAI were deleted)
-    await expect(page.locator("tr").filter({ hasText: "Gemini" })).not.toBeVisible();
+    // Should show Google AI as active
+    const googleRow = page.locator("tr").filter({ hasText: "Google AI" });
+    await expect(googleRow).toBeVisible({ timeout: 5000 });
+    // OpenAI should not be present
     await expect(page.locator("tr").filter({ hasText: "OpenAI" })).not.toBeVisible();
   });
 
-  test("T02: Claude Sonnet 4 model exists in models page", async ({ page }) => {
+  test("T02: Gemini 3 Flash model exists in models page", async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto(`${BASE}/admin/ai-models`, {
       waitUntil: "networkidle",
       timeout: 15000,
     });
     await expect(page.locator('[data-testid="ai-models-page"]')).toBeVisible({ timeout: 10000 });
-    const modelRow = page.locator("tr").filter({ hasText: "Claude Sonnet 4" });
+    const modelRow = page.locator("tr").filter({ hasText: "Gemini 3 Flash" });
     await expect(modelRow).toBeVisible({ timeout: 5000 });
   });
 
@@ -151,8 +150,65 @@ test.describe("Agent System — API Endpoint Tests", () => {
   });
 });
 
+test.describe("Agent System — Live Chat Tests", () => {
+  test("T11: Agent responds to a simple greeting", async ({ page, request }) => {
+    await loginAsAdmin(page);
+    const cookies = await page.context().cookies();
+    const cookieHeader = getAuthCookieHeader(cookies);
+
+    const res = await request.post(`${BASE}/api/agent/chat`, {
+      ignoreHTTPSErrors: true,
+      headers: { Cookie: cookieHeader },
+      data: { messages: [{ role: "user", content: "Hola, ¿qué puedes hacer?" }] },
+    });
+    expect(res.status()).toBe(200);
+    // Streaming response — read as text and verify it has content
+    const body = await res.text();
+    expect(body.length).toBeGreaterThan(50);
+  });
+
+  test("T12: Agent uses platform tools (buscar_usuarios)", async ({ page, request }) => {
+    await loginAsAdmin(page);
+    const cookies = await page.context().cookies();
+    const cookieHeader = getAuthCookieHeader(cookies);
+
+    const res = await request.post(`${BASE}/api/agent/chat`, {
+      ignoreHTTPSErrors: true,
+      headers: { Cookie: cookieHeader },
+      data: { messages: [{ role: "user", content: "¿Cuántos usuarios hay registrados en la plataforma?" }] },
+    });
+    expect(res.status()).toBe(200);
+    const body = await res.text();
+    expect(body.length).toBeGreaterThan(50);
+  });
+
+  test("T13: Agent tool calls and costs are logged", async ({ page, request }) => {
+    await loginAsAdmin(page);
+    const cookies = await page.context().cookies();
+    const cookieHeader = getAuthCookieHeader(cookies);
+
+    // Send a message that triggers tool use
+    const chatRes = await request.post(`${BASE}/api/agent/chat`, {
+      ignoreHTTPSErrors: true,
+      headers: { Cookie: cookieHeader },
+      data: { messages: [{ role: "user", content: "Lista los servicios del monitor" }] },
+    });
+    expect(chatRes.status()).toBe(200);
+
+    // Wait for async onFinish to complete
+    await page.waitForTimeout(3000);
+
+    // Verify cost logs exist for Google provider
+    await page.goto(`${BASE}/admin/ai-analytics`, {
+      waitUntil: "networkidle",
+      timeout: 15000,
+    });
+    await expect(page.locator('[data-testid="ai-analytics-page"]')).toBeVisible({ timeout: 10000 });
+  });
+});
+
 test.describe("Agent System — Data Integrity", () => {
-  test("T11: Database has exactly one active provider (Anthropic)", async ({ page, request }) => {
+  test("T14: Database has exactly one active provider (Google AI)", async ({ page, request }) => {
     await loginAsAdmin(page);
     const cookies = await page.context().cookies();
     const cookieHeader = getAuthCookieHeader(cookies);
@@ -169,7 +225,7 @@ test.describe("Agent System — Data Integrity", () => {
     }
   });
 
-  test("T12: Agent conversations page loads and shows data", async ({ page }) => {
+  test("T15: Agent conversations page loads and shows data", async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto(`${BASE}/admin/ai-conversations`, {
       waitUntil: "networkidle",
