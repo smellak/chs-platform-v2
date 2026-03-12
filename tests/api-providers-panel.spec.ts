@@ -60,10 +60,10 @@ test.describe("API Providers Panel — Smart Form", () => {
 
     // Should show Google models
     await expect(
-      page.locator('[role="option"]').filter({ hasText: "Gemini 2.5 Flash" }),
+      page.locator('[role="option"]').filter({ hasText: "Gemini 2.5 Flash —" }),
     ).toBeVisible();
     await expect(
-      page.locator('[role="option"]').filter({ hasText: "Gemini 3 Flash" }),
+      page.locator('[role="option"]').filter({ hasText: "Gemini 3 Flash (Preview)" }),
     ).toBeVisible();
   });
 
