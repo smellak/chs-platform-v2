@@ -15,14 +15,34 @@ import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("agent-chat");
 
+interface UIMessagePart {
+  type: string;
+  text?: string;
+  toolName?: string;
+  [key: string]: unknown;
+}
+
 interface ChatMessage {
   role: "user" | "assistant";
-  content: string;
+  content?: string;
+  parts?: UIMessagePart[];
 }
 
 interface ChatRequestBody {
   messages: ChatMessage[];
   conversationId?: string;
+}
+
+/** Extract text from a message that may use `content` (string) or `parts` (AI SDK v6 UIMessage). */
+function extractTextContent(msg: ChatMessage): string {
+  if (typeof msg.content === "string") return msg.content;
+  if (Array.isArray(msg.parts)) {
+    return msg.parts
+      .filter((p) => p.type === "text" && typeof p.text === "string")
+      .map((p) => p.text!)
+      .join("");
+  }
+  return "";
 }
 
 export async function POST(request: NextRequest): Promise<Response> {
@@ -73,8 +93,9 @@ export async function POST(request: NextRequest): Promise<Response> {
   // Create or retrieve conversation
   let convId = reqConvId;
   if (!convId) {
-    const firstMsg = messages[messages.length - 1]?.content ?? "";
-    const title = firstMsg.slice(0, 60) || "Nueva conversación";
+    const lastMsg = messages[messages.length - 1];
+    const firstMsgText = lastMsg ? extractTextContent(lastMsg) : "";
+    const title = firstMsgText.slice(0, 60) || "Nueva conversación";
     const inserted = await db.insert(schema.agentConversations).values({
       userId,
       orgId: ctx.organization.id,
@@ -90,10 +111,11 @@ export async function POST(request: NextRequest): Promise<Response> {
   // Save user message
   const lastUserMsg = messages[messages.length - 1];
   if (lastUserMsg?.role === "user") {
+    const userContent = extractTextContent(lastUserMsg);
     await db.insert(schema.agentMessages).values({
       conversationId: convId,
       role: "user",
-      content: lastUserMsg.content,
+      content: userContent,
     });
   }
 
@@ -113,7 +135,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     system: systemPrompt,
     messages: messages.map((m) => ({
       role: m.role,
-      content: m.content,
+      content: extractTextContent(m),
     })),
     tools: aiTools,
     stopWhen: stepCountIs(10),

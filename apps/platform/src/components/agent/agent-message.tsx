@@ -30,8 +30,15 @@ function getTextContent(message: UIMessage): string {
 /** Check if a part is a tool-related part (dynamic-tool or tool-*) */
 function isToolPart(
   part: UIMessage["parts"][number],
-): part is UIMessage["parts"][number] & { toolCallId: string; toolName: string; state: string } {
+): part is UIMessage["parts"][number] & { toolCallId: string; state: string; toolName?: string } {
   return part.type === "dynamic-tool" || (part.type.startsWith("tool-") && part.type !== "text");
+}
+
+/** Get the tool name from a tool part (dynamic-tool has toolName, static tool-* encodes name in type) */
+function getToolPartName(part: { type: string; toolName?: string }): string {
+  if (part.type === "dynamic-tool" && part.toolName) return part.toolName;
+  if (part.type.startsWith("tool-")) return part.type.slice(5); // "tool-buscar_usuarios" → "buscar_usuarios"
+  return "unknown";
 }
 
 export function AgentMessage({ message, userInitials }: AgentMessageProps) {
@@ -65,7 +72,7 @@ export function AgentMessage({ message, userInitials }: AgentMessageProps) {
         {toolInvocations.length > 0 && (
           <div className="space-y-1">
             {toolInvocations.map((ti, idx) => {
-              const toolName = ti.toolName;
+              const toolName = getToolPartName(ti);
               const isAppTool = toolName.includes("__");
               const displayName = isAppTool
                 ? toolName.split("__")[1]?.replace(/_/g, " ")

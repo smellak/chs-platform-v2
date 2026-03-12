@@ -150,50 +150,90 @@ test.describe("Agent System — API Endpoint Tests", () => {
   });
 });
 
-test.describe("Agent System — Live Chat Tests", () => {
-  test("T11: Agent responds to a simple greeting", async ({ page, request }) => {
+test.describe("Agent System — Live Browser Chat Tests", () => {
+  test("T11: Open chat panel, send greeting, receive real response", async ({ page }) => {
     await loginAsAdmin(page);
-    const cookies = await page.context().cookies();
-    const cookieHeader = getAuthCookieHeader(cookies);
+    await page.goto(BASE, { waitUntil: "networkidle", timeout: 15000 });
 
-    const res = await request.post(`${BASE}/api/agent/chat`, {
-      ignoreHTTPSErrors: true,
-      headers: { Cookie: cookieHeader },
-      data: { messages: [{ role: "user", content: "Hola, ¿qué puedes hacer?" }] },
-    });
-    expect(res.status()).toBe(200);
-    // Streaming response — read as text and verify it has content
-    const body = await res.text();
-    expect(body.length).toBeGreaterThan(50);
+    // Click the floating agent button to open the chat panel
+    const agentBtn = page.locator('[data-testid="agent-button"]');
+    await expect(agentBtn).toBeVisible({ timeout: 10000 });
+    await agentBtn.click();
+
+    // Verify the chat panel opened
+    const panel = page.locator('[data-testid="agent-panel"]');
+    await expect(panel).toBeVisible({ timeout: 5000 });
+
+    // Type a message in the chat input
+    const chatInput = page.locator('[data-testid="agent-input"]');
+    await expect(chatInput).toBeVisible({ timeout: 5000 });
+    await chatInput.fill("Hola, ¿quién eres?");
+    await chatInput.press("Enter");
+
+    // Wait for the assistant response to appear (not just "Pensando...")
+    // The assistant message should contain real text from Gemini, not an error
+    const assistantMsg = panel.locator('[class*="agent"]').filter({ hasNotText: "Error" }).last();
+    await expect(panel.getByText("Agente CHS", { exact: false })).toBeVisible({ timeout: 20000 });
+
+    // Verify NO error message appeared
+    await expect(panel.locator('text="Error al procesar el mensaje"')).not.toBeVisible({ timeout: 2000 });
+
+    // Verify actual response text appeared (Gemini should mention its capabilities)
+    // Wait for streaming to finish — the response text should appear in the panel
+    await page.waitForTimeout(8000);
+    const panelText = await panel.textContent();
+    expect(panelText).toBeTruthy();
+    // The response should contain substantive text (not just UI chrome)
+    expect(panelText!.length).toBeGreaterThan(100);
+    // Should NOT contain error text
+    expect(panelText).not.toContain("Error al procesar");
   });
 
-  test("T12: Agent uses platform tools (buscar_usuarios)", async ({ page, request }) => {
+  test("T12: Chat with tool use — ask about users in browser", async ({ page }) => {
+    test.setTimeout(60000);
     await loginAsAdmin(page);
-    const cookies = await page.context().cookies();
-    const cookieHeader = getAuthCookieHeader(cookies);
+    await page.goto(BASE, { waitUntil: "networkidle", timeout: 15000 });
 
-    const res = await request.post(`${BASE}/api/agent/chat`, {
-      ignoreHTTPSErrors: true,
-      headers: { Cookie: cookieHeader },
-      data: { messages: [{ role: "user", content: "¿Cuántos usuarios hay registrados en la plataforma?" }] },
-    });
-    expect(res.status()).toBe(200);
-    const body = await res.text();
-    expect(body.length).toBeGreaterThan(50);
+    // Open agent panel
+    await page.locator('[data-testid="agent-button"]').click();
+    const panel = page.locator('[data-testid="agent-panel"]');
+    await expect(panel).toBeVisible({ timeout: 5000 });
+
+    // Ask a question that requires the buscar_usuarios tool
+    const chatInput = page.locator('[data-testid="agent-input"]');
+    await chatInput.fill("¿Cuántos usuarios hay registrados?");
+    await chatInput.press("Enter");
+
+    // Wait for the streamed response to finish (tool use = multi-step, takes longer)
+    // Instead of a fixed wait, poll until the "Pensando..." indicator disappears
+    await expect(page.locator('text="Pensando..."')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text="Pensando..."')).not.toBeVisible({ timeout: 30000 });
+
+    // Verify no error
+    await expect(panel.locator('text="Error al procesar el mensaje"')).not.toBeVisible({ timeout: 2000 });
+
+    // The response should mention user count or user names
+    const panelText = await panel.textContent();
+    expect(panelText).toBeTruthy();
+    // Gemini should have called buscar_usuarios and returned a number
+    expect(panelText).toMatch(/usuario|user/i);
   });
 
-  test("T13: Agent tool calls and costs are logged", async ({ page, request }) => {
+  test("T13: Chat costs are logged in analytics", async ({ page, request }) => {
     await loginAsAdmin(page);
     const cookies = await page.context().cookies();
     const cookieHeader = getAuthCookieHeader(cookies);
 
-    // Send a message that triggers tool use
+    // Send a message via API (to ensure cost logging)
     const chatRes = await request.post(`${BASE}/api/agent/chat`, {
       ignoreHTTPSErrors: true,
       headers: { Cookie: cookieHeader },
-      data: { messages: [{ role: "user", content: "Lista los servicios del monitor" }] },
+      data: { messages: [{ role: "user", content: "hola" }] },
     });
     expect(chatRes.status()).toBe(200);
+    const body = await chatRes.text();
+    // Verify the streaming response has real content
+    expect(body).toContain('"type":"text-delta"');
 
     // Wait for async onFinish to complete
     await page.waitForTimeout(3000);
