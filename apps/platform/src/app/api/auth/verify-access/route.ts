@@ -305,6 +305,9 @@ function buildAccessResponse(data: AccessResponseData): NextResponse {
   response.headers.set("X-CHS-Access-Level", data.accessLevel);
   response.headers.set("X-CHS-Permissions", JSON.stringify(data.permissions));
 
+  // Auth confirmation
+  response.headers.set("X-CHS-Authenticated", "true");
+
   // Elias SSO headers (x-chs-user-role, x-chs-user-dept differ from canonical)
   response.headers.set("X-CHS-User-Id", data.userId);
   response.headers.set("X-CHS-User-Name", data.userName);
