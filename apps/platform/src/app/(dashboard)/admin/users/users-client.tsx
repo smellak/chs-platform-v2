@@ -64,6 +64,7 @@ export function UsersClient({ users, departments, roles }: UsersClientProps) {
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [filterDept, setFilterDept] = useState("all");
+  const [filterStatus, setFilterStatus] = useState<"active" | "inactive" | "all">("active");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null);
@@ -77,8 +78,15 @@ export function UsersClient({ users, departments, roles }: UsersClientProps) {
       u.email.toLowerCase().includes(search.toLowerCase());
     const matchesDept =
       filterDept === "all" || u.departmentRole?.departmentId === filterDept;
-    return matchesSearch && matchesDept;
+    const matchesStatus =
+      filterStatus === "all" ||
+      (filterStatus === "active" && u.isActive) ||
+      (filterStatus === "inactive" && !u.isActive);
+    return matchesSearch && matchesDept && matchesStatus;
   });
+
+  const activeCount = users.filter((u) => u.isActive).length;
+  const inactiveCount = users.filter((u) => !u.isActive).length;
 
   function openCreate() {
     setEditingUser(null);
@@ -122,7 +130,8 @@ export function UsersClient({ users, departments, roles }: UsersClientProps) {
       const result = await deleteUser(deleteTarget.id);
       if (result.success) {
         toast({
-          title: `Usuario ${deleteTarget.firstName} ${deleteTarget.lastName} eliminado correctamente`,
+          title: "Usuario eliminado",
+          description: `${deleteTarget.firstName} ${deleteTarget.lastName} ha sido desactivado y eliminado de la lista.`,
         });
         setDeleteTarget(null);
         router.refresh();
@@ -137,10 +146,10 @@ export function UsersClient({ users, departments, roles }: UsersClientProps) {
   }
 
   return (
-    <div>
+    <div data-testid="users-page">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Gestión de Usuarios</h1>
-        <Button onClick={openCreate} size="sm">
+        <Button onClick={openCreate} size="sm" data-testid="new-user-btn">
           <Plus className="h-4 w-4 mr-2" />
           Nuevo Usuario
         </Button>
@@ -169,6 +178,19 @@ export function UsersClient({ users, departments, roles }: UsersClientProps) {
             ))}
           </SelectContent>
         </Select>
+        <Select
+          value={filterStatus}
+          onValueChange={(v) => setFilterStatus(v as "active" | "inactive" | "all")}
+        >
+          <SelectTrigger className="w-full sm:w-44" data-testid="status-filter">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="active">Activos ({activeCount})</SelectItem>
+            <SelectItem value="inactive">Inactivos ({inactiveCount})</SelectItem>
+            <SelectItem value="all">Todos ({users.length})</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -187,12 +209,16 @@ export function UsersClient({ users, departments, roles }: UsersClientProps) {
             {filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  No se encontraron usuarios
+                  {filterStatus === "active"
+                    ? "No hay usuarios activos"
+                    : filterStatus === "inactive"
+                      ? "No hay usuarios inactivos"
+                      : "No se encontraron usuarios"}
                 </TableCell>
               </TableRow>
             ) : (
               filtered.map((u) => (
-                <TableRow key={u.id}>
+                <TableRow key={u.id} data-testid={`user-row-${u.username}`}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium">
@@ -232,27 +258,30 @@ export function UsersClient({ users, departments, roles }: UsersClientProps) {
                       <Button variant="ghost" size="sm" onClick={() => openEdit(u)}>
                         Editar
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleToggle(u.id)}
-                        title={u.isActive ? "Desactivar" : "Activar"}
-                      >
-                        {u.isActive ? (
-                          <UserX className="h-4 w-4 text-destructive" />
-                        ) : (
-                          <UserCheck className="h-4 w-4 text-emerald-500" />
-                        )}
-                      </Button>
                       {!u.isSuperAdmin && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleteTarget(u)}
-                          title="Eliminar usuario"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleToggle(u.id)}
+                            title={u.isActive ? "Desactivar" : "Activar"}
+                          >
+                            {u.isActive ? (
+                              <UserX className="h-4 w-4 text-destructive" />
+                            ) : (
+                              <UserCheck className="h-4 w-4 text-emerald-500" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleteTarget(u)}
+                            title="Eliminar usuario"
+                            data-testid={`delete-user-${u.username}`}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </>
                       )}
                     </div>
                   </TableCell>
@@ -400,14 +429,14 @@ export function UsersClient({ users, departments, roles }: UsersClientProps) {
             <DialogDescription className="pt-2">
               ¿Estás seguro de que deseas eliminar a{" "}
               <strong>{deleteTarget?.firstName} {deleteTarget?.lastName}</strong>?
-              Esta acción no se puede deshacer.
+              El usuario será desactivado y no podrá acceder al sistema.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>
               Cancelar
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting} data-testid="confirm-delete-btn">
               {deleting ? "Eliminando..." : "Eliminar"}
             </Button>
           </DialogFooter>

@@ -223,6 +223,9 @@ export async function deleteUser(userId: string): Promise<ActionResult> {
     // Soft delete: mark as inactive
     await db.update(schema.users).set({ isActive: false, updatedAt: new Date() }).where(eq(schema.users.id, userId));
 
+    // Revoke all refresh tokens so the user is immediately logged out
+    await db.delete(schema.refreshTokens).where(eq(schema.refreshTokens.userId, userId));
+
     // Log activity
     const org = await db.select().from(schema.organizations).limit(1);
     if (org[0]) {
