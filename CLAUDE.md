@@ -481,6 +481,7 @@ This platform was migrated from **CHS Platform v1** (`smellak/chsplatform`), a m
 11. **Security fix** — Fixed Arana ForwardAuth vulnerability (stale container ID after Coolify redeploy)
 12. **SSO integration** — Eliminated double login for Route Optimizer and AON with `/api/auth/sso` endpoints
 13. **AI agents for all apps** — Created agents for Route Optimizer, AON, Arana, Proveedores (5 total)
+14. **Favicon rebrand** — Replaced favicon with S gradient icon (bright cyan→blue) from corporate branding image, all sizes (ICO, 16/32px PNG, 180px apple-touch-icon)
 
 ---
 
