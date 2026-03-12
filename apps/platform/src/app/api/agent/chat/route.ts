@@ -118,17 +118,22 @@ export async function POST(request: NextRequest): Promise<Response> {
     tools: aiTools,
     stopWhen: stepCountIs(10),
     maxOutputTokens: resolved.maxTokens,
-    onFinish: async ({ text, toolCalls, usage }) => {
+    onFinish: async ({ text, toolCalls, steps, totalUsage }) => {
       const latencyMs = Date.now() - startTime;
-      const totalTokens = usage?.totalTokens ?? 0;
-      const inputTokens = usage?.inputTokens ?? 0;
-      const outputTokens = usage?.outputTokens ?? 0;
+      const totalTokens = totalUsage?.totalTokens ?? 0;
+      const inputTokens = totalUsage?.inputTokens ?? 0;
+      const outputTokens = totalUsage?.outputTokens ?? 0;
+
+      // Collect tool calls from ALL steps (not just the last one)
+      const allToolCalls = steps?.flatMap((s) => s.toolCalls ?? []) ?? toolCalls ?? [];
 
       // Save assistant message with enhanced tracing
-      const toolCallData = toolCalls?.map((tc) => ({
-        toolName: tc.toolName,
-        args: tc.input,
-      }));
+      const toolCallData = allToolCalls.length > 0
+        ? allToolCalls.map((tc) => ({
+            toolName: tc.toolName,
+            args: tc.input,
+          }))
+        : undefined;
 
       const msgInserted = await db.insert(schema.agentMessages).values({
         conversationId: finalConvId,
@@ -146,9 +151,9 @@ export async function POST(request: NextRequest): Promise<Response> {
 
       const msgId = msgInserted[0]?.id;
 
-      // Save individual tool calls
-      if (msgId && toolCalls) {
-        for (const tc of toolCalls) {
+      // Save individual tool calls from all steps
+      if (msgId && allToolCalls.length > 0) {
+        for (const tc of allToolCalls) {
           const [appSlug] = tc.toolName.split("__");
           const app = ctx.availableApps.find((a) => a.slug === appSlug);
           await db.insert(schema.agentToolCalls).values({
@@ -175,7 +180,7 @@ export async function POST(request: NextRequest): Promise<Response> {
         action: "agent.chat",
         details: {
           conversationId: finalConvId,
-          toolsUsed: toolCalls?.map((t) => t.toolName),
+          toolsUsed: allToolCalls.map((t) => t.toolName),
           tokensUsed: totalTokens,
           model: resolved.modelId,
           provider: resolved.providerName,

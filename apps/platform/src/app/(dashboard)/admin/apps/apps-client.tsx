@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Search, Trash2, Wrench } from "lucide-react";
+import { Plus, Search, Trash2, Wrench, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -734,6 +734,19 @@ export function AppsClient({ apps, departments }: AppsClientProps) {
                     onCheckedChange={setAgentEnabled}
                   />
                 </div>
+
+                {!agentEnabled && (
+                  <div className="rounded-lg border border-dashed border-muted-foreground/40 p-6 text-center space-y-2">
+                    <Info className="h-8 w-8 mx-auto text-muted-foreground/60" />
+                    <p className="text-sm text-muted-foreground">
+                      Para integrar un agente IA, la aplicación debe implementar el endpoint
+                      de agente usando <code className="text-xs bg-muted px-1 py-0.5 rounded">@chs-platform/agent-sdk</code>.
+                    </p>
+                    <p className="text-xs text-muted-foreground/80">
+                      Consulta la <a href="/docs/developer-guide/building-agents" className="underline hover:text-foreground">documentación de integración</a> para más detalles.
+                    </p>
+                  </div>
+                )}
 
                 {agentEnabled && (
                   <div className="space-y-4">
