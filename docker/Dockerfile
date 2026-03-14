@@ -39,6 +39,9 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY docker/entrypoint.sh ./entrypoint.sh
 RUN chmod +x entrypoint.sh
 
+# Create cache directory with correct ownership for non-root user
+RUN mkdir -p /app/apps/platform/.next/cache && chown -R chs:chs /app/apps/platform/.next/cache
+
 USER chs
 EXPOSE 3000
 ENV PORT=3000

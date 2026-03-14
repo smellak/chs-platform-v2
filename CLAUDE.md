@@ -216,6 +216,9 @@ http:
 | `aon.centrohogarsanchez.es` | Sistema AON | `chs-v2-aon-auth.yaml` |
 | `arana.centrohogarsanchez.es` | Arana de Precios | `chs-v2-arana-auth.yaml` |
 | `proveedores.centrohogarsanchez.es` | Portal Proveedores | `proveedores-chs-auth.yaml` |
+| `dashboard.centrohogarsanchez.es` | Cuadro de Dirección | `chs-v2-dashboard-auth.yaml` |
+| `medidas.centrohogarsanchez.es` | Procesador de Medidas | `chs-v2-medidas-auth.yaml` |
+| `elias.centrohogarsanchez.es` | Citas Almacen (alias) | `chs-v2-elias-auth.yaml` |
 
 All Traefik file configs are at `/data/coolify/proxy/dynamic/` on the production server.
 
@@ -302,6 +305,8 @@ Multi-stage build:
 | Araña de Precios | `a00g4os8ogg8skgk0oowk8c8` | No (Coolify) | 3000 |
 | Sistema AON | `ms84cwosc0occ488ggccg8g8` | No (Coolify) | 3000 |
 | Citas Almacén | `cogk4c4s8kgsk4k4s00wskss` | No (Coolify) | 5000 |
+| Cuadro de Dirección | `css4cosk08k0c40gkgww84go` | No (Coolify) | 3000 |
+| Procesador de Medidas | `wk8sggsg4koowwccssww4c4s` | No (Coolify) | 3000 |
 
 ---
 
@@ -330,6 +335,7 @@ Multi-stage build:
 | `AI_RATE_LIMIT_MESSAGES_PER_HOUR` | `50` | Rate limit |
 | `AI_RATE_LIMIT_TOKENS_PER_DAY` | `100000` | Daily token limit |
 | `ENCRYPTION_KEY` | — | For encrypting sensitive data |
+| `ALERT_WEBHOOK_URL` | — | Webhook URL for service-down alerts (POST JSON) |
 | `PORT` | `3000` | Server port |
 
 ---
@@ -408,7 +414,7 @@ npx playwright test --headed                  # With browser visible
 - Tool call auditing in `agent_tool_calls` table
 - Per-agent permission model (blocked apps/tools per user)
 - Rate limiting (messages/hour + tokens/day) and cost tracking
-- 5 active agents across all apps (see AI Agents section below)
+- 7 active agents across all apps (see AI Agents section below)
 
 ### AI Agents
 
@@ -419,6 +425,8 @@ npx playwright test --headed                  # With browser visible
 | **AON** | Sistema AON | consultar_polizas, ver_trabajos, ver_estadisticas | `/api/agent` | CHS capability protocol |
 | **Arana** | Arana de Precios | consultar_precios, ver_alertas, ver_competidores | `/api/agent` | CHS capability protocol |
 | **Proveedores** | Portal Proveedores | consultar_proveedores, ver_facturas, ver_ordenes_compra | `/api/agent` | CHS capability protocol |
+| **Agente Dashboard** | Cuadro de Dirección | consultar_ventas, consultar_margenes, comparar_tiendas, resumen_ejecutivo | `/api/agent` | CHS capability protocol |
+| **Medidas Agent** | Procesador de Medidas | listar_jobs, ver_job, ver_metricas_stage1, estadisticas_generales | `/api/agent` | CHS capability protocol |
 
 **CHS Agent Protocol:** Platform sends `POST {internal_url}/api/agent` with `{"capability": "name", "parameters": {...}}`, expects `{"text": "...", "data": {...}}` response.
 
@@ -482,6 +490,8 @@ This platform was migrated from **CHS Platform v1** (`smellak/chsplatform`), a m
 12. **SSO integration** — Eliminated double login for Route Optimizer and AON with `/api/auth/sso` endpoints
 13. **AI agents for all apps** — Created agents for Route Optimizer, AON, Arana, Proveedores (5 total)
 14. **Favicon rebrand** — Replaced favicon with S gradient icon (bright cyan→blue) from corporate branding image, all sizes (ICO, 16/32px PNG, 180px apple-touch-icon)
+15. **Functional audit** — Full platform audit (17 bugs found, 17/18 Playwright tests), documented in AUDIT-REPORT.md
+16. **Post-audit fixes** — Fixed stale internal_urls (Araña, Dashboard), purged 1029 orphan refresh tokens, added per-user token limit (max 10), removed auth.verify-access activity log pollution (6259 entries), deleted 8 fictitious users and 14 test API keys, added sessions pagination, webhook alerts for service-down events, Docker cache permission fix
 
 ---
 

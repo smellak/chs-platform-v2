@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { eq, lt } from "drizzle-orm";
+import { eq, lt, and, notInArray, desc } from "drizzle-orm";
 import { z } from "zod";
 import {
   verifyPassword,
@@ -112,9 +112,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const refreshTokenValue = generateRefreshToken();
     const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    // Clean up expired tokens for this user before creating a new one
+    // Clean up expired tokens globally
     await db.delete(schema.refreshTokens).where(
       lt(schema.refreshTokens.expiresAt, new Date()),
+    );
+
+    // Limit to 10 active sessions per user — keep the 9 most recent, delete the rest
+    const recentTokenIds = db
+      .select({ id: schema.refreshTokens.id })
+      .from(schema.refreshTokens)
+      .where(eq(schema.refreshTokens.userId, user.id))
+      .orderBy(desc(schema.refreshTokens.lastAccessedAt))
+      .limit(9);
+
+    await db.delete(schema.refreshTokens).where(
+      and(
+        eq(schema.refreshTokens.userId, user.id),
+        notInArray(schema.refreshTokens.id, recentTokenIds),
+      ),
     );
 
     // Store refresh token with session metadata

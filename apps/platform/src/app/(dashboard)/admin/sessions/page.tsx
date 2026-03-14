@@ -1,15 +1,39 @@
-import { and, eq, gt, desc, sql } from "drizzle-orm";
+import { and, eq, gt, desc, sql, count } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getDb, schema } from "@/lib/db";
 import { SessionsClient } from "./sessions-client";
 
-export default async function SessionsPage() {
+const PAGE_SIZE = 20;
+
+export default async function SessionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const user = await getCurrentUser();
   if (!user?.isSuperAdmin) redirect("/");
 
+  const params = await searchParams;
+  const currentPage = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
+  const offset = (currentPage - 1) * PAGE_SIZE;
+
   const db = getDb();
 
+  const activeFilter = and(
+    gt(schema.refreshTokens.expiresAt, new Date()),
+    eq(schema.users.isActive, true),
+  );
+
+  // Get total count
+  const countResult = await db
+    .select({ total: count() })
+    .from(schema.refreshTokens)
+    .innerJoin(schema.users, eq(schema.refreshTokens.userId, schema.users.id))
+    .where(activeFilter);
+  const total = countResult[0]?.total ?? 0;
+
+  // Get paginated sessions
   const sessions = await db
     .select({
       id: schema.refreshTokens.id,
@@ -25,11 +49,10 @@ export default async function SessionsPage() {
     })
     .from(schema.refreshTokens)
     .innerJoin(schema.users, eq(schema.refreshTokens.userId, schema.users.id))
-    .where(and(
-      gt(schema.refreshTokens.expiresAt, new Date()),
-      eq(schema.users.isActive, true),
-    ))
-    .orderBy(desc(schema.refreshTokens.lastAccessedAt));
+    .where(activeFilter)
+    .orderBy(desc(schema.refreshTokens.lastAccessedAt))
+    .limit(PAGE_SIZE)
+    .offset(offset);
 
   const sessionsData = sessions.map((s) => ({
     id: s.id,
@@ -44,5 +67,15 @@ export default async function SessionsPage() {
     ipAddress: s.ipAddress,
   }));
 
-  return <SessionsClient sessions={sessionsData} currentUserId={user.id} />;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  return (
+    <SessionsClient
+      sessions={sessionsData}
+      currentUserId={user.id}
+      currentPage={currentPage}
+      totalPages={totalPages}
+      totalSessions={total}
+    />
+  );
 }

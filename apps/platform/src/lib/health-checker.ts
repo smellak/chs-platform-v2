@@ -3,6 +3,7 @@ import { getDb, schema } from "@/lib/db";
 
 const CHECK_INTERVAL_MS = 60_000;
 const FETCH_TIMEOUT_MS = 5_000;
+const ALERT_WEBHOOK_URL = process.env["ALERT_WEBHOOK_URL"] ?? "";
 
 interface HealthCheckResult {
   status: "online" | "offline" | "degraded";
@@ -109,6 +110,20 @@ async function runHealthChecks(): Promise<void> {
             responseMs: result.responseMs,
           },
         });
+
+        // Send external webhook alert if configured
+        if (ALERT_WEBHOOK_URL) {
+          fetch(ALERT_WEBHOOK_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              event: "service.down",
+              app: instance.appName,
+              timestamp: new Date().toISOString(),
+              details: `${instance.appName} no responde (HTTP ${result.httpCode ?? "timeout"}, ${result.responseMs}ms)`,
+            }),
+          }).catch(() => { /* webhook failure should not block health checks */ });
+        }
       } else if (
         (previousStatus === "offline" || previousStatus === "degraded") &&
         result.status === "online"

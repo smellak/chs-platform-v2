@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { MonitorDot, Trash2, Users, Clock, Wifi } from "lucide-react";
+import { MonitorDot, Trash2, Users, Clock, Wifi, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -32,6 +32,9 @@ interface SessionRow {
 interface SessionsClientProps {
   sessions: SessionRow[];
   currentUserId: string;
+  currentPage: number;
+  totalPages: number;
+  totalSessions: number;
 }
 
 function parseUserAgent(ua: string | null): string {
@@ -69,7 +72,13 @@ function timeUntil(dateStr: string): string {
   return `${diffDays}d`;
 }
 
-export function SessionsClient({ sessions, currentUserId }: SessionsClientProps) {
+export function SessionsClient({
+  sessions,
+  currentUserId,
+  currentPage,
+  totalPages,
+  totalSessions,
+}: SessionsClientProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [revoking, setRevoking] = useState<string | null>(null);
@@ -100,13 +109,17 @@ export function SessionsClient({ sessions, currentUserId }: SessionsClientProps)
     }
   }
 
+  function goToPage(page: number) {
+    router.push(`/admin/sessions?page=${page}`);
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Sesiones Activas</h1>
         <Badge variant="secondary" className="text-sm">
           <MonitorDot className="h-3 w-3 mr-1" />
-          {sessions.length} sesiones
+          {totalSessions} sesiones
         </Badge>
       </div>
 
@@ -117,27 +130,21 @@ export function SessionsClient({ sessions, currentUserId }: SessionsClientProps)
             <Wifi className="h-4 w-4" />
             Total Sesiones
           </div>
-          <div className="text-2xl font-bold">{sessions.length}</div>
+          <div className="text-2xl font-bold">{totalSessions}</div>
         </div>
         <div className="bg-card rounded-xl border border-border p-4">
           <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
             <Users className="h-4 w-4" />
-            Usuarios Activos
+            Usuarios en Página
           </div>
           <div className="text-2xl font-bold">{uniqueUsers}</div>
         </div>
         <div className="bg-card rounded-xl border border-border p-4">
           <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
             <Clock className="h-4 w-4" />
-            Hoy
+            Página
           </div>
-          <div className="text-2xl font-bold">
-            {sessions.filter((s) => {
-              const created = new Date(s.createdAt);
-              const today = new Date();
-              return created.toDateString() === today.toDateString();
-            }).length}
-          </div>
+          <div className="text-2xl font-bold">{currentPage} / {totalPages}</div>
         </div>
       </div>
 
@@ -234,6 +241,38 @@ export function SessionsClient({ sessions, currentUserId }: SessionsClientProps)
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-sm text-muted-foreground">
+            {totalSessions} sesiones
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage <= 1}
+              onClick={() => goToPage(currentPage - 1)}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Anterior
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              {currentPage} / {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage >= totalPages}
+              onClick={() => goToPage(currentPage + 1)}
+            >
+              Siguiente
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

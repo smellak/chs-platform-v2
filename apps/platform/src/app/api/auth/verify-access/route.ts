@@ -128,22 +128,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
       const adminDept = adminDeptRoles[0];
 
-      // Log activity
-      await db.insert(schema.activityLogs).values({
-        orgId: user.orgId,
-        userId: user.id,
-        action: "auth.verify-access",
-        entityType: "app",
-        entityId: appData.appId,
-        details: {
-          app: appData.appSlug,
-          host: targetHost ?? targetSlug,
-          result: "granted",
-          role: "super-admin",
-        },
-        ipAddress: request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip"),
-      });
-
       return buildAccessResponse({
         userId: user.id,
         userName: `${user.firstName} ${user.lastName}`,
@@ -222,42 +206,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
 
     if (!bestAccess) {
-      // Log denied access
-      await db.insert(schema.activityLogs).values({
-        orgId: user.orgId,
-        userId: user.id,
-        action: "auth.verify-access",
-        entityType: "app",
-        entityId: appData.appId,
-        details: {
-          app: appData.appSlug,
-          host: targetHost ?? targetSlug,
-          result: "denied",
-        },
-        ipAddress: request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip"),
-      });
       return errorResponse(403, "Sin acceso a esta aplicación", "no-access");
     }
 
     // Resolve role
     const resolvedRole = bestAccess.roleSlug === "dept-admin" ? "dept-admin" : bestAccess.roleSlug;
-
-    // Log successful access
-    await db.insert(schema.activityLogs).values({
-      orgId: user.orgId,
-      userId: user.id,
-      action: "auth.verify-access",
-      entityType: "app",
-      entityId: appData.appId,
-      details: {
-        app: appData.appSlug,
-        host: targetHost ?? targetSlug,
-        result: "granted",
-        role: resolvedRole,
-        accessLevel: bestAccess.accessLevel,
-      },
-      ipAddress: request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip"),
-    });
 
     return buildAccessResponse({
       userId: user.id,
