@@ -360,7 +360,7 @@ export function ApiProvidersClient({ providers }: ApiProvidersClientProps) {
               <TableHead className="hidden sm:table-cell">Modelo</TableHead>
               <TableHead className="hidden md:table-cell">API Key</TableHead>
               <TableHead className="hidden lg:table-cell">
-                Coste (1K tok)
+                Coste (In/Out MTok)
               </TableHead>
               <TableHead className="hidden sm:table-cell">Estado</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
@@ -411,7 +411,7 @@ export function ApiProvidersClient({ providers }: ApiProvidersClientProps) {
                   </TableCell>
                   <TableCell className="hidden lg:table-cell text-xs text-muted-foreground font-mono">
                     {p.costPer1kInput != null && p.costPer1kOutput != null
-                      ? `$${Number(p.costPer1kInput).toFixed(4)} / $${Number(p.costPer1kOutput).toFixed(4)}`
+                      ? `$${(Number(p.costPer1kInput) * 1000).toFixed(2)} / $${(Number(p.costPer1kOutput) * 1000).toFixed(2)} MTok`
                       : "—"}
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">

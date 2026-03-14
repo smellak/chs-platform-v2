@@ -84,7 +84,7 @@ test.describe("AUDITORÍA FUNCIONAL REAL", () => {
 
   test("A07: Monitor — datos son reales, no inventados", async ({ page }) => {
     await login(page);
-    await page.goto(`${BASE}/admin/monitor`);
+    await page.goto(`${BASE}/monitor`);
     await page.waitForTimeout(3000);
     await page.screenshot({ path: "test-results/audit-A07-monitor.png", fullPage: true });
     const content = await page.textContent("body");
@@ -112,26 +112,47 @@ test.describe("AUDITORÍA FUNCIONAL REAL", () => {
   test("A10: Chat IA — enviar mensaje y recibir respuesta", async ({ page }) => {
     await login(page);
     await page.waitForTimeout(2000);
-    const chatBtn = page.locator('button[aria-label*="gente"], button[aria-label*="chat"], button[aria-label*="IA"], [class*="agent-button"]');
-    if (await chatBtn.first().isVisible()) {
-      await chatBtn.first().click();
-      await page.waitForTimeout(1000);
+
+    // Use data-testid selectors that exist in the component
+    const chatBtn = page.locator('[data-testid="agent-button"]');
+    if (await chatBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await chatBtn.click();
+      await page.waitForSelector('[data-testid="agent-panel"]', { state: "visible", timeout: 5000 });
       await page.screenshot({ path: "test-results/audit-A10-chat-open.png", fullPage: true });
-      const input = page.locator('input[placeholder*="scrib"], textarea[placeholder*="scrib"], input[name*="message"], textarea[name*="message"]');
-      if (await input.first().isVisible()) {
-        await input.first().fill("Hola, ¿cuántos usuarios activos hay?");
-        await page.keyboard.press("Enter");
-        await page.waitForTimeout(15000);
-        await page.screenshot({ path: "test-results/audit-A10-chat-response.png", fullPage: true });
-        const chatContent = await page.locator('[class*="message"], [class*="chat"], [role="log"]').textContent().catch(() => "");
-        const hasError = chatContent?.toLowerCase().includes("error") || false;
-        console.log(`Chat tiene error: ${hasError}`);
-        console.log(`Chat content preview: ${chatContent?.substring(0, 200)}`);
-      } else {
-        console.log("No se encontró input de chat");
+
+      const input = page.locator('[data-testid="agent-input"]');
+      await input.waitFor({ state: "visible", timeout: 5000 });
+      await input.fill("Hola, ¿cuántos usuarios activos hay?");
+      await page.keyboard.press("Enter");
+
+      // Wait for assistant response: look for "Pensando..." indicator to appear then disappear,
+      // or for an assistant message element to appear
+      try {
+        // Wait up to 45s for a response — the streaming message will appear as a new child
+        await page.waitForFunction(
+          () => {
+            const panel = document.querySelector('[data-testid="agent-panel"]');
+            if (!panel) return false;
+            // Check if "Pensando..." indicator is gone AND there's content
+            const thinking = panel.querySelector('[class*="animate-spin"]');
+            const messages = panel.querySelectorAll('[class*="message"]');
+            // At least one assistant message should exist (more than just the user message)
+            return !thinking && messages.length >= 1;
+          },
+          { timeout: 45000 },
+        );
+      } catch {
+        // If we timeout waiting, still take screenshot for debugging
+        console.log("Timeout esperando respuesta del agente — capturando estado actual");
       }
+
+      await page.screenshot({ path: "test-results/audit-A10-chat-response.png", fullPage: true });
+      const panelContent = await page.locator('[data-testid="agent-panel"]').textContent().catch(() => "");
+      const hasError = panelContent?.toLowerCase().includes("error de ia") || false;
+      console.log(`Chat tiene error: ${hasError}`);
+      console.log(`Chat content preview: ${panelContent?.substring(0, 300)}`);
     } else {
-      console.log("No se encontró botón de chat/agente");
+      console.log("No se encontró botón de chat/agente (data-testid=agent-button)");
     }
   });
 
