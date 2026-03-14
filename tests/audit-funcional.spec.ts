@@ -110,6 +110,8 @@ test.describe("AUDITORÍA FUNCIONAL REAL", () => {
   });
 
   test("A10: Chat IA — enviar mensaje y recibir respuesta", async ({ page }) => {
+    test.setTimeout(90000); // AI chat needs more time
+
     await login(page);
     await page.waitForTimeout(2000);
 
@@ -125,24 +127,20 @@ test.describe("AUDITORÍA FUNCIONAL REAL", () => {
       await input.fill("Hola, ¿cuántos usuarios activos hay?");
       await page.keyboard.press("Enter");
 
-      // Wait for assistant response: look for "Pensando..." indicator to appear then disappear,
-      // or for an assistant message element to appear
+      // Wait for assistant response — look for streaming to complete
       try {
-        // Wait up to 45s for a response — the streaming message will appear as a new child
         await page.waitForFunction(
           () => {
             const panel = document.querySelector('[data-testid="agent-panel"]');
             if (!panel) return false;
-            // Check if "Pensando..." indicator is gone AND there's content
             const thinking = panel.querySelector('[class*="animate-spin"]');
-            const messages = panel.querySelectorAll('[class*="message"]');
-            // At least one assistant message should exist (more than just the user message)
-            return !thinking && messages.length >= 1;
+            const text = panel.textContent ?? "";
+            // Response arrived when there's no spinner and panel has substantial content
+            return !thinking && text.length > 100;
           },
-          { timeout: 45000 },
+          { timeout: 60000 },
         );
       } catch {
-        // If we timeout waiting, still take screenshot for debugging
         console.log("Timeout esperando respuesta del agente — capturando estado actual");
       }
 

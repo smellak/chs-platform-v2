@@ -69,13 +69,17 @@ test.describe("VERIFICACIÓN POST-REBUILD Fase 0-3", () => {
   // FASE 2 — Funcionalidad
   test("V07: Monitor — accesible en /monitor", async ({ page }) => {
     await login(page);
-    await page.goto(`${BASE}/monitor`);
+    const response = await page.goto(`${BASE}/monitor`);
     await page.waitForTimeout(3000);
     await page.screenshot({ path: "test-results/verify-V07-monitor.png", fullPage: true });
-    const content = await page.textContent("body");
-    const is404 = content?.includes("no encontrada") || content?.includes("not found") || content?.includes("404");
-    console.log(`Monitor es 404: ${is404}`);
-    expect(is404).toBeFalsy();
+    // Check HTTP status, not page content (page may contain "404" as service health check codes)
+    const status = response?.status() ?? 0;
+    console.log(`Monitor HTTP status: ${status}`);
+    expect(status).toBeLessThan(400);
+    // Verify the page has the monitor heading
+    const heading = await page.textContent("h1, h2");
+    console.log(`Monitor heading: ${heading}`);
+    expect(heading?.toLowerCase()).toContain("monitor");
   });
 
   test("V08: Apps — lista correcta", async ({ page }) => {
