@@ -15,6 +15,17 @@ const PUBLIC_PATHS = [
   "/api/health",
 ];
 
+/** Build correct base URL using Traefik's forwarded headers instead of internal 0.0.0.0:3000 */
+function getExternalUrl(request: NextRequest, path: string): URL {
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const forwardedProto = request.headers.get("x-forwarded-proto") || "https";
+
+  if (forwardedHost) {
+    return new URL(path, `${forwardedProto}://${forwardedHost}`);
+  }
+  return new URL(path, request.url);
+}
+
 async function verifyToken(
   token: string,
 ): Promise<{ userId: string; orgId: string } | null> {
@@ -56,28 +67,28 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   if (!token) {
     if (sessionActive === "1" && !pathname.startsWith("/api/")) {
       // User has a session but access token missing — attempt silent refresh
-      const refreshUrl = new URL("/api/auth/refresh-redirect", request.url);
+      const refreshUrl = getExternalUrl(request, "/api/auth/refresh-redirect");
       refreshUrl.searchParams.set("returnTo", pathname + request.nextUrl.search);
       return NextResponse.redirect(refreshUrl);
     }
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(getExternalUrl(request, "/login"));
   }
 
   const payload = await verifyToken(token);
   if (!payload) {
     if (sessionActive === "1" && !pathname.startsWith("/api/")) {
       // Token expired but session exists — attempt silent refresh
-      const refreshUrl = new URL("/api/auth/refresh-redirect", request.url);
+      const refreshUrl = getExternalUrl(request, "/api/auth/refresh-redirect");
       refreshUrl.searchParams.set("returnTo", pathname + request.nextUrl.search);
       return NextResponse.redirect(refreshUrl);
     }
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Token inválido" }, { status: 401 });
     }
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(getExternalUrl(request, "/login"));
   }
 
   const requestHeaders = new Headers(request.headers);
