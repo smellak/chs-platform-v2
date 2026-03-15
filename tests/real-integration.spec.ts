@@ -400,4 +400,26 @@ test.describe("F5.4 — ANTI-REGRESIÓN", () => {
     expect(trafikLogs).toBe("0");
   });
 
+  test("R21: Redirect sin auth NO contiene 0.0.0.0 ni localhost", async ({ page }) => {
+    const response = await page.goto("https://platform.centrohogarsanchez.es/admin");
+    const finalUrl = page.url();
+    console.log(`Redirect sin auth: ${finalUrl}`);
+    expect(finalUrl).not.toContain("0.0.0.0");
+    expect(finalUrl).not.toContain("localhost");
+    expect(finalUrl).toContain("platform.centrohogarsanchez.es");
+  });
+
+  test("R22: Refresh-redirect NO contiene 0.0.0.0 ni localhost", async ({ page }) => {
+    // Simular cookie de sesión expirada
+    await page.context().addCookies([
+      { name: "chs_session_active", value: "true", domain: "platform.centrohogarsanchez.es", path: "/" }
+    ]);
+    const response = await page.goto("https://platform.centrohogarsanchez.es/admin");
+    const finalUrl = page.url();
+    console.log(`Refresh-redirect: ${finalUrl}`);
+    expect(finalUrl).not.toContain("0.0.0.0");
+    expect(finalUrl).not.toContain("localhost");
+    expect(finalUrl).toContain("platform.centrohogarsanchez.es");
+  });
+
 });
