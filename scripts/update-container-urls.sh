@@ -17,6 +17,8 @@ declare -A APPS=(
   ["a00g4os8ogg8skgk0oowk8c8"]="Araña de Precios|3000|chs-v2-arana-auth.yaml"
   ["ms84cwosc0occ488ggccg8g8"]="Sistema AON|3000|chs-v2-aon-auth.yaml"
   ["cogk4c4s8kgsk4k4s00wskss"]="Citas Almacén|5000|chs-v2-citas-auth.yaml"
+  ["css4cosk08k0c40gkgww84go"]="Cuadro de Dirección|3000|chs-v2-dashboard-auth.yaml"
+  ["wk8sggsg4koowwccssww4c4s"]="Procesador de Medidas|3000|chs-v2-medidas-auth.yaml"
 )
 
 echo "=== CHS Container URL Updater ==="
