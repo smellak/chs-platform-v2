@@ -17,6 +17,7 @@ DB_CONTAINER="chs-db"
 DB_USER="chs"
 DB_NAME="chs"
 TRAEFIK_DIR="/data/coolify/proxy/dynamic"
+ALERT_WEBHOOK_URL="${ALERT_WEBHOOK_URL:-}"
 
 # Map: Coolify prefix → app name | port | Traefik YAML
 declare -A APPS=(
@@ -105,6 +106,38 @@ update_loadbalancer_url() {
   echo "       Traefik loadBalancer UPDATED: $yaml_name ($current_url → $new_url)"
   changes=$((changes + 1))
 }
+
+# ── Helper: send webhook alert ──
+send_alert() {
+  local message="$1"
+  local webhook_url="${ALERT_WEBHOOK_URL:-}"
+  if [ -n "$webhook_url" ]; then
+    curl -sf -X POST "$webhook_url" \
+      -H "Content-Type: application/json" \
+      -d "{\"text\":\"⚠️ CHS Container Alert: ${message}\"}" \
+      >/dev/null 2>&1 || true
+  fi
+}
+
+# ── Duplicate container detection ──
+echo "--- Checking for duplicate containers ---"
+duplicates_found=0
+for prefix in "${!APPS[@]}"; do
+  IFS='|' read -r app_name _port _file <<< "${APPS[$prefix]}"
+  count=$(docker ps --format "{{.Names}}" | grep -c "^${prefix}" || true)
+  if [ "$count" -gt 1 ]; then
+    containers=$(docker ps --format "{{.Names}}  (up {{.RunningFor}})" | grep "^${prefix}")
+    msg="DUPLICATE: $app_name has $count running containers — Traefik may round-robin between them"
+    echo "[WARN] $msg"
+    echo "$containers" | sed 's/^/       /'
+    send_alert "$msg"
+    duplicates_found=$((duplicates_found + 1))
+  fi
+done
+if [ "$duplicates_found" -eq 0 ]; then
+  echo "       No duplicates found"
+fi
+echo ""
 
 # ── Main loop ──
 for prefix in "${!APPS[@]}"; do

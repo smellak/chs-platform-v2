@@ -245,6 +245,14 @@ All Traefik file configs are at `/data/coolify/proxy/dynamic/` on the production
 - Role mapped: `super-admin`, `dept-admin` → app admin; others → operator/viewer
 - Users created on first SSO login with random password (never used)
 
+**SSO Integration Pattern for New Apps:**
+Apps behind ForwardAuth receive `X-CHS-*` headers on every request. To implement SSO:
+1. Create a `GET /api/auth/sso` endpoint that reads `x-chs-user-id` and `x-chs-user-name` from request headers
+2. If headers present → return user info (id, name, role, dept) as JSON
+3. If headers missing → return 401 `{"error":"No SSO headers present"}`
+4. Frontend calls `/api/auth/sso` on page load; on success, stores user info in state (no login form needed)
+5. Role mapping: `super-admin`/`dept-admin` with `full` access → admin; `full` access → editor; else → viewer
+
 ---
 
 ## Docker & Deployment
@@ -492,18 +500,27 @@ This platform was migrated from **CHS Platform v1** (`smellak/chsplatform`), a m
 14. **Favicon rebrand** — Replaced favicon with S gradient icon (bright cyan→blue) from corporate branding image, all sizes (ICO, 16/32px PNG, 180px apple-touch-icon)
 15. **Functional audit** — Full platform audit (17 bugs found, 17/18 Playwright tests), documented in AUDIT-REPORT.md
 16. **Post-audit fixes** — Fixed stale internal_urls (Araña, Dashboard), purged 1029 orphan refresh tokens, added per-user token limit (max 10), removed auth.verify-access activity log pollution (6259 entries), deleted 8 fictitious users and 14 test API keys, added sessions pagination, webhook alerts for service-down events, Docker cache permission fix
+17. **ForwardAuth service ID fix** — Coolify generated a Traefik HTTPS service ID (`k4c8`) different from the container prefix (`k8c8`) for Araña, breaking all ForwardAuth file provider routers. Rewrote `update-container-urls.sh` to read real service IDs from Docker labels. Added `chs-container-watcher.service` (systemd Docker events listener) for instant post-deploy fixes. Added duplicate container detection with webhook alerts.
 
 ---
 
 ## Known Issues
 
-1. **Coolify container name instability** — Container suffixes change on every Coolify redeploy. After redeploy, run `sudo ./scripts/update-container-urls.sh` to update Traefik configs and DB `internal_url` references. Affects: Arana, AON, Citas (Coolify-managed). Does NOT affect: Route Optimizer, Proveedores, CHS Platform (stable names).
+1. **Coolify container name + service ID instability** — Container suffixes AND Traefik service IDs change on Coolify redeploys. Additionally, Coolify sometimes generates HTTPS service IDs that differ from the container prefix (e.g. Araña: container prefix `a00g4os8ogg8skgk0oowk8c8` but Traefik HTTPS service `https-0-a00g4os8ogg8skgk0oowk4c8`). This is handled automatically by:
+   - **`chs-container-watcher.service`** — Systemd service listening Docker events for instant updates on container start
+   - **Cron every 5min** — Safety net in `/etc/cron.d/chs-container-urls`
+   - **`scripts/update-container-urls.sh`** — Reads real service IDs from Docker labels (not assumed from prefix), updates both DB `internal_url` and Traefik file provider configs
+   - The script also detects duplicate running containers per prefix and sends webhook alerts if `ALERT_WEBHOOK_URL` is set
 
 2. **Hairpin NAT** — Some domains (`arana`, `proveedores`) resolve to the public IP `94.130.248.102`, which causes connection failures when testing from the server itself. Use `curl --resolve "domain:443:127.0.0.1"` for local testing. External users are unaffected.
 
 3. **Non-admin test users** — 4 Playwright tests fail (fase0 T12, fase1 T25, fase2 T04/T05) because non-admin test users have expired tokens or missing access policies. These are test-data issues, not code bugs.
 
 4. **docker/.env.prod not in git** — The production `.env.prod` file is in `.gitignore` to prevent leaking API keys. It must be managed directly on the server at `/home/chs-dev/chs-platform-v2/docker/.env.prod`.
+
+5. **Coolify dashboard state desync** — Do NOT trust Coolify's visual dashboard for container status. Always verify with `docker ps` and `curl` to the app's health endpoint. Coolify may show "running" for stopped containers or vice versa.
+
+6. **AI model resolution** — The model resolver (`lib/agent/model-resolver.ts`) uses a 3-tier priority: (1) app-specific DB assignment → (2) org default DB model → (3) env vars (`GOOGLE_GENERATIVE_AI_API_KEY`, `ANTHROPIC_API_KEY`). It does NOT use Coolify's `AI_INTEGRATIONS_*` env vars. If Coolify injects those, they are safely ignored.
 
 ---
 
