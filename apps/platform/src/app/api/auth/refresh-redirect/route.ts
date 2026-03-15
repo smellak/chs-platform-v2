@@ -9,12 +9,23 @@ import {
 } from "@chs-platform/auth";
 import { getDb, schema } from "@/lib/db";
 
+/** Build correct base URL using Traefik's forwarded headers instead of internal 0.0.0.0:3000 */
+function getExternalUrl(request: NextRequest, path: string): URL {
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const forwardedProto = request.headers.get("x-forwarded-proto") || "https";
+
+  if (forwardedHost) {
+    return new URL(path, `${forwardedProto}://${forwardedHost}`);
+  }
+  return new URL(path, request.url);
+}
+
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const returnTo = request.nextUrl.searchParams.get("returnTo") || "/";
   const refreshTokenValue = request.cookies.get("chs_refresh_token")?.value;
 
   if (!refreshTokenValue) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(getExternalUrl(request, "/login"));
   }
 
   try {
@@ -34,7 +45,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const tokenRecord = tokens[0];
     if (!tokenRecord) {
-      return NextResponse.redirect(new URL("/login", request.url));
+      return NextResponse.redirect(getExternalUrl(request, "/login"));
     }
 
     // Find user
@@ -46,7 +57,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const user = usersFound[0];
     if (!user || !user.isActive) {
-      return NextResponse.redirect(new URL("/login", request.url));
+      return NextResponse.redirect(getExternalUrl(request, "/login"));
     }
 
     // Delete old refresh token (rotation)
@@ -89,7 +100,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // Sanitize returnTo to prevent open redirect
     const safeReturnTo = returnTo.startsWith("/") ? returnTo : "/";
     const response = NextResponse.redirect(
-      new URL(safeReturnTo, request.url),
+      getExternalUrl(request, safeReturnTo),
     );
 
     const accessCookieConfig = getAccessTokenCookieConfig(orgDomain);
@@ -128,6 +139,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     return response;
   } catch {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(getExternalUrl(request, "/login"));
   }
 }
