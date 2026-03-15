@@ -119,19 +119,42 @@ send_alert() {
   fi
 }
 
-# ── Duplicate container detection ──
+# ── Duplicate container cleanup ──
 echo "--- Checking for duplicate containers ---"
 duplicates_found=0
 for prefix in "${!APPS[@]}"; do
   IFS='|' read -r app_name _port _file <<< "${APPS[$prefix]}"
-  count=$(docker ps --format "{{.Names}}" | grep -c "^${prefix}" || true)
+  running=$(docker ps --format "{{.Names}}" | grep "^${prefix}" || true)
+  count=$(echo "$running" | grep -c . || true)
+
   if [ "$count" -gt 1 ]; then
-    containers=$(docker ps --format "{{.Names}}  (up {{.RunningFor}})" | grep "^${prefix}")
-    msg="DUPLICATE: $app_name has $count running containers — Traefik may round-robin between them"
-    echo "[WARN] $msg"
-    echo "$containers" | sed 's/^/       /'
-    send_alert "$msg"
     duplicates_found=$((duplicates_found + 1))
+
+    # Find the newest container by creation timestamp
+    newest=""
+    newest_ts="0"
+    while IFS= read -r cname; do
+      ts=$(docker inspect --format '{{.Created}}' "$cname" 2>/dev/null || true)
+      if [[ "$ts" > "$newest_ts" ]]; then
+        newest_ts="$ts"
+        newest="$cname"
+      fi
+    done <<< "$running"
+
+    echo "[CLEANUP] $app_name — $count running, keeping newest: $newest (created $newest_ts)"
+
+    # Stop and remove all containers that are NOT the newest
+    while IFS= read -r cname; do
+      if [ "$cname" != "$newest" ]; then
+        old_ts=$(docker inspect --format '{{.Created}}' "$cname" 2>/dev/null || true)
+        docker stop "$cname" >/dev/null 2>&1 || true
+        docker rm "$cname" >/dev/null 2>&1 || true
+        echo "       [AUTO-CLEANUP] Removed old container $cname (created $old_ts)"
+        msg="Removed duplicate $cname ($app_name), keeping $newest"
+        send_alert "$msg"
+        changes=$((changes + 1))
+      fi
+    done <<< "$running"
   fi
 done
 if [ "$duplicates_found" -eq 0 ]; then
