@@ -1,7 +1,13 @@
 #!/bin/bash
 # update-container-urls.sh
 # Updates app_instances.internal_url and Traefik ForwardAuth configs
-# after a Coolify redeploy changes container names.
+# after a Coolify redeploy changes container names or service IDs.
+#
+# Handles two Traefik service patterns:
+#   1. @docker refs  — service ID read from Docker labels (Araña, AON, Citas, Dashboard)
+#   2. file services — loadBalancer URL updated with current container name (Medidas)
+#
+# Safe to run repeatedly (idempotent). Only modifies chs-v2-* configs.
 #
 # Usage: sudo ./scripts/update-container-urls.sh
 
@@ -12,7 +18,7 @@ DB_USER="chs"
 DB_NAME="chs"
 TRAEFIK_DIR="/data/coolify/proxy/dynamic"
 
-# Map of Coolify service ID prefix → app name + port + Traefik config file
+# Map: Coolify prefix → app name | port | Traefik YAML
 declare -A APPS=(
   ["a00g4os8ogg8skgk0oowk8c8"]="Araña de Precios|3000|chs-v2-arana-auth.yaml"
   ["ms84cwosc0occ488ggccg8g8"]="Sistema AON|3000|chs-v2-aon-auth.yaml"
@@ -21,46 +27,152 @@ declare -A APPS=(
   ["wk8sggsg4koowwccssww4c4s"]="Procesador de Medidas|3000|chs-v2-medidas-auth.yaml"
 )
 
+# Elias shares the Citas container — listed separately for Traefik config updates
+declare -A ALIASES=(
+  ["cogk4c4s8kgsk4k4s00wskss"]="chs-v2-elias-auth.yaml"
+)
+
+changes=0
+
 echo "=== CHS Container URL Updater ==="
+echo "    $(date -Iseconds)"
 echo ""
 
+# ── Helper: read the real HTTPS service ID from Docker labels ──
+get_docker_https_service() {
+  local container="$1"
+  docker inspect "$container" --format '{{json .Config.Labels}}' 2>/dev/null | \
+    python3 -c "
+import sys, json
+labels = json.load(sys.stdin)
+for k in labels:
+    if k.startswith('traefik.http.services.https-') and 'port' in k:
+        print(k.split('.')[3])
+        break
+" 2>/dev/null
+}
+
+# ── Helper: update @docker service refs in a YAML file ──
+update_docker_service_ref() {
+  local yaml_path="$1"
+  local real_service="$2"
+  local yaml_name
+  yaml_name=$(basename "$yaml_path")
+
+  # Extract current @docker service ID from the YAML
+  local current_service
+  current_service=$(grep -oP '[a-z0-9-]+@docker' "$yaml_path" 2>/dev/null | head -1 | sed 's/@docker//' || true)
+
+  if [ -z "$current_service" ]; then
+    return 0  # no @docker refs in this file, skip
+  fi
+
+  if [ "$current_service" = "$real_service" ]; then
+    echo "       Traefik @docker OK: $yaml_name"
+    return 0
+  fi
+
+  sed -i "s/${current_service}@docker/${real_service}@docker/g" "$yaml_path"
+  echo "       Traefik @docker UPDATED: $yaml_name ($current_service → $real_service)"
+  changes=$((changes + 1))
+}
+
+# ── Helper: update loadBalancer URL in a file-provider service ──
+update_loadbalancer_url() {
+  local yaml_path="$1"
+  local prefix="$2"
+  local container="$3"
+  local port="$4"
+  local yaml_name
+  yaml_name=$(basename "$yaml_path")
+
+  local new_url="http://${container}:${port}"
+
+  # Check if there's a loadBalancer URL with this prefix
+  local current_url
+  current_url=$(grep -oP "http://${prefix}[^\"]*" "$yaml_path" 2>/dev/null | head -1 || true)
+
+  if [ -z "$current_url" ]; then
+    return 0  # no loadBalancer URL with this prefix, skip
+  fi
+
+  if [ "$current_url" = "$new_url" ]; then
+    echo "       Traefik loadBalancer OK: $yaml_name"
+    return 0
+  fi
+
+  sed -i "s|${current_url}|${new_url}|g" "$yaml_path"
+  echo "       Traefik loadBalancer UPDATED: $yaml_name ($current_url → $new_url)"
+  changes=$((changes + 1))
+}
+
+# ── Main loop ──
 for prefix in "${!APPS[@]}"; do
   IFS='|' read -r app_name port traefik_file <<< "${APPS[$prefix]}"
 
-  # Find current container name
-  container=$(docker ps --format "{{.Names}}" | grep "^${prefix}" | head -1)
+  container=$(docker ps --format "{{.Names}}" | grep "^${prefix}" | head -1 || true)
 
   if [ -z "$container" ]; then
-    echo "[SKIP] $app_name — container with prefix $prefix not found"
+    echo "[SKIP] $app_name — no container with prefix $prefix"
+    echo ""
     continue
   fi
 
-  echo "[OK]   $app_name — container: $container"
+  echo "[OK]   $app_name — $container"
 
-  # Update DB internal_url
+  # ── 1. Update DB internal_url ──
   new_url="http://${container}:${port}"
-  docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c \
-    "UPDATE app_instances SET internal_url = '${new_url}' WHERE internal_url LIKE 'http://${prefix}%';" \
-    2>/dev/null
-  echo "       DB updated: $new_url"
+  current_url=$(docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -t -A -c \
+    "SELECT internal_url FROM app_instances WHERE internal_url LIKE 'http://${prefix}%' LIMIT 1;" \
+    2>/dev/null | tr -d '[:space:]')
 
-  # Update Traefik config (replace old service ID prefix with current)
-  config_path="${TRAEFIK_DIR}/${traefik_file}"
-  if [ -f "$config_path" ]; then
-    # The service reference format is: https-0-<prefix>@docker
-    # We only need to ensure the prefix matches (it doesn't include the suffix)
-    current_prefix=$(grep -oP 'https-0-\K[^@]+' "$config_path" | head -1)
-    if [ "$current_prefix" != "$prefix" ]; then
-      sed -i "s/${current_prefix}/${prefix}/g" "$config_path"
-      echo "       Traefik config updated: $traefik_file ($current_prefix → $prefix)"
-    else
-      echo "       Traefik config OK: $traefik_file"
-    fi
+  if [ "$current_url" = "$new_url" ]; then
+    echo "       DB OK: $new_url"
+  elif [ -n "$current_url" ]; then
+    docker exec "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c \
+      "UPDATE app_instances SET internal_url = '${new_url}' WHERE internal_url LIKE 'http://${prefix}%';" \
+      >/dev/null 2>&1
+    echo "       DB UPDATED: $current_url → $new_url"
+    changes=$((changes + 1))
   else
+    echo "       DB: no matching row for prefix $prefix"
+  fi
+
+  # ── 2. Update Traefik config ──
+  config_path="${TRAEFIK_DIR}/${traefik_file}"
+  if [ ! -f "$config_path" ]; then
     echo "       Traefik config not found: $traefik_file"
+    echo ""
+    continue
+  fi
+
+  # Read real HTTPS service ID from Docker labels
+  real_service=$(get_docker_https_service "$container")
+
+  if [ -n "$real_service" ]; then
+    # Pattern 1: @docker service references
+    update_docker_service_ref "$config_path" "$real_service"
+  fi
+
+  # Pattern 2: loadBalancer URLs (for file-provider services like Medidas)
+  update_loadbalancer_url "$config_path" "$prefix" "$container" "$port"
+
+  # ── 3. Update alias configs (e.g. Elias → Citas container) ──
+  if [ -n "${ALIASES[$prefix]+x}" ]; then
+    alias_file="${TRAEFIK_DIR}/${ALIASES[$prefix]}"
+    if [ -f "$alias_file" ]; then
+      if [ -n "$real_service" ]; then
+        update_docker_service_ref "$alias_file" "$real_service"
+      fi
+      update_loadbalancer_url "$alias_file" "$prefix" "$container" "$port"
+    fi
   fi
 
   echo ""
 done
 
-echo "Done. Traefik auto-reloads file configs within ~2 seconds."
+if [ "$changes" -gt 0 ]; then
+  echo "Done. $changes change(s) applied. Traefik auto-reloads within ~2s."
+else
+  echo "Done. Everything up to date."
+fi
