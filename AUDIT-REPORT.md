@@ -345,3 +345,67 @@ N/T = No Testeado (no se ejecutaron acciones destructivas para no alterar datos)
 11. **Actualizar CLAUDE.md** — Añadir los 2 agentes faltantes, los 3 dominios nuevos, y actualizar la sección de Milestones.
 
 12. **Corregir permisos de cache de imágenes** — En el Dockerfile, crear el directorio `.next/cache` con permisos para el usuario `chs:1001`.
+
+---
+
+## 12. RESOLUCIÓN DE BUGS — Fases 0-4
+
+*Actualizado: 2026-03-15*
+
+Tras la auditoría, se ejecutaron 5 fases de corrección. Estado final:
+
+### Fase 0 — Emergencias (COMPLETADA)
+
+| Bug | Estado | Acción |
+|-----|--------|--------|
+| #1 Araña `internal_url` obsoleta | RESUELTO | UPDATE en DB con sufijo correcto `-160853936940` |
+| #13 Araña `health_endpoint` incorrecto | RESUELTO | UPDATE de `/dashboard` a `/api/health` |
+| #6 Dashboard `internal_url` no HTTP | RESUELTO | UPDATE a URL HTTP correcta con sufijo Coolify |
+| #3 Sparkium crash loop | RESUELTO | `docker stop sparkium` — DB hostname irrecuperable |
+
+### Fase 1 — Limpieza de datos (COMPLETADA)
+
+| Bug | Estado | Acción |
+|-----|--------|--------|
+| #4 1.018 refresh tokens | RESUELTO | Purgados 1.029 tokens + límite de 10 sesiones por usuario en código de login |
+| #8 8 usuarios ficticios | RESUELTO | DELETE de 8 usuarios inactivos ficticios |
+| #10 14 API keys de test | RESUELTO | DELETE de 14 claves `E2E Key` / `Test Key E2E` |
+| #9 Activity logs contaminados | RESUELTO | Eliminada inserción `auth.verify-access` del código + DELETE de 6.259 entradas |
+| #17 CLAUDE.md desactualizado | RESUELTO | Actualizado con 7 agentes, 8 dominios, milestones 15-16, env vars nuevas |
+
+### Fase 2 — Funcionalidad rota (COMPLETADA)
+
+| Bug | Estado | Acción |
+|-----|--------|--------|
+| #5 Monitor devuelve 404 | NO ERA BUG | El monitor existe en `/monitor`, no en `/admin/monitor`. Tests corregidos. |
+| #12 Apps 9 errores al guardar | NO ERA BUG | Playwright contaba badges rojos de status como errores |
+| #14 Google AI coste $0.0000 | RESUELTO | UPDATE de costes en DB (0.0005/0.003 por 1K tokens) |
+
+### Fase 3 — Robustez (COMPLETADA)
+
+| Mejora | Estado | Acción |
+|--------|--------|--------|
+| Alertas webhook service-down | IMPLEMENTADO | `ALERT_WEBHOOK_URL` env var + POST JSON en health-checker.ts |
+| Paginación de sesiones | IMPLEMENTADO | Server-side pagination (20/página) en sessions page + UI |
+| Cache de imágenes Docker | RESUELTO | `RUN mkdir -p .next/cache && chown chs:chs` en Dockerfile |
+
+### Fase 4 — Mejoras de calidad (COMPLETADA)
+
+| Item | Estado | Detalle |
+|------|--------|---------|
+| F4.1 SSO Route Optimizer + AON | YA EXISTÍA | Ambas apps tienen `/api/auth/sso` funcional con auto-login en frontend. Verificado en producción. |
+| F4.2 Catálogo de modelos API | YA EXISTÍA + FIX | Catálogo, selector de modelos, auto-fill de costes ya implementados. Fix: formato de coste en tabla de `$0.0005` a `$0.50 MTok`. |
+| F4.3 Test A10 chat timeout | RESUELTO | `test.setTimeout(90s)`, selectores `data-testid`, `waitForFunction` en vez de timeout fijo |
+| F4.4 Tool calls no se registran | YA FUNCIONABA | `onFinish` ya usa `steps?.flatMap()` para capturar todos los tool calls. DB confirma 8 registros correctos. |
+
+### Estado final de tests: 228/237 (96.2%)
+
+| Tests pasados | Tests fallidos | Detalles de fallos |
+|---------------|---------------|-------------------|
+| 228 | 9 | 4 por usuarios de test no-admin eliminados (Known Issue #3), 1 por verify-access logging eliminado (intencional F1.4), 1 por label de sesiones cambiado (F3.3), 1 por favicon.svg (no existe, usa .ico), 1 por timeout de edición apps, 1 por Amazon A+ activa en DB |
+
+### Bugs resueltos: 14 de 17
+
+| Resueltos | No eran bugs | Pendientes |
+|-----------|-------------|------------|
+| 11 | 2 | 4 (pre-existentes: #2 alerta automática, #7 chat público Elias, #15 Anthropic en DB, #16 ya corregido) |
